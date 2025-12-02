@@ -1,25 +1,44 @@
-[MongoDB 설정] 
-1. Connection Name: Project5
-2. Database Name: stock
-3. Collection Name: test
---위 DB설정은 테스트 임시용이며 추후 프로젝트 진행상황에따라 변동가능--
+프로젝트 실행 및 환경 설정 가이드
+1. MongoDB 설정
 
-[Python 설정]
-1. pip install pip install requests beautifulsoup4 lxml pandas pymongo
-2. test파일은 프로젝트 파일 내 script안의 test.py 참고바람
+Connection Name: Project5
 
-[실행확인]
-1. Python 실행
-2. MongoDB 데이터 확인
+Database Name: stock
+
+Collection Name: test
+
+⚠️ 위 DB 설정은 테스트용 임시 설정입니다. 프로젝트 진행 상황에 따라 변경될 수 있습니다.
+
+2. Python 환경 설정
+
+필요한 패키지 설치:
+
+pip install requests beautifulsoup4 lxml pandas pymongo
+
+테스트 스크립트:
+
+프로젝트 내 script 폴더의 test.py 파일을 참고하세요.
+
+3. Python 실행 및 MongoDB 확인
+
+Python을 실행합니다.
+
+MongoDB에서 데이터가 정상적으로 저장되는지 확인합니다.
 
 
----React 실행시 참고사항---
+4. React 실행 시 참고 사항
 
-1. node.js 설치 필수
-2. 터미널 접속후 프로젝트 파일 root 기준 cd frontend
-3. npm install
-4. npm run dev
-5. 데이터 넘어오는지 검사하는건 
-   http://localhost:8585/api/stocks
-   넘어온 데이터값 확인
-   http://localhost:5173/stocks
+Node.js 설치 필수
+
+프로젝트 루트 디렉토리에서 터미널 실행 후:
+
+cd frontend
+npm install
+npm run dev
+
+데이터 확인--
+백엔드에서 데이터가 정상적으로 넘어오는지 확인:
+http://localhost:8585/api/stocks
+
+프론트에서 데이터 렌더링 확인:
+http://localhost:5173/stocks
