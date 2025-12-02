@@ -2,7 +2,7 @@
 pip install requests 
 pip install beautifulsoup4 
 pip install lxml 
-pip install pandas 
+pip install pandas  
 pip install pymongo
 
 [React 폴더 구조(예시)]
