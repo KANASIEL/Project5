@@ -5,7 +5,7 @@ pip install lxml
 pip install pandas 
 pip install pymongo
 
-[React 폴더 구조(예시)]
+[React 폴더 구조(예시)] 
 /frontend
 ├── node_modules/          (설치된 모든 라이브러리)
 ├── public/                (공개 액세스 자산)
