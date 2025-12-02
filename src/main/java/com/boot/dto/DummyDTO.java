@@ -4,8 +4,8 @@ import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+@Document(collection = "test")
 @Data
-@Document(collection = "test") // MongoDB 컬렉션 이름
 public class DummyDTO {
 
     @Id
@@ -13,9 +13,11 @@ public class DummyDTO {
 
     private String N;
     private String 종목명;
-    private String 현재가;
-    private String 전일비;
-    private String 등락률;
+
+    // ← 여기만 다시 String으로 바꿔!
+    private String 현재가;     // ← String
+    private String 전일비;     // ← String
+    private String 등락률;     // ← String
     private String 액면가;
     private String 시가총액;
     private String 상장주식수;
