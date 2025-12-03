@@ -1,6 +1,6 @@
 import {BrowserRouter as Router, Routes, Route} from "react-router-dom";
-import "./App.css";
 import StockSearch from "./pages/test.jsx"
+import MainPage from "./pages/Main/MainPage.jsx";
 
 
 function App() {
@@ -8,6 +8,7 @@ function App() {
         <Router>
             <Routes>
                 <Route path="/stocks" element={<StockSearch/>}/>
+                <Route path="/main" element={<MainPage/>}/>
             </Routes>
         </Router>
     );
