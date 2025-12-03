@@ -24,3 +24,6 @@ pip install pymongo
 ├── package.json           (프로젝트 메타데이터 및 종속성)  
 ├── package-lock.json      (정확한 종속성 버전 잠금)  
 └── README.md  
+
+1. 프로젝트 임포트후에 터미널로 frontend 폴더 안에서 npm install
+2. npm run dev
