@@ -94,19 +94,18 @@ async def fetch_news_detail(session, link):
                 image_url = meta_image["content"].strip()
 
             # 작성일
-			meta_date = soup.select_one('meta[property="article:published_time"]')
-    		if meta_date and meta_date.has_attr("content"):
-        		pubDate = meta_date["content"].strip()
-    		else:
-        	   # span뿐 아니라 어떤 태그든 _ARTICLE_DATE_TIME 클래스가 있으면 잡기
-        	   date_tag = soup.select_one('._ARTICLE_DATE_TIME')
-        	   if date_tag and date_tag.has_attr("data-date-time"):
-                  pubDate = date_tag["data-date-time"].strip()
-
+            meta_date = soup.select_one('meta[property="article:published_time"]')
+            if meta_date and meta_date.has_attr("content"):
+                pubDate = meta_date["content"].strip()
+            else:
+                date_tag = soup.select_one('._ARTICLE_DATE_TIME')
+                if date_tag and date_tag.has_attr("data-date-time"):
+                    pubDate = date_tag["data-date-time"].strip()
 
             # 언론사 로고
             def first_url_from_srcset(s):
-                if not s: return ""
+                if not s:
+                    return ""
                 parts = s.split(",")
                 first = parts[0].strip().split(" ")[0]
                 return first
@@ -145,6 +144,7 @@ async def fetch_news_detail(session, link):
         log(f"⚠ 뉴스 상세 크롤링 실패: {link} / Error: {e}")
 
     return author, content, media, mediaLogo, image_url, pubDate
+
 
 # -------------------------
 # 뉴스 리스트 크롤링
