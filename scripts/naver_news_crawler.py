@@ -1,10 +1,11 @@
 import asyncio
 import aiohttp
 from bs4 import BeautifulSoup
-import os
-from pymongo import MongoClient
 from datetime import datetime
-import random
+import random, os
+
+from pymongo.mongo_client import MongoClient
+from pymongo.server_api import ServerApi
 
 # -------------------------
 # MongoDB 연결
@@ -13,7 +14,8 @@ MONGO_URI = os.environ.get("MONGO_URI")
 if not MONGO_URI:
     raise RuntimeError("MONGO_URI not set in crawler")
 
-client = MongoClient(MONGO_URI)
+# Atlas에서 복사한 mongodb+srv://... 그대로 MONGO_URI에 들어가 있어야 함
+client = MongoClient(MONGO_URI, server_api=ServerApi('1'))
 db = client["stock"]
 collection = db["news_crawling"]
 
