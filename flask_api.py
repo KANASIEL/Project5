@@ -1,5 +1,6 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+import os
 from pymongo import MongoClient
 from urllib.parse import unquote
 from datetime import datetime
@@ -12,8 +13,11 @@ app = Flask(__name__)
 CORS(app)  # React CORS 허용
 
 # MongoDB Atlas URI를 환경 변수로 설정 (Render에서 설정)
-MONGODB_URI = os.environ.get("MONGODB_URI", "mongodb://localhost:27017/")
-client = MongoClient(MONGODB_URI)
+MONGO_URI = os.environ.get("MONGO_URI")
+if not MONGO_URI:
+    raise RuntimeError("MONGO_URI not set in Flask")
+
+client = MongoClient(MONGO_URI)
 db = client["stock"]
 collection = db["news_crawling"]
 
