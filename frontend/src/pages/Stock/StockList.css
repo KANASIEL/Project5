@@ -1,0 +1,246 @@
+/* StockList.css */
+.stocklist-container {
+    padding: 32px;
+    font-family: "Malgun Gothic", "맑은 고딕", sans-serif;
+    background: #f8f9fa;
+    min-height: 100vh;
+    border-radius: 16px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+.stocklist-title {
+    font-size: 30px;
+    font-weight: 700;
+    color: #1e1e2d;
+    margin: 0 0 24px;
+    padding-bottom: 12px;
+    border-bottom: 4px solid #1976d2;
+    display: inline-block;
+}
+
+.stocklist-date {
+    font-size: 18px;
+    color: #666;
+    font-weight: normal;
+}
+
+.stocklist-controls {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 35px;
+    padding: 24px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+.stocklist-search-input {
+    padding: 14px 20px;
+    width: 400px;
+    max-width: 100%;
+    border: 2px solid #ddd;
+    border-radius: 14px;
+    font-size: 16px;
+    transition: all 0.3s;
+}
+
+.stocklist-search-input:focus {
+    outline: none;
+    border-color: #1976d2;
+    box-shadow: 0 0 0 4px rgba(25,118,210,0.15);
+}
+
+.stocklist-size-select {
+    padding: 14px 20px;
+    border: 2px solid #ddd;
+    border-radius: 14px;
+    font-size: 15px;
+    background: white;
+    cursor: pointer;
+}
+
+.stocklist-flex-spacer { flex: 1; }
+
+.stocklist-total-count {
+    color: #1976d2;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.stocklist-loading {
+    text-align: center;
+    padding: 100px 20px;
+    font-size: 22px;
+    color: #777;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+.stocklist-table-wrapper {
+    overflow-x: auto;
+    border-radius: 16px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    margin-bottom: 40px;
+}
+
+.stocklist-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    font-size: 15px;
+}
+
+.stocklist-table th {
+    padding: 18px 12px;
+    background: linear-gradient(135deg, #1e1e2d, #2c3e50);
+    color: white;
+    font-weight: 600;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.stocklist-row {
+    transition: all 0.25s;
+    border-bottom: 1px solid #eee;
+}
+
+.stocklist-row:hover {
+    background: #f0f8ff;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+}
+
+.stocklist-row.samsung {
+    background: #fff8e1 !important;
+}
+.stocklist-row.samsung:hover {
+    background: #ffecb3 !important;
+}
+
+.stocklist-row:nth-child(even) { background: #fafafa; }
+.stocklist-row:nth-child(even):hover { background: #f0f5ff; }
+
+.stocklist-name-cell {
+    text-align: left !important;
+    padding-left: 24px !important;
+    font-weight: 600;
+}
+
+.stocklist-link {
+    color: #1976d2;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.stocklist-link:hover {
+    text-decoration: underline;
+}
+
+.stocklist-vs, .stocklist-rate {
+    font-weight: bold;
+    font-size: 15px;
+}
+
+.stocklist-vs.up, .stocklist-rate.up { color: #e91e63; }
+.stocklist-vs.down, .stocklist-rate.down { color: #2962ff; }
+
+.stocklist-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin: 40px 0;
+    flex-wrap: wrap;
+}
+
+.stocklist-page-btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 14px;
+    background: #1976d2;
+    color: white;
+    font-weight: bold;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.stocklist-page-btn:hover:not(:disabled) {
+    background: #1565c0;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(25,118,210,0.3);
+}
+
+.stocklist-page-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.stocklist-page-info {
+    font-size: 20px;
+    font-weight: bold;
+    color: #1976d2;
+    min-width: 120px;
+    text-align: center;
+}
+
+.stocklist-rank-section {
+    margin-top: 80px;
+}
+
+.stocklist-main-tabs {
+    display: flex;
+    gap: 30px;
+    padding: 15px 0 25px;
+    border-bottom: 4px solid #e0e0e0;
+    margin-bottom: 40px;
+    background: white;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.stocklist-main-tab {
+    font-size: 22px;
+    font-weight: 700;
+    background: none;
+    border: none;
+    color: #777;
+    cursor: pointer;
+    padding: 12px 20px;
+    border-radius: 12px 12px 0 0;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.stocklist-main-tab::after {
+    content: '';
+    position: absolute;
+    bottom: -24px;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: transparent;
+    transition: background 0.3s;
+}
+
+.stocklist-main-tab.active {
+    color: #1976d2;
+    background: #e3f2fd;
+}
+
+.stocklist-main-tab.active::after {
+    background: #1976d2;
+}
+
+.stocklist-rank-full {
+    padding: 20px 0;
+    min-height: 80vh;
+}
