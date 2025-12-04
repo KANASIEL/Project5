@@ -27,3 +27,7 @@ pip install pymongo
 
 1. 프로젝트 임포트후에 터미널로 frontend 폴더 안에서 npm install
 2. npm run dev
+
+
+- 주식데이터 뜨게하기(build.gradle)
+스프링부트 window -> preferences -> java compiler 에서 Store information about method paremeter 체크 후 Apply
