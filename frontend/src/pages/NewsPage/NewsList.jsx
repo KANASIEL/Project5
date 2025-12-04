@@ -52,6 +52,7 @@ function NewsList() {
 	       )}&page=${pageNumber}&size=${pageSize}&sort=date`;
 
 
+
       console.log("📡 요청 URL:", url);
 
       const res = await fetch(url);
@@ -175,16 +176,23 @@ function NewsList() {
 	  {/* 카테고리: 항상 보여주기 */}
 	  <div className="category-tabs">
 	    {CATEGORY_LIST.map((cat) => (
-	      <button
-	        key={cat}
-	        className={cat === activeCategory ? "active" : ""}
-	        onClick={() => {
-	          setActiveCategory(cat);
-	          setPage(0);
-	        }}
-	      >
-	        {cat}
-	      </button>
+			<button
+			  key={cat}
+			  className={cat === activeCategory ? "active" : ""}
+			  onClick={() => {
+			    setActiveCategory(cat);
+			    setPage(0);
+			    if (keyword.trim() !== "") {
+			      // 검색 중이면: 새 카테고리 + 같은 키워드로 다시 검색
+			      fetchNews(cat, 0, keyword);
+			    } else {
+			      // 평소 리스트
+			      fetchNews(cat, 0);
+			    }
+			  }}
+			>
+			  {cat}
+			</button>
 	    ))}
 	  </div>
 
