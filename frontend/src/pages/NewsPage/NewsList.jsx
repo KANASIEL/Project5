@@ -132,9 +132,10 @@ function NewsList() {
     return acc;
   }, {});
 
-  // 현재 activeCategory에 맞는 뉴스
-  const filteredItems = groupedItems[activeCategory] || [];
-
+  // 검색 중이면 전체 items, 아니면 카테고리별
+  const listToShow = isSearching
+    ? items
+    : (groupedItems[activeCategory] || []);
 
   return (
     <div className="news-container">
@@ -187,7 +188,7 @@ function NewsList() {
       {loading && <p>불러오는 중...</p>}
 
 	  <ul className="news-list">
-	    {filteredItems.map((n) => (
+	     {listToShow.map((n) => (
 	      <li key={n._id || n.link} className="news-card" onClick={() => openModal(n)}>
 	        <div className="news-content">
 	          {n.image_url ? (
