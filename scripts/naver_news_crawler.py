@@ -98,9 +98,11 @@ async def fetch_news_detail(session, link):
             if meta_date and meta_date.has_attr("content"):
                 pubDate = meta_date["content"].strip()
             else:
-                date_tag = soup.select_one('span._ARTICLE_DATE_TIME')
-                if date_tag and date_tag.has_attr("data-date-time"):
-                    pubDate = date_tag["data-date-time"].strip()
+			    date_tag = soup.select_one('span._ARTICLE_DATE_TIME')
+			    if date_tag and date_tag.has_attr("data-date-time"):
+			        pubDate = date_tag["data-date-time"].strip()  # 여기에서 2025-12-04 15:34:14 가져옴
+			    else:
+			        pubDate = ""
 
             # 언론사 로고
             def first_url_from_srcset(s):
