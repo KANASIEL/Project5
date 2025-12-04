@@ -1,18 +1,22 @@
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 from pymongo import MongoClient
 from urllib.parse import unquote
 from datetime import datetime
-import threading
-import time
-import os
+import threading, time, os
 
-# 크롤러 모듈 임포트
-import scripts.naver_news_crawler as crawler  # naver_news_crawler.py 안에 main() 함수가 있어야 함
+import scripts.naver_news_crawler as crawler
 
 app = Flask(__name__)
-client = MongoClient("MONGO_URI")  # 실제 MongoDB URI
+CORS(app)  # React CORS 허용
+
+client = MongoClient("mongodb://localhost:27017/")  # 실제 URI 사용
 db = client["stock"]
 collection = db["news_crawling"]
+
+@app.route("/")
+def index():
+    return "Flask API is running"
 
 @app.route("/news")
 def get_news():
@@ -23,7 +27,6 @@ def get_news():
     query = {"category": category} if category else {}
     news_list = list(collection.find(query, {"_id": 0}))
 
-    # 문자열 pubDate → datetime 변환 후 정렬
     for news in news_list:
         try:
             news["pubDate"] = datetime.strptime(news.get("pubDate","1970-01-01 00:00:00"), "%Y-%m-%d %H:%M:%S")
@@ -35,7 +38,6 @@ def get_news():
     end = start + size
     content = news_list[start:end]
 
-    # datetime → 문자열
     for news in content:
         news["pubDate"] = news["pubDate"].strftime("%Y-%m-%d %H:%M:%S")
 
@@ -45,10 +47,9 @@ def get_news():
         "totalPages": (len(news_list) + size - 1) // size
     })
 
-# 크롤러를 주기적으로 실행
 def run_crawler():
     while True:
-        crawler.main()  # naver_news_crawler.py 안에 main() 함수 있어야 함
+        crawler.main()
         time.sleep(3600)  # 1시간마다 실행
 
 if __name__ == "__main__":
