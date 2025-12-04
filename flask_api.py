@@ -54,6 +54,55 @@ def get_news():
         "number": page,
         "totalPages": (len(news_list) + size - 1) // size
     })
+    
+@app.route("/news/search")
+def search_news():
+    q = request.args.get("q", "").strip()
+    page = int(request.args.get("page", 0))
+    size = int(request.args.get("size", 5))
+
+    if not q:
+        return jsonify({"content": [], "number": 0, "totalPages": 0})
+
+    regex = {"$regex": q, "$options": "i"}
+    query = {
+        "$or": [
+            {"title": regex},
+            {"content": regex},
+            {"author": regex},
+            {"media": regex},
+        ]
+    }
+
+    news_list = list(collection.find(query, {"_id": 0}))
+
+    # 날짜 파싱 및 정렬은 /news와 동일하게 처리
+    for news in news_list:
+        try:
+            news["pubDate"] = datetime.strptime(
+                news.get("pubDate", "1970-01-01 00:00:00"),
+                "%Y-%m-%d %H:%M:%S"
+            )
+        except Exception:
+            news["pubDate"] = datetime(1970, 1, 1)
+
+    news_list.sort(key=lambda x: x["pubDate"], reverse=True)
+
+    start = page * size
+    end = start + size
+    content = news_list[start:end]
+
+    for news in content:
+        news["pubDate"] = news["pubDate"].strftime("%Y-%m-%d %H:%M:%S")
+
+    return jsonify({
+        "content": content,
+        "number": page,
+        "totalPages": (len(news_list) + size - 1) // size
+    })
+   
+    
+    
 
 def run_crawler():
     while True:
