@@ -6,7 +6,6 @@ import threading, time, os, asyncio
 
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
-from dateutil import parser  # requirements에 python-dateutil 추가 필요
 
 import scripts.naver_news_crawler as crawler
 
@@ -36,20 +35,17 @@ def get_news():
     query = {"category": category} if category else {}
     news_list = list(collection.find(query, {"_id": 0}))
 
-    # ✅ pubDate 문자열 → datetime 변환 (여기 들여쓰기 주의)
     for news in news_list:
         try:
-            news["pubDate"] = parser.parse(news.get("pubDate", "1970-01-01"))
-        except Exception:
-            news["pubDate"] = datetime(1970, 1, 1)
-
+            news["pubDate"] = datetime.strptime(news.get("pubDate","1970-01-01 00:00:00"), "%Y-%m-%d %H:%M:%S")
+        except:
+            news["pubDate"] = datetime(1970,1,1)
     news_list.sort(key=lambda x: x["pubDate"], reverse=True)
 
     start = page * size
     end = start + size
     content = news_list[start:end]
 
-    # 다시 문자열로 포맷
     for news in content:
         news["pubDate"] = news["pubDate"].strftime("%Y-%m-%d %H:%M:%S")
 
@@ -58,7 +54,6 @@ def get_news():
         "number": page,
         "totalPages": (len(news_list) + size - 1) // size
     })
-
 
 def run_crawler():
     while True:
