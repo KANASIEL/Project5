@@ -1,0 +1,308 @@
+.news-container {
+  max-width: 900px;
+  margin: 40px auto;
+  font-family: 'Segoe UI', sans-serif;
+  color: #000;
+}
+
+.news-container h2 {
+  text-align: center;
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 24px;
+}
+
+.news-list {
+  list-style: none;
+  padding: 0;
+}
+
+.news-card {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  transition: transform 0.2s, background 0.2s;
+}
+
+.news-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex-grow: 1;
+}
+
+.news-meta {
+  display: flex;
+  justify-content: space-between; /* 왼쪽/오른쪽 나누기 */
+  align-items: center;
+  font-size: 12px;
+  color: #333;
+  margin-top: 8px;
+}
+
+.left-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px; /* 로고와 작성자 간 간격 */
+}
+
+.right-meta {
+  font-style: normal;
+  color: #888;
+  font-size: 12px;
+}
+
+
+.news-card:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.news-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.news-content {
+  display: flex;
+  gap: 16px;
+}
+
+.news-image-wrapper {
+  flex-shrink: 0;
+}
+
+.news-image {
+  width: 220px;
+  height: 150px;
+  object-fit: cover;
+}
+
+
+.news-text h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.news-text p {
+  font-size: 14px;
+  margin: 0 0 8px;
+  color: #555;
+}
+
+.news-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #333;
+}
+
+.news-date {
+  font-style: italic;
+}
+
+.news-author {
+  font-weight: 600;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0;
+  font-family: 'Noto Sans', sans-serif;
+}
+
+.pagination button {
+  background-color: #2c5f8d;  /* 브랜드 색상 */
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.2s;
+}
+
+.pagination button:hover:not(:disabled) {
+  background-color: #1e4261;
+  transform: scale(1.05);
+}
+
+.pagination button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.pagination span {
+  font-weight: 600;
+  color: #2c5f8d;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px; /* 작은 화면에서 여유 확보 */
+  box-sizing: border-box;
+}
+
+.modal-content,
+.modal-meta,
+.modal-link {
+  padding-left: 25px;
+  padding-right: 25px;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 10px;
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;       /* 화면 높이 기준 최대 높이 */
+  min-height: 500px;      /* 최소 높이 충분히 확보 */
+  display: flex;
+  flex-direction: column; /* 내용이 위에서 아래로 자연스럽게 쌓이도록 */
+  gap: 15px;              /* 내부 요소 간 간격 */
+  overflow-y: auto;       /* 내용 넘치면 스크롤 */
+  position: relative;
+  box-sizing: border-box;
+}
+
+
+
+.modal-close {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  border: none;
+  background: none;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.modal-meta {
+  display: flex;
+  justify-content: flex-start;
+  flex-wrap: wrap;        /* 화면 좁으면 줄바꿈 */
+  gap: 15px;
+  color: #555;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.modal-link {
+  display: inline-block;
+  margin-top: auto;       /* 내용 아래쪽에 항상 붙도록 */
+  padding-top: 10px;
+  padding-bottom: 10px;
+  color: #007bff;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+
+/* 카테고리 버튼 영역 */
+.category-tabs {
+  display: flex;
+  flex-wrap: wrap;        /* 화면 좁으면 줄바꿈 */
+  justify-content: center; 
+  gap: 12px;              /* 버튼 간 간격 */
+  margin-bottom: 24px;
+}
+
+.category-tabs button {
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.3s, color 0.3s, transform 0.2s;
+}
+
+.category-tabs button:hover {
+  background-color: #2c5f8d;
+  color: #fff;
+  transform: scale(1.05);
+}
+
+.category-tabs button.active {
+  background-color: #2c5f8d;
+  color: #fff;
+  font-weight: 600;
+  border: 1px solid #1e4261;
+}
+
+/* 검색창 전체 wrapper */
+.search-box {
+  width: 60%;
+  height: 48px;
+  margin: 0 auto 20px;
+
+  display: flex;
+  align-items: center;
+  background: #fff;
+
+  border-radius: 14px;
+  padding: 0 12px;
+
+  border: 1.5px solid #d7d7d7;
+  transition: all 0.25s ease;
+}
+
+/* focus 시 약간 파란 빛 + 그림자 */
+.search-box:focus-within {
+  border-color: #1e6bff;
+  box-shadow: 0 0 8px rgba(30, 107, 255, 0.3);
+}
+
+/* 인풋 영역 */
+.search-box input {
+  width: 100%;
+  border: none;
+  outline: none;
+  font-size: 15px;
+}
+
+/* 오른쪽 아이콘 버튼  */
+.icon-btn {
+  width: 35px;
+  height: 35px;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+  outline: none;
+}
+
+/* 클릭 반응 */
+.icon-btn:active svg {
+  transform: scale(0.88);
+  transition: 0.15s;
+}
+
+.highlight {
+  color: #1c4ed8;          /* 진한 파란색 */
+  font-weight: 700;        /* 약간 굵게 */
+}
+
+.media-logo {
+  width: 70px;      /* 원하는 크기로 조절 */
+  height: 30px;
+  object-fit: contain;
+  margin-right: 6px;   /* 텍스트와 간격 */
+  opacity: 0.9;
+}
