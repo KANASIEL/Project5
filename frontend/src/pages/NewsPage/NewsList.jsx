@@ -41,10 +41,10 @@ function NewsList() {
       const searching = query.trim() !== "";
       setIsSearching(searching);
 
-      const baseUrl = "https://project5-n56u.onrender.com"; // 배포된 Flask 주소
+      const baseUrl = "https://project5-n56u.onrender.com";
 
       const url = searching
-        ? `${baseUrl}/news/search?q=${encodeURIComponent(query)}`
+        ? `${baseUrl}/news/search?q=${encodeURIComponent(query)}&page=${pageNumber}&size=${pageSize}`
         : `${baseUrl}/news?category=${encodeURIComponent(
             category
           )}&page=${pageNumber}&size=${pageSize}&sort=date`;
@@ -52,23 +52,25 @@ function NewsList() {
       console.log("📡 요청 URL:", url);
 
       const res = await fetch(url);
+      if (!res.ok) {
+        // 404/500이면 검색 모드 끄고 기존 리스트 유지
+        throw new Error(`HTTP ${res.status}`);
+      }
+
       const data = await res.json();
 
-      if (searching) {
-        setItems(data);
-        setPage(0);
-        setTotalPages(1);
-      } else {
-        setItems(data.content || []);
-        setPage(data.number || 0);
-        setTotalPages(data.totalPages || 1);
-      }
+      setItems(data.content || []);
+      setPage(data.number || 0);
+      setTotalPages(data.totalPages || 1);
     } catch (e) {
       console.error("뉴스 가져오기 실패:", e);
+      // 에러 나면 검색 모드 해제
+      setIsSearching(false);
     } finally {
       setLoading(false);
     }
   };
+
 
 
   useEffect(() => {
