@@ -11,7 +11,7 @@ from pymongo import MongoClient, ReplaceOne
 SERVICE_KEY = "9197e1a826357d75b894b07ec955c0879a53b8d2a3d75d468d7f0d7f7471ee99" 
 BASE_URL = "https://apis.data.go.kr/1160100/service/GetStockSecuritiesInfoService/getStockPriceInfo"
 MONGO_URI = "mongodb://localhost:27017/" 
-DATABASE_NAME = "StockScreenerDB"
+DATABASE_NAME = "stock"
 COLLECTION_NAME = "stock_daily_prices" 
 NUM_OF_ROWS = 1000
 
