@@ -41,9 +41,11 @@ function NewsList() {
       const searching = query.trim() !== "";
       setIsSearching(searching);
 
+      const baseUrl = "https://project5-n56u.onrender.com"; // 배포된 Flask 주소
+
       const url = searching
-        ? `http://localhost:8585/news/search?q=${query}`
-        : `http://localhost:8585/news?category=${encodeURIComponent(
+        ? `${baseUrl}/news/search?q=${encodeURIComponent(query)}`
+        : `${baseUrl}/news?category=${encodeURIComponent(
             category
           )}&page=${pageNumber}&size=${pageSize}&sort=date`;
 
@@ -53,7 +55,7 @@ function NewsList() {
       const data = await res.json();
 
       if (searching) {
-        setItems(data); // 배열 형태
+        setItems(data);
         setPage(0);
         setTotalPages(1);
       } else {
@@ -67,6 +69,7 @@ function NewsList() {
       setLoading(false);
     }
   };
+
 
   useEffect(() => {
     if (!isSearching) {
