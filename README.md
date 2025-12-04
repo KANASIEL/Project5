@@ -29,5 +29,5 @@ pip install pymongo
 2. npm run dev
 
 
-- 주식데이터 뜨게하기(build.gradle)
+- 주식데이터 뜨게하기(build.gradle) : 
 스프링부트 window -> preferences -> java compiler 에서 Store information about method paremeter 체크 후 Apply
