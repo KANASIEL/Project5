@@ -36,7 +36,7 @@ function StockRank() {
 
     return (
         <div className="stockrank-container">
-            <h2 className="stockrank-title">실시간 주식 랭킹</h2>
+            <h2 className="stockrank-title">주식 랭킹</h2>
 
             {/* 탭 */}
             <div className="stockrank-tab-container">
