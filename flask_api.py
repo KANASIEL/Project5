@@ -10,7 +10,9 @@ import scripts.naver_news_crawler as crawler
 app = Flask(__name__)
 CORS(app)  # React CORS 허용
 
-client = MongoClient("mongodb://localhost:27017/")  # 실제 URI 사용
+# MongoDB Atlas URI를 환경 변수로 설정 (Render에서 설정)
+MONGODB_URI = os.environ.get("MONGODB_URI", "mongodb://localhost:27017/")
+client = MongoClient(MONGODB_URI)
 db = client["stock"]
 collection = db["news_crawling"]
 
