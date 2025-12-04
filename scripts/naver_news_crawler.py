@@ -1,6 +1,7 @@
 import asyncio
 import aiohttp
 from bs4 import BeautifulSoup
+import os
 from pymongo import MongoClient
 from datetime import datetime
 import random
@@ -8,7 +9,11 @@ import random
 # -------------------------
 # MongoDB 연결
 # -------------------------
-client = MongoClient("MONGO_URI")
+MONGO_URI = os.environ.get("MONGO_URI")
+if not MONGO_URI:
+    raise RuntimeError("MONGO_URI not set in crawler")
+
+client = MongoClient(MONGO_URI)
 db = client["stock"]
 collection = db["news_crawling"]
 
