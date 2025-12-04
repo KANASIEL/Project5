@@ -58,6 +58,7 @@ def get_news():
 @app.route("/news/search")
 def search_news():
     q = request.args.get("q", "").strip()
+    category = unquote(request.args.get("category", ""))
     page = int(request.args.get("page", 0))
     size = int(request.args.get("size", 5))
 
@@ -65,7 +66,8 @@ def search_news():
         return jsonify({"content": [], "number": 0, "totalPages": 0})
 
     regex = {"$regex": q, "$options": "i"}
-    query = {
+
+    or_query = {
         "$or": [
             {"title": regex},
             {"content": regex},
@@ -74,9 +76,13 @@ def search_news():
         ]
     }
 
+    if category:
+        query = {"$and": [ {"category": category}, or_query ]}
+    else:
+        query = or_query
+
     news_list = list(collection.find(query, {"_id": 0}))
 
-    # 날짜 파싱 및 정렬은 /news와 동일하게 처리
     for news in news_list:
         try:
             news["pubDate"] = datetime.strptime(
@@ -100,6 +106,7 @@ def search_news():
         "number": page,
         "totalPages": (len(news_list) + size - 1) // size
     })
+
    
     
     
