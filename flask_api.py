@@ -1,11 +1,11 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-import os
-from pymongo import MongoClient
 from urllib.parse import unquote
 from datetime import datetime
-import threading, time, os
-import asyncio  # 추가
+import threading, time, os, asyncio
+
+from pymongo.mongo_client import MongoClient
+from pymongo.server_api import ServerApi
 
 import scripts.naver_news_crawler as crawler
 
@@ -17,7 +17,8 @@ MONGO_URI = os.environ.get("MONGO_URI")
 if not MONGO_URI:
     raise RuntimeError("MONGO_URI not set in Flask")
 
-client = MongoClient(MONGO_URI)
+# Atlas에서 복사한 mongodb+srv://... 그대로 MONGO_URI에 들어가 있어야 함
+client = MongoClient(MONGO_URI, server_api=ServerApi('1'))
 db = client["stock"]
 collection = db["news_crawling"]
 
