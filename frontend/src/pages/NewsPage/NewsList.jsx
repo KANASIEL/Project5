@@ -43,11 +43,14 @@ function NewsList() {
 
       const baseUrl = "https://project5-n56u.onrender.com";
 
-      const url = searching
-        ? `${baseUrl}/news/search?q=${encodeURIComponent(query)}&page=${pageNumber}&size=${pageSize}`
-        : `${baseUrl}/news?category=${encodeURIComponent(
-            category
-          )}&page=${pageNumber}&size=${pageSize}&sort=date`;
+	  const url = searching
+	    ? `${baseUrl}/news/search?category=${encodeURIComponent(
+	         category
+	       )}&q=${encodeURIComponent(query)}&page=${pageNumber}&size=${pageSize}`
+	    : `${baseUrl}/news?category=${encodeURIComponent(
+	         category
+	       )}&page=${pageNumber}&size=${pageSize}&sort=date`;
+
 
       console.log("📡 요청 URL:", url);
 
