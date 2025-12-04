@@ -4,6 +4,7 @@ from pymongo import MongoClient
 from urllib.parse import unquote
 from datetime import datetime
 import threading, time, os
+import asyncio  # 추가
 
 import scripts.naver_news_crawler as crawler
 
@@ -51,7 +52,7 @@ def get_news():
 
 def run_crawler():
     while True:
-        crawler.main()
+        asyncio.run(crawler.main())  # 비동기 함수 실행
         time.sleep(3600)  # 1시간마다 실행
 
 if __name__ == "__main__":
