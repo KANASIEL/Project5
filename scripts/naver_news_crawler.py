@@ -8,9 +8,7 @@ import random
 # -------------------------
 # MongoDB 연결
 # -------------------------
-client = MongoClient(
-    "mongodb+srv://joseulmi0422_db_user:oaeWjXgeaCgrno8e@cluster0.eyhvlsf.mongodb.net/?retryWrites=true&w=majority"
-)
+client = MongoClient("MONGO_URI")
 db = client["stock"]
 collection = db["news_crawling"]
 
