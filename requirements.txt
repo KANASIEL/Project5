@@ -5,3 +5,4 @@ beautifulsoup4==4.12.2
 lxml>=5.1.0
 dnspython<3.0.0,>=1.16.0
 Flask-CORS
+python-dateutil==2.9.0.post0
