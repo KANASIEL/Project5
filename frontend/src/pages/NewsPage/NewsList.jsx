@@ -269,63 +269,95 @@ function NewsList() {
         </button>
       </div>
 
-      {selectedNews && (
-        <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={closeModal}>
-              X
-            </button>
+	  	  {/* 📌 모달 부분만 교체하세요 */}
+	  	  {selectedNews && (
+	  	    <div className="modal-overlay" onClick={closeModal}>
+	  	      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+	  	        
+	  	        {/* 1. 헤더 (제목 + 닫기 버튼) */}
+	  	        <div className="modal-header">
+	  	          <h2
+	  	            className="modal-title"
+	  	            dangerouslySetInnerHTML={{ __html: selectedNews.title }}
+	  	          />
+	  	          <button className="modal-close-btn" onClick={closeModal}>
+	  	            &times;
+	  	          </button>
+	  	        </div>
 
-            <h2 dangerouslySetInnerHTML={{ __html: selectedNews.title }} />
+	  	        {/* 2. 본문 (스크롤 영역) */}
+	  	        <div className="modal-body">
+	  	          
+	  	          {/* 메타정보: 버튼 위치 이동됨 */}
+	  	          <div className="modal-meta">
+	  	            <div className="left-meta">
+	  	              {/* 언론사 로고 */}
+	  	              {selectedNews.mediaLogo && (
+	  	                <img src={selectedNews.mediaLogo} className="media-logo" alt="media" />
+	  	              )}
+	  	              {/* 기자 이름 */}
+	  	              {selectedNews.author && (
+	  	                <span className="news-author">{selectedNews.author}</span>
+	  	              )}
+	  	              {selectedNews.link && (
+	  	                <a
+	  	                  href={selectedNews.link}
+	  	                  target="_blank"
+	  	                  rel="noreferrer"
+	  	                  className="modal-origin-btn"
+	  	                >
+	  	                  기사원문
+	  	                </a>
+	  	              )}
+	  	            </div>
 
-            <div className="modal-meta">
-              <div className="left-meta">
-                {selectedNews.mediaLogo && (
-                  <img src={selectedNews.mediaLogo} className="media-logo" />
-                )}
-                {selectedNews.author && (
-                  <span className="news-author">{selectedNews.author}</span>
-                )}
-              </div>
-              <div className="right-meta">
-                {selectedNews.pubDate && (
-                  <span className="news-date">
-                    {new Date(selectedNews.pubDate).toLocaleString()}
-                  </span>
-                )}
-              </div>
-            </div>
+	  	            <div className="right-meta">
+	  	              {/* 날짜만 남음 */}
+	  	              {selectedNews.pubDate && (
+	  	                <span className="news-date">
+	  	                  {new Date(selectedNews.pubDate).toLocaleString()}
+	  	                </span>
+	  	              )}
+	  	            </div>
+	  	          </div>
 
-            {selectedNews.image_url && (
-              <div className="modal-image-wrapper">
-                <img
-                  src={selectedNews.image_url}
-                  alt={selectedNews.title}
-                  className="modal-image"
-                />
-              </div>
-            )}
+	  	          {/* 대표 이미지 */}
+	  	          {selectedNews.image_url && (
+	  	            <div className="modal-image-wrapper">
+	  	              <img
+	  	                src={selectedNews.image_url}
+	  	                alt={selectedNews.title}
+	  	                className="modal-image"
+	  	              />
+	  	            </div>
+	  	          )}
 
-            <p
-              className="modal-content-text"
-              dangerouslySetInnerHTML={{
-                __html: selectedNews.content,
-              }}
-            />
+	  	          {/* 본문 내용 */}
+	  	          <div className="modal-article">
+	  	            {selectedNews.content &&
+	  	              selectedNews.content
+	  	                .replace(/<br\s*\/?>/gi, "\n")
+	  	                .split(/\n\s*\n|<\/p>/)
+	  	                .map((paragraph, idx) => {
+	  	                  const cleanText = paragraph.replace(/<\/?p>/gi, "").trim();
+	  	                  if (!cleanText) return null;
 
-            {selectedNews.link && (
-              <a
-                href={selectedNews.link}
-                target="_blank"
-                rel="noreferrer"
-                className="modal-link"
-              >
-                원문 보기
-              </a>
-            )}
-          </div>
-        </div>
-      )}
+	  	                  return (
+	  	                    <div key={idx} className="article-paragraph">
+	  	                      <div className="paragraph-bar" />
+	  	                      <div className="article-text" dangerouslySetInnerHTML={{ __html: cleanText }} />
+	  	                    </div>
+	  	                  );
+	  	                })}
+	  	          </div>
+
+	  	        </div>
+	  	        {/* modal-body 끝 */}
+	  	        
+	  	      </div>
+	  	    </div>
+	  	  )}
+
     </div>
   );
 }
