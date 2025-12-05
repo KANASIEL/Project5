@@ -2,14 +2,14 @@ import {BrowserRouter as Router, Routes, Route} from "react-router-dom";
 
 import MainPage from "./pages/Main/MainPage.jsx";
 import NewsList from "./pages/NewsPage/NewsList.jsx";
-import StockList from "./pages/Stock/StockList.jsx"
+import KrxList from "./pages/Stock/KrxList.jsx"
 
 function App() {
     return (
         <Router>
             <Routes>
                 <Route path="/" element={<MainPage/>}/>
-                <Route path="/stocks/list" element={<StockList/>}/>
+                <Route path="/krx/list" element={<KrxList/>}/>
                 <Route path="/news" element={<NewsList />} />
             </Routes>
         </Router>
