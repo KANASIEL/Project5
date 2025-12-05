@@ -14,6 +14,8 @@ function NewsList() {
   const [keyword, setKeyword] = useState("");
   const [isSearching, setIsSearching] = useState(false);
 
+  const [order, setOrder] = useState("desc"); // 'desc' 최신순, 'asc' 오래된순
+
   const pageSize = 5;
 
   const CATEGORY_LIST = [
@@ -26,68 +28,67 @@ function NewsList() {
     "경제 일반",
   ];
 
-  /** 🔍 검색 결과 하이라이트 */
   const highlightText = (text) => {
     if (!keyword || !text) return text;
     const pattern = new RegExp(`(${keyword})`, "gi");
     return text.replace(pattern, `<span class="highlight">$1</span>`);
   };
 
-  /** 📌 뉴스 불러오기 (카테고리/검색 통합) */
-  const fetchNews = async (category, pageNumber = 0, query = keyword) => {
+  const fetchNews = async (
+    category,
+    pageNumber = 0,
+    query = keyword,
+    sortOrder = order
+  ) => {
     try {
       setLoading(true);
 
       const searching = query.trim() !== "";
       setIsSearching(searching);
 
-      const baseUrl = "https://project5-n56u.onrender.com"; // 배포된 Flask 주소
+      const baseUrl = "https://project5-n56u.onrender.com";
 
       const url = searching
-        ? `${baseUrl}/news/search?q=${encodeURIComponent(query)}`
+        ? `${baseUrl}/news/search?category=${encodeURIComponent(
+            category
+          )}&q=${encodeURIComponent(query)}&page=${pageNumber}&size=${pageSize}&order=${sortOrder}`
         : `${baseUrl}/news?category=${encodeURIComponent(
             category
-          )}&page=${pageNumber}&size=${pageSize}&sort=date`;
+          )}&page=${pageNumber}&size=${pageSize}&order=${sortOrder}`;
 
       console.log("📡 요청 URL:", url);
 
       const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
       const data = await res.json();
 
-      if (searching) {
-        setItems(data);
-        setPage(0);
-        setTotalPages(1);
-      } else {
-        setItems(data.content || []);
-        setPage(data.number || 0);
-        setTotalPages(data.totalPages || 1);
-      }
+      setItems(data.content || []);
+      setPage(data.number || 0);
+      setTotalPages(data.totalPages || 1);
     } catch (e) {
       console.error("뉴스 가져오기 실패:", e);
+      setIsSearching(false);
     } finally {
       setLoading(false);
     }
   };
 
-
   useEffect(() => {
-    if (!isSearching) {
-      fetchNews(activeCategory, 0);
-    }
-  }, [activeCategory]);
+    // 처음 마운트/카테고리/정렬 변경 시 0페이지부터
+    fetchNews(activeCategory, 0, keyword, order);
+  }, [activeCategory, order]);
 
-  /** 검색 실행 */
   const handleSearch = () => {
+    setPage(0);
     if (keyword.trim() === "") {
       setIsSearching(false);
-      fetchNews(activeCategory, 0);
+      fetchNews(activeCategory, 0, "", order);
     } else {
-      fetchNews(activeCategory, 0, keyword);
+      fetchNews(activeCategory, 0, keyword, order);
     }
   };
 
-  /** 검색 엔터키 */
   const handleEnter = (e) => {
     if (e.key === "Enter") handleSearch();
   };
@@ -95,34 +96,12 @@ function NewsList() {
   const openModal = (news) => setSelectedNews(news);
   const closeModal = () => setSelectedNews(null);
 
-//  const summarizeContent = (content) => {
-//    try {
-//      if (!content) return "";
-//
-//      // 문자열이면 그대로 사용
-//      if (typeof content === "string") {
-//        const clean = content.replace(/<[^>]+>/g, ""); // HTML 태그 제거
-//        return clean.length > 100 ? clean.slice(0, 100) + "..." : clean;
-//      }
-//
-//      // 객체 또는 배열이면 안전하게 문자열 변환
-//      const text = JSON.stringify(content, null, 2);
-//      return text.length > 100 ? text.slice(0, 100) + "..." : text;
-//    } catch (err) {
-//      console.error("summarizeContent error:", err);
-//      return "";
-//    }
-//  };
-
-
   const goToPage = (pageNumber) => {
-    if (!isSearching && pageNumber >= 0 && pageNumber < totalPages) {
-      fetchNews(activeCategory, pageNumber);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
+    if (pageNumber < 0 || pageNumber >= totalPages) return;
+    fetchNews(activeCategory, pageNumber, keyword, order); // 검색/일반 모두 여기로
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
-  
-  // items를 카테고리별 그룹으로 변환
+
   const groupedItems = items.reduce((acc, news) => {
     const cat = news.category || "기타";
     if (!acc[cat]) acc[cat] = [];
@@ -130,16 +109,11 @@ function NewsList() {
     return acc;
   }, {});
 
-  // 현재 activeCategory에 맞는 뉴스
-  const filteredItems = groupedItems[activeCategory] || [];
-
+  const listToShow = isSearching ? items : groupedItems[activeCategory] || [];
 
   return (
     <div className="news-container">
-	  <h2>{activeCategory} 뉴스</h2>
 
-
-      {/* 🔍 검색바 */}
       <div className="search-box">
         <input
           type="text"
@@ -148,7 +122,6 @@ function NewsList() {
           onChange={(e) => setKeyword(e.target.value)}
           onKeyDown={handleEnter}
         />
-
         <button className="icon-btn" onClick={handleSearch}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
             <path
@@ -166,91 +139,136 @@ function NewsList() {
         </button>
       </div>
 
-	  {/* 카테고리: 항상 보여주기 */}
-	  <div className="category-tabs">
-	    {CATEGORY_LIST.map((cat) => (
-	      <button
-	        key={cat}
-	        className={cat === activeCategory ? "active" : ""}
-	        onClick={() => {
-	          setActiveCategory(cat);
-	          setPage(0);
-	        }}
-	      >
-	        {cat}
-	      </button>
-	    ))}
-	  </div>
-
-      {loading && <p>불러오는 중...</p>}
-
-	  <ul className="news-list">
-	    {filteredItems.map((n) => (
-	      <li key={n._id || n.link} className="news-card" onClick={() => openModal(n)}>
-	        <div className="news-content">
-	          {n.image_url ? (
-	            <div className="news-image-wrapper">
-	              <img src={n.image_url} alt={n.title} className="news-image" />
-	            </div>
-	          ) : (
-	            <div className="news-image-wrapper placeholder">이미지 없음</div>
-	          )}
-
-	          <div className="news-text">
-	            <h3
-	              dangerouslySetInnerHTML={{
-	                __html: highlightText(n.title),
-	              }}
-	            />
-
-	            <p
-	              className="news-summary"
-	              dangerouslySetInnerHTML={{
-	                __html: highlightText(
-	                  n.content
-	                    ? n.content.length > 120
-	                      ? n.content.slice(0, 120) + "..."
-	                      : n.content
-	                    : n.description || ""
-	                ),
-	              }}
-	            />
-
-				<div className="news-meta">
-				  <div className="left-meta">
-				    {n.mediaLogo && <img src={n.mediaLogo} className="media-logo" />}
-				    {n.author && <span className="news-author">{n.author}</span>}
-				  </div>
-				  <div className="right-meta">
-				    {n.pubDate && <span className="news-date">{new Date(n.pubDate).toLocaleString()}</span>}
-				  </div>
-				</div>
-	          </div>
-	        </div>
-	      </li>
-	    ))}
-	  </ul>
-
-
-      {/* 페이지네이션 (검색 중일 때는 숨김) */}
-      {!isSearching && (
-        <div className="pagination">
-          <button onClick={() => goToPage(page - 1)} disabled={page === 0}>
-            이전
-          </button>
-          <span>
-            {page + 1} / {totalPages}
-          </span>
+      <div className="category-tabs">
+        {CATEGORY_LIST.map((cat) => (
           <button
-            onClick={() => goToPage(page + 1)}
-            disabled={page === totalPages - 1}
+            key={cat}
+            className={cat === activeCategory ? "active" : ""}
+            onClick={() => {
+              setActiveCategory(cat);
+              setPage(0);
+              if (keyword.trim() !== "") {
+                fetchNews(cat, 0, keyword, order);
+              } else {
+                fetchNews(cat, 0, "", order);
+              }
+            }}
           >
-            다음
+            {cat}
           </button>
-        </div>
+        ))}
+      </div>
+
+      <div className="search-divider"></div>
+
+      {/* 정렬 드롭다운 */}
+      <div className="sort-dropdown">
+        <select
+          value={order}
+          onChange={(e) => {
+            const newOrder = e.target.value;
+            setOrder(newOrder);
+            setPage(0);
+            fetchNews(activeCategory, 0, keyword, newOrder);
+          }}
+        >
+          <option value="desc">🕒 최신순</option>
+          <option value="asc">📅 오래된순</option>
+        </select>
+      </div>
+
+      {/* {loading && <p>불러오는 중...</p>} */}
+
+      {/* 리스트 / 빈 상태 처리 */}
+      {listToShow.length === 0 && !loading ? (
+        <p className="empty-message">
+          {isSearching
+            ? "해당 검색어로 찾은 뉴스가 없어요! 😢"
+            : "아직 이 카테고리에 뉴스가 올라오지 않았어요 📰✨"}
+        </p>
+      ) : (
+        <ul className="news-list">
+          {listToShow.map((n) => (
+            <li
+              key={n._id || n.link}
+              className="news-card"
+              onClick={() => openModal(n)}
+            >
+              <div className="news-content">
+                {n.image_url ? (
+                  <div className="news-image-wrapper">
+                    <img
+                      src={n.image_url}
+                      alt={n.title}
+                      className="news-image"
+                    />
+                  </div>
+                ) : (
+                  <div className="news-image-wrapper placeholder">
+                    이미지 없음
+                  </div>
+                )}
+
+                <div className="news-text">
+                  <h3
+                    dangerouslySetInnerHTML={{
+                      __html: highlightText(n.title),
+                    }}
+                  />
+
+                  <p
+                    className="news-summary"
+                    dangerouslySetInnerHTML={{
+                      __html: highlightText(
+                        n.content
+                          ? n.content.length > 150
+                            ? n.content.slice(0, 150) + "..."
+                            : n.content
+                          : n.description || ""
+                      ),
+                    }}
+                  />
+
+                  <div className="news-meta">
+                    <div className="left-meta">
+                      {n.mediaLogo && (
+                        <img src={n.mediaLogo} className="media-logo" />
+                      )}
+                      {n.author && (
+                        <span className="news-author">{n.author}</span>
+                      )}
+                    </div>
+                    <div className="right-meta">
+                      {n.pubDate && (
+                        <span className="news-date">
+                          {new Date(n.pubDate).toLocaleString()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
 
-      {/* 📌 모달 */}
+      {/* 검색 중에도 페이지네이션 표시 */}
+      <div className="pagination">
+        <button onClick={() => goToPage(page - 1)} disabled={page === 0}>
+          이전
+        </button>
+        <span>
+          {page + 1} / {totalPages}
+        </span>
+        <button
+          onClick={() => goToPage(page + 1)}
+          disabled={page === totalPages - 1}
+        >
+          다음
+        </button>
+      </div>
+
       {selectedNews && (
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -260,20 +278,23 @@ function NewsList() {
 
             <h2 dangerouslySetInnerHTML={{ __html: selectedNews.title }} />
 
-			<div className="modal-meta">
-			  <div className="left-meta">
-			    {selectedNews.mediaLogo && (
-			      <img src={selectedNews.mediaLogo} className="media-logo" />
-			    )}
-			    {selectedNews.author && <span className="news-author">{selectedNews.author}</span>}
-			  </div>
-			  <div className="right-meta">
-			    {selectedNews.pubDate && (
-			      <span className="news-date">{new Date(selectedNews.pubDate).toLocaleString()}</span>
-			    )}
-			  </div>
-			</div>
-
+            <div className="modal-meta">
+              <div className="left-meta">
+                {selectedNews.mediaLogo && (
+                  <img src={selectedNews.mediaLogo} className="media-logo" />
+                )}
+                {selectedNews.author && (
+                  <span className="news-author">{selectedNews.author}</span>
+                )}
+              </div>
+              <div className="right-meta">
+                {selectedNews.pubDate && (
+                  <span className="news-date">
+                    {new Date(selectedNews.pubDate).toLocaleString()}
+                  </span>
+                )}
+              </div>
+            </div>
 
             {selectedNews.image_url && (
               <div className="modal-image-wrapper">
@@ -287,7 +308,9 @@ function NewsList() {
 
             <p
               className="modal-content-text"
-              dangerouslySetInnerHTML={{ __html: selectedNews.content }}
+              dangerouslySetInnerHTML={{
+                __html: selectedNews.content,
+              }}
             />
 
             {selectedNews.link && (

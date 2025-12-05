@@ -1,10 +1,11 @@
 import asyncio
 import aiohttp
 from bs4 import BeautifulSoup
-import os
-from pymongo import MongoClient
 from datetime import datetime
-import random
+import random, os
+
+from pymongo.mongo_client import MongoClient
+from pymongo.server_api import ServerApi
 
 # -------------------------
 # MongoDB 연결
@@ -13,7 +14,8 @@ MONGO_URI = os.environ.get("MONGO_URI")
 if not MONGO_URI:
     raise RuntimeError("MONGO_URI not set in crawler")
 
-client = MongoClient(MONGO_URI)
+# Atlas에서 복사한 mongodb+srv://... 그대로 MONGO_URI에 들어가 있어야 함
+client = MongoClient(MONGO_URI, server_api=ServerApi('1'))
 db = client["stock"]
 collection = db["news_crawling"]
 
@@ -198,7 +200,21 @@ async def crawl_category(session, category, url):
         )
 
     results = await asyncio.gather(*tasks)
+    
     for (author, content, media, mediaLogo, image_url, pubDate), news in zip(results, valid_news):
+        # 1) 최소 품질 조건 정의
+        has_title   = bool(news.get("title", "").strip())
+        has_content = bool(content and content.strip())
+        has_media   = bool(media and media.strip())
+        has_date    = bool(pubDate and pubDate.strip())
+        
+        # 2) 본문도 없고, 언론사/날짜도 없으면 그냥 삭제(또는 스킵)
+        if not has_title or (not has_content and not (has_media and has_date)):
+            log(f"[DROP] 내용 부족으로 삭제: {news['title']}")
+            collection.delete_one({"link": news["link"]})
+            continue
+            
+        # 3) 정상 기사만 업데이트
         collection.update_one(
             {"link": news["link"]},
             {"$set": {
