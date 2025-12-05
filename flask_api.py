@@ -18,7 +18,7 @@ if not MONGO_URI:
     raise RuntimeError("MONGO_URI not set in Flask")
 
 # Atlas에서 복사한 mongodb+srv://... 그대로 MONGO_URI에 들어가 있어야 함
-client = MongoClient(MONGO_URI, server_api=ServerApi('1'))
+client = MongoClient(MONGO_URI, server_api=ServerApi("1"))
 db = client["stock"]
 collection = db["news_crawling"]
 
@@ -31,16 +31,22 @@ def get_news():
     category = unquote(request.args.get("category", ""))
     page = int(request.args.get("page", 0))
     size = int(request.args.get("size", 5))
+    order = request.args.get("order", "desc")  # 'desc' 최신순, 'asc' 오래된순
 
     query = {"category": category} if category else {}
     news_list = list(collection.find(query, {"_id": 0}))
 
     for news in news_list:
         try:
-            news["pubDate"] = datetime.strptime(news.get("pubDate","1970-01-01 00:00:00"), "%Y-%m-%d %H:%M:%S")
-        except:
-            news["pubDate"] = datetime(1970,1,1)
-    news_list.sort(key=lambda x: x["pubDate"], reverse=True)
+            news["pubDate"] = datetime.strptime(
+                news.get("pubDate", "1970-01-01 00:00:00"),
+                "%Y-%m-%d %H:%M:%S",
+            )
+        except Exception:
+            news["pubDate"] = datetime(1970, 1, 1)
+
+    reverse = (order != "asc")  # asc면 오래된순, 그 외는 최신순
+    news_list.sort(key=lambda x: x["pubDate"], reverse=reverse)
 
     start = page * size
     end = start + size
@@ -49,11 +55,13 @@ def get_news():
     for news in content:
         news["pubDate"] = news["pubDate"].strftime("%Y-%m-%d %H:%M:%S")
 
-    return jsonify({
-        "content": content,
-        "number": page,
-        "totalPages": (len(news_list) + size - 1) // size
-    })
+    return jsonify(
+        {
+            "content": content,
+            "number": page,
+            "totalPages": (len(news_list) + size - 1) // size,
+        }
+    )
 
 @app.route("/news/search")
 def search_news():
@@ -61,6 +69,7 @@ def search_news():
     category = unquote(request.args.get("category", ""))
     page = int(request.args.get("page", 0))
     size = int(request.args.get("size", 5))
+    order = request.args.get("order", "desc")  # 'desc' 최신순, 'asc' 오래된순
 
     if not q:
         return jsonify({"content": [], "number": 0, "totalPages": 0})
@@ -77,7 +86,7 @@ def search_news():
     }
 
     if category:
-        query = {"$and": [ {"category": category}, or_query ]}
+        query = {"$and": [{"category": category}, or_query]}
     else:
         query = or_query
 
@@ -87,12 +96,13 @@ def search_news():
         try:
             news["pubDate"] = datetime.strptime(
                 news.get("pubDate", "1970-01-01 00:00:00"),
-                "%Y-%m-%d %H:%M:%S"
+                "%Y-%m-%d %H:%M:%S",
             )
         except Exception:
             news["pubDate"] = datetime(1970, 1, 1)
 
-    news_list.sort(key=lambda x: x["pubDate"], reverse=True)
+    reverse = (order != "asc")
+    news_list.sort(key=lambda x: x["pubDate"], reverse=reverse)
 
     start = page * size
     end = start + size
@@ -101,11 +111,13 @@ def search_news():
     for news in content:
         news["pubDate"] = news["pubDate"].strftime("%Y-%m-%d %H:%M:%S")
 
-    return jsonify({
-        "content": content,
-        "number": page,
-        "totalPages": (len(news_list) + size - 1) // size
-    })
+    return jsonify(
+        {
+            "content": content,
+            "number": page,
+            "totalPages": (len(news_list) + size - 1) // size,
+        }
+    )
 
 def run_crawler():
     while True:
