@@ -31,7 +31,6 @@ def get_news():
     category = unquote(request.args.get("category", ""))
     page = int(request.args.get("page", 0))
     size = int(request.args.get("size", 5))
-    order = request.args.get("order", "desc")  # 'desc' or 'asc'
 
     query = {"category": category} if category else {}
     news_list = list(collection.find(query, {"_id": 0}))
@@ -42,10 +41,7 @@ def get_news():
         except:
             news["pubDate"] = datetime(1970,1,1)
     news_list.sort(key=lambda x: x["pubDate"], reverse=True)
-	
-	reverse = (order != "asc")  # asc면 오래된순, 그 외는 최신순
-    news_list.sort(key=lambda x: x["pubDate"], reverse=reverse)
-	
+
     start = page * size
     end = start + size
     content = news_list[start:end]
@@ -58,7 +54,7 @@ def get_news():
         "number": page,
         "totalPages": (len(news_list) + size - 1) // size
     })
-    
+
 @app.route("/news/search")
 def search_news():
     q = request.args.get("q", "").strip()
@@ -111,10 +107,6 @@ def search_news():
         "totalPages": (len(news_list) + size - 1) // size
     })
 
-   
-    
-    
-
 def run_crawler():
     while True:
         asyncio.run(crawler.main())  # 비동기 함수 실행
@@ -123,4 +115,4 @@ def run_crawler():
 if __name__ == "__main__":
     threading.Thread(target=run_crawler, daemon=True).start()
     port = int(os.environ.get("PORT", 8585))
-    app.run(host="0.0.0.0", port=port, debug=True)
+    app.run(host="0.0.0.0", port=port, debug=False)
