@@ -31,6 +31,7 @@ def get_news():
     category = unquote(request.args.get("category", ""))
     page = int(request.args.get("page", 0))
     size = int(request.args.get("size", 5))
+    order = request.args.get("order", "desc")  # 'desc' or 'asc'
 
     query = {"category": category} if category else {}
     news_list = list(collection.find(query, {"_id": 0}))
@@ -41,7 +42,10 @@ def get_news():
         except:
             news["pubDate"] = datetime(1970,1,1)
     news_list.sort(key=lambda x: x["pubDate"], reverse=True)
-
+	
+	reverse = (order != "asc")  # asc면 오래된순, 그 외는 최신순
+    news_list.sort(key=lambda x: x["pubDate"], reverse=reverse)
+	
     start = page * size
     end = start + size
     content = news_list[start:end]
