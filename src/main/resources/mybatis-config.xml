@@ -3,5 +3,7 @@
 <configuration>
     <mappers>
         <mapper resource="mybatis/mappers/Dummy.xml"/>
+        <mapper resource="mybatis/mappers/AppUserMapper.xml"/>
+        <mapper resource="mybatis/mappers/UserAccountMapper.xml"/>
     </mappers>
 </configuration>
