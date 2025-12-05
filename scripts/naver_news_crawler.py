@@ -200,7 +200,21 @@ async def crawl_category(session, category, url):
         )
 
     results = await asyncio.gather(*tasks)
+    
     for (author, content, media, mediaLogo, image_url, pubDate), news in zip(results, valid_news):
+        # 1) 최소 품질 조건 정의
+        has_title   = bool(news.get("title", "").strip())
+        has_content = bool(content and content.strip())
+        has_media   = bool(media and media.strip())
+        has_date    = bool(pubDate and pubDate.strip())
+        
+        # 2) 본문도 없고, 언론사/날짜도 없으면 그냥 삭제(또는 스킵)
+        if not has_title or (not has_content and not (has_media and has_date)):
+            log(f"[DROP] 내용 부족으로 삭제: {news['title']}")
+            collection.delete_one({"link": news["link"]})
+            continue
+            
+        # 3) 정상 기사만 업데이트
         collection.update_one(
             {"link": news["link"]},
             {"$set": {
