@@ -5,4 +5,5 @@ import java.util.List;
 
 public interface StockKosdaqService {
     List<StockKosdaqDTO> findAll();
+    StockKosdaqDTO findByCode(String code);
 }

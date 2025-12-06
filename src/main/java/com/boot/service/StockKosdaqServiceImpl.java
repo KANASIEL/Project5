@@ -17,4 +17,9 @@ public class StockKosdaqServiceImpl implements StockKosdaqService {
     public List<StockKosdaqDTO> findAll() {
         return repository.findAll();
     }
+
+    @Override
+    public StockKosdaqDTO findByCode(String code) {
+        return repository.findByCode(code);
+    }
 }

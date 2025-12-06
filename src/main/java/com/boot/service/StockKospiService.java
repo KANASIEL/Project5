@@ -5,4 +5,5 @@ import java.util.List;
 
 public interface StockKospiService {
     List<StockKospiDTO> findAll();
+    StockKospiDTO findByCode(String code);
 }

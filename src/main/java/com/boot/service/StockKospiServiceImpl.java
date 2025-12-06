@@ -17,4 +17,9 @@ public class StockKospiServiceImpl implements StockKospiService {
     public List<StockKospiDTO> findAll() {
         return repository.findAll();
     }
+
+    @Override
+    public StockKospiDTO findByCode(String code) {
+        return repository.findByCode(code);  // MongoRepository가 자동으로 생성해줌
+    }
 }
