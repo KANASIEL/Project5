@@ -27,6 +27,7 @@
   margin-bottom: 12px;
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
   transition: transform 0.2s, background 0.2s;
+  cursor: pointer !important;
 }
 
 .news-text {
@@ -55,6 +56,8 @@
   font-style: normal;
   color: #888;
   font-size: 12px;
+  display: flex;
+  align-items: center;
 }
 
 .news-card:hover {
@@ -177,20 +180,38 @@
   padding-left: 25px;
   padding-right: 25px;
 }
-
-.modal-content {
-  background: white;
-  border-radius: 10px;
-  max-width: 900px;
-  width: 100%;
-  max-height: 90vh;
-  min-height: 500px;
+/* --- 모달 헤더 (고정 영역) --- */
+.modal-header {
+  flex-shrink: 0; /* 스크롤 되어도 줄어들지 않음 */
   display: flex;
-  flex-direction: column;
-  gap: 15px;
-  overflow-y: auto;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30px 30px 0px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  background: #fff;
+  z-index: 10;
+  align-items: flex-start !important;
+  padding: 30px 30px 10px 60px !important;
+}
+/* 모달 전체 프레임 */
+.modal-content {
+  background: #fff;
+  width: 100%;
+  max-width: 900px;
+  height: 85vh; /* 화면 높이의 85% */
+  max-height: 800px;
+  min-height: 500px;
+  
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  
+  display: flex;
+  flex-direction: column; /* 헤더(고정) + 바디(스크롤) 구조 */
+  overflow: hidden; /* 모서리 둥글게 유지 */
   position: relative;
-  box-sizing: border-box;
+  
+  /* 중요: 내부 여백 0으로 설정하여 스크롤바가 끝까지 가도록 함 */
+  padding: 0 !important; 
 }
 
 .modal-close {
@@ -213,16 +234,164 @@
   margin-bottom: 10px;
 }
 
-.modal-link {
-  display: inline-block;
-  margin-top: auto;
-  padding-top: 10px;
-  padding-bottom: 10px;
-  color: #1e40af;
-  text-decoration: underline;
-  cursor: pointer;
+/*.modal-link {*/
+/*  display: inline-block;*/
+/*  margin-top: auto;*/
+/*  padding-top: 10px;*/
+/*  padding-bottom: 10px;*/
+/*  color: #1e40af;*/
+/*  text-decoration: underline;*/
+/*  cursor: pointer;*/
+/*}*/
+
+.modal-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111 !important;
+  margin: 0; /* 불필요한 마진 제거 */
+  
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0px 50px 0px 50px !important;
 }
 
+/* 닫기 버튼 */
+.modal-close-btn {
+  border: none;
+  border-radius: 50%;
+  width: 45px;
+  height: 45px;
+  font-size: 40px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  margin-top: 2px;
+  color: #1e40af;
+  background: none !important;
+}
+
+/*.modal-close-btn:hover {*/
+/*  background: #e0e0e0;*/
+/*  color: #000;*/
+/*}*/
+
+/* --- 모달 바디 (스크롤 영역) --- */
+.modal-body {
+  flex-grow: 1; /* 남은 공간 채우기 */
+  overflow-y: auto; /* 세로 스크롤 허용 */
+  background-color: #fff;
+  font-family: 'Noto Sans KR', sans-serif;
+  color: #222;
+
+   padding: 30px 70px 50px 120px !important;
+}
+
+.modal-body > * {
+  padding-right: 60px !important; 
+}
+
+/* 기사원문 버튼 (알약 모양) */
+.modal-origin-btn {
+	display: inline-block;
+	  padding: 2px 10px 3px; /* 크기 살짝 아담하게 */
+	  border: 1px solid #d0d0d0;
+	  border-radius: 100px;
+	  font-size: 11px;
+	  color: #555;
+	  text-decoration: none;
+	  background-color: #fff;
+	  transition: all 0.2s;
+	  margin-left: 2px;
+	  white-space: nowrap;
+}
+
+.modal-origin-btn:hover {
+  background-color: #f5f5f5;
+  border-color: #999;
+  color: #000;
+}
+.modal-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+}
+/* 모달 내부 요소 스타일 */
+.modal-body .modal-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.95rem;
+  color: #555;
+  margin-bottom: 20px;
+}
+
+.modal-image-wrapper {
+  margin: 20px 0;
+  padding-bottom: 16px;
+  border-bottom: none !important; /* 이미지 아래 선 제거 */
+  padding-right: 60px !important;
+}
+
+.modal-image {
+  max-width: 100%;
+  display: block;
+  margin: 0 auto;
+  border-radius: 10px;
+}
+
+.modal-article {
+  margin-top: 22px;
+}
+
+/* 문단 스타일 (파란색 바) */
+.article-paragraph {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  min-height: 24px; /* 최소 높이 확보 */
+}
+
+.paragraph-bar {
+  flex-shrink: 0;
+  width: 3px;
+  background: linear-gradient(180deg, #1976ff, #7eb7ff);
+  border-radius: 6px;
+}
+
+.article-text {
+  font-size: 16px;
+  line-height: 1.8;
+  color: #333;
+  width: 100%;
+  word-break: break-all;
+}
+
+.article-text p {
+  margin: 0;
+}
+
+/* --- 스크롤바 커스텀 (모달 바디에만 적용) --- */
+.modal-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  border-radius: 10px;
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+  background-color: #2c5f8d;
+}
+
+.modal-body::-webkit-scrollbar-track {
+  background-color: transparent;
+  margin: 10px 0;
+}
 /* ===== 카테고리 탭 ===== */
 .category-tabs {
   display: flex;
@@ -397,5 +566,6 @@
   backdrop-filter: none;
   display: block; /* inline-block 제거 */
 }
+
 
 
