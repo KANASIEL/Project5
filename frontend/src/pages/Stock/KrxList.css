@@ -1,0 +1,258 @@
+/* src/pages/Stock/KrxList.css - !important 0개 + 완전 독립 + 최고 가독성 */
+
+.krx-page-wrapper {
+    min-height: 100vh;
+    background: #ffffff;
+    color: #1e293b;
+    padding: 20px 0;
+    position: relative;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.krx-main-content {
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 0 24px;
+    margin-right: 320px; /* 랭킹 공간 확보 */
+}
+
+@media (max-width: 1200px) {
+    .krx-main-content { margin-right: 0; }
+}
+
+.krx-page-title {
+    text-align: center;
+    font-size: 2.1rem;
+    font-weight: 800;
+    color: #1e40af;
+    margin-bottom: 2rem;
+}
+
+/* 테이블 */
+.krx-table-container {
+    background: white;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 10px 35px rgba(0,0,0,0.08);
+    border: 1px solid #e2e8f0;
+}
+
+.krx-table-head {
+    background: linear-gradient(135deg, #1e40af, #2563eb);
+}
+
+.krx-head-cell {
+    color: white;
+    font-weight: 700;
+    font-size: 0.95rem;
+    padding: 14px 10px;
+}
+
+.krx-table-row:hover {
+    background: #f8fafc;
+}
+
+.krx-table-row .MuiTableCell-root {
+    padding: 12px 10px;
+    font-size: 0.92rem;
+}
+
+.krx-name-cell {
+    cursor: pointer;
+}
+.krx-stock-name {
+    font-weight: 700;
+    font-size: 1.02rem;
+    color: #0f172a;
+}
+.krx-stock-code {
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+.krx-price-cell {
+    font-weight: 700;
+    font-size: 1rem;
+    color: #0f172a;
+}
+
+.krx-number-cell {
+    color: #475569;
+    font-weight: 600;
+}
+
+.krx-rank-top {
+    background: #f59e0b;
+    color: white;
+    font-weight: bold;
+    font-size: 0.8rem;
+    height: 26px;
+}
+.krx-rank-normal {
+    background: #f1f5f9;
+    color: #1e293b;
+    font-weight: bold;
+    font-size: 0.8rem;
+    height: 26px;
+}
+
+/* 검색 */
+.krx-search-wrapper {
+    max-width: 640px;
+    margin: 0 auto 2.5rem;
+}
+.krx-search-input .MuiOutlinedInput-root {
+    border-radius: 16px;
+    background: white;
+}
+.krx-search-input .MuiOutlinedInput-notchedOutline {
+    border-color: #cbd5e1;
+}
+.krx-search-result {
+    text-align: center;
+    margin-top: 0.8rem;
+    color: #475569;
+    font-size: 0.95rem;
+}
+
+/* 최근 본 */
+.krx-recent-container {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.07);
+    border: 1px solid #e2e8f0;
+    margin-bottom: 2rem;
+}
+.krx-recent-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #1e40af;
+    margin-bottom: 0.8rem;
+}
+.krx-recent-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.krx-recent-chip {
+    background: #f1f5f9;
+    color: #1e293b;
+    border: 1px solid #e2e8f0;
+    font-weight: 600;
+    font-size: 0.88rem;
+    cursor: pointer;
+}
+.krx-recent-chip:hover {
+    background: #e2e8f0;
+}
+
+/* 페이지네이션 */
+.krx-pagination-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: 3rem;
+}
+
+/* 랭킹 사이드바 */
+.krx-ranking-sidebar {
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    width: 280px;
+    max-height: 75vh;
+    overflow-y: auto;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 15px 45px rgba(0,0,0,0.15);
+    border: 1px solid #e2e8f0;
+    z-index: 1200;
+    padding: 24px;
+}
+
+.krx-ranking-title {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: #dc2626;
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.krx-ranking-item {
+    padding: 14px 0;
+    border-bottom: 1px solid #f1f5f9;
+    cursor: pointer;
+    border-radius: 12px;
+    transition: all 0.3s;
+}
+
+.krx-ranking-item:last-child {
+    border-bottom: none;
+}
+
+.krx-ranking-item:hover {
+    background: #f8fafc;
+    transform: translateX(6px);
+}
+
+.krx-ranking-item-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.krx-ranking-rank {
+    font-weight: 800;
+    color: #1e293b;
+    font-size: 1.1rem;
+}
+
+.krx-ranking-name {
+    color: #475569;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.krx-ranking-amount {
+    font-weight: 800;
+    color: #dc2626;
+    font-size: 1.15rem;
+}
+
+/* 로딩 & 에러 */
+.krx-loading-wrapper {
+    padding: 80px 20px;
+    text-align: center;
+    background: white;
+}
+.krx-loading-bar { background: #e2e8f0; }
+.krx-loading-text { margin-top: 1rem; font-weight: 600; color: #1e293b; }
+.krx-error-alert { margin: 2rem; background: white; color: #dc2626; }
+
+/* 전일비/등락률 색상 - !important 0개 + 완전 독립 */
+.krx-change-cell {
+    font-weight: 700;
+    font-size: 1rem;
+    color: #64748b; /* 기본값 (0 또는 변화 없음) */
+}
+
+/* 상승 */
+.krx-change-cell.krx-up {
+    color: #dc2626;
+}
+
+/* 하락 */
+.krx-change-cell.krx-down {
+    color: #2563eb;
+}
+
+/* 모바일 */
+@media (max-width: 1200px) {
+    .krx-ranking-sidebar {
+        position: static;
+        width: 100%;
+        max-width: 500px;
+        margin: 3rem auto 0;
+        max-height: none;
+    }
+}
