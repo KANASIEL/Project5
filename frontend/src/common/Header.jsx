@@ -2,7 +2,7 @@
 import React from "react";
 import "./Header.css";
 
-const IS_LOGGED_IN = true;
+const IS_LOGGED_IN = false;
 const USER_NAME = "김투자";
 
 export default function Header() {
@@ -25,12 +25,12 @@ export default function Header() {
                         </button>
                         <div className="stock-header__dropdown-menu">
                             <a href="/krx/list" className="stock-header__dropdown-item">국내주식</a>
-                            <a href="/global" className="stock-header__dropdown-item">해외주식</a>
+                            <a href="#" className="stock-header__dropdown-item">해외주식</a>
                         </div>
                     </div>
 
                     <a href="/news" className="stock-header__nav-item">뉴스</a>
-                    <a href="/about" className="stock-header__nav-item">About</a>
+                    <a href="#" className="stock-header__nav-item">About</a>
                 </nav>
 
                 {/* 오른쪽 유저 영역 */}

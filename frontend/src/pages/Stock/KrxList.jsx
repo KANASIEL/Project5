@@ -209,7 +209,7 @@ function KrxList() {
     return (
         <Box className="krx-page-wrapper">
             <Box className="krx-main-content">
-                <Typography className="krx-page-title">KRX 실시간 시세표</Typography>
+                <Typography className="krx-page-title">KRX 실시간 시세표 (시가총액)</Typography>
 
                 {/* 최근 본 종목 */}
                 {recentLoading ? (
