@@ -19,6 +19,8 @@ import KakaoLogin from "./pages/Login/KakaoLogin.jsx";
 import Login from "./pages/Login/Login.jsx";
 import Register from "./pages/Register/Register.jsx";
 
+import { AuthProvider } from "./context/AuthContext";
+
 function Layout() {
     const location = useLocation();
     const isMainPage = location.pathname === "/";
@@ -77,7 +79,9 @@ function Layout() {
 function App() {
     return (
         <Router>
+		<AuthProvider>
             <Layout />
+		</AuthProvider>
         </Router>
     );
 }
