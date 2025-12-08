@@ -1,6 +1,3 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import StockSearch from "./pages/test.jsx";
 // App.jsx - 최종 완성본 (App.css 완전 삭제 가능!)
 import React from "react";
 import {
@@ -14,12 +11,13 @@ import Header from "./common/Header.jsx";
 import Footer from "./common/Footer.jsx";
 
 import MainPage from "./pages/Main/MainPage.jsx";
-import KakaoLogin from "./pages/Login/KakaoLogin.jsx";
-import Login from "./pages/Login/Login.jsx";
-import Register from "./pages/Register/Register.jsx";
 import NewsList from "./pages/NewsPage/NewsList.jsx";
 import KrxList from "./pages/Stock/KrxList.jsx";
 import KrxDetail from "./pages/Stock/KrxDetail.jsx";
+
+import KakaoLogin from "./pages/Login/KakaoLogin.jsx";
+import Login from "./pages/Login/Login.jsx";
+import Register from "./pages/Register/Register.jsx";
 
 function Layout() {
     const location = useLocation();
@@ -65,6 +63,9 @@ function Layout() {
                     <Route path="/krx/list" element={<KrxList />} />
                     <Route path="/krx/:code" element={<KrxDetail />} />
                     <Route path="/news" element={<NewsList />} />
+                    <Route path="/kakaoLogin" element={<KakaoLogin />} />
+                    <Route path="/register" element={<Register />} />
+                    <Route path="/login" element={<Login />} />
                 </Routes>
             </main>
 
@@ -74,24 +75,11 @@ function Layout() {
 }
 
 function App() {
-  return (
-      <Router>
-        <Routes>
-		  <Route path="/stocks" element={<StockSearch />} />
-          <Route path="/main" element={<MainPage />} />
-          <Route path="/kakaoLogin" element={<KakaoLogin />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/login" element={<Login />} />
-        </Routes>
-      </Router>
-  );
     return (
         <Router>
             <Layout />
         </Router>
     );
 }
-
-export default App;
 
 export default App;
