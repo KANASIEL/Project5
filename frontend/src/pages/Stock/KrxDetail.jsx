@@ -165,7 +165,7 @@ function StockDetail() {
                         </Typography>
                         <Typography variant="h5">
                             {stock.market_cap
-                                ? (stock.market_cap / 1e8).toFixed(0) + "억"
+                                ? stock.market_cap.toLocaleString() + "억" // 👈 나눗셈 제거, 포맷팅만 적용
                                 : "-"}
                         </Typography>
                     </Box>
@@ -250,12 +250,6 @@ function StockDetail() {
                     </Button>
                 </Box>
             </Paper>
-
-            <Box textAlign="center" mt={6} color="#666">
-                <Typography variant="body2">
-                    실시간 주가 • 뉴스공시 • 국내 1위급 주식 상세페이지 완성!
-                </Typography>
-            </Box>
         </Box>
     );
 }
