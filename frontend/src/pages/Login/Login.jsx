@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import KakaoLogin from "./KakaoLogin";  
 import "./Login.css";
+
 
 const Login = () => {
     const navigate = useNavigate();
@@ -34,12 +36,19 @@ const Login = () => {
 
         } catch (error) {
             console.error(error);
+			alert("로그인 중 오류가 발생했습니다.");
             setErrorMsg("로그인 중 오류가 발생했습니다.");
         }
     };
 
     return (
         <div className="login-wrapper">
+		
+			<div className="site-title-login">
+		        <h1>Stock & News Search</h1>
+			</div>
+			
+			<div className="login-container">
             <h2 className="login-title">로그인</h2>
 
             <form onSubmit={handleLogin} className="login-form">
@@ -72,6 +81,8 @@ const Login = () => {
                 <button type="submit" className="login-btn">
                     로그인
                 </button>
+				
+				<KakaoLogin value={KakaoLogin} onChange={KakaoLogin} />
 
                 <button
                     type="button"
@@ -79,9 +90,11 @@ const Login = () => {
                     className="login-register-btn"
                 >
                     회원가입
-                </button>
+                </button>				
             </form>
+			</div>
         </div>
+        
     );
 };
 

@@ -1,14 +1,17 @@
 import React, { useEffect } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import "./KakaoLogin.css";
 
 const KakaoLogin = () => {
+  const navigate = useNavigate();
 
   useEffect(() => {
     const script = document.createElement("script");
     script.src = "https://developers.kakao.com/sdk/js/kakao.js";
     script.onload = () => {
       if (!window.Kakao.isInitialized()) {
-        window.Kakao.init("bf9f9907f0485f2f46de133469b6c7d1"); // JavaScript Key
+        window.Kakao.init("bf9f9907f0485f2f46de133469b6c7d1");
         console.log("Kakao SDK Initialized!");
       }
     };
@@ -32,10 +35,19 @@ const KakaoLogin = () => {
               profileImage: res.properties?.profile_image || null
             };
 
-            axios.post("http://localhost:8585/api/auth/loginOrRegister", dto)
+            axios.post("http://localhost:8585/api/auth/loginOrRegister", dto, {
+              withCredentials: true
+            })
               .then(result => {
                 console.log("서버 응답:", result.data);
+
                 alert("로그인 성공!");
+
+                // ✅ 로그인 성공 시 메인 페이지로 이동
+                navigate("/main");
+              })
+              .catch(err => {
+                console.error("서버 오류:", err);
               });
           }
         });
@@ -46,7 +58,11 @@ const KakaoLogin = () => {
     });
   };
 
-  return <button onClick={handleKakaoLogin}>카카오 로그인</button>;
+  return (
+    <button className="kakao-btn" onClick={handleKakaoLogin}>
+      카카오 로그인
+    </button>
+  );
 };
 
 export default KakaoLogin;

@@ -16,28 +16,28 @@
 }
 
 .site-title-login {
-    color: #ffffff;
+	color: #ffffff;
     letter-spacing: -1.5px;
     text-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
 }
 
 .site-title-login h1 {
-    position: relative;
+	position: relative;
     font-size: 3.75rem;
     font-weight: 900;
-    top: -80px;
+	top: -80px;
 }
 
 .login-title{
-    color: white;
-    text-align: center;
-    font-size: 35px;
-    margin-bottom: 50px;
+	color: white;
+	text-align: center;
+	font-size: 35px;
+	margin-bottom: 50px;
 }
 
 .login-container{
-    margin-top: -70px;
-    background: rgba(255, 255, 255, 0.11);
+	margin-top: -70px;
+	background: rgba(255, 255, 255, 0.11);
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
     border-radius: 28px;
@@ -47,16 +47,16 @@
 }
 
 .login-label{
-    color: white;
-    font-size: 17px;
-    font-weight: 600;
+	color: white;
+	font-size: 17px;
+	font-weight: 600;
     margin-bottom: 10px;
 }
 
 .login-input{
-    flex: 1;
+	flex: 1;
     padding: 1rem 0.8rem;
-    width: 350px;
+	width: 350px;
     font-size: 1.15rem;
     background: rgba(255, 255, 255, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.3);
@@ -67,37 +67,54 @@
 }
 
 .login-title{
-    margin-top: -25px;
+	margin-top: -25px;
 }
 
 .login-btn{
-    background-color: #3b82f6;
+	background-color: #3b82f6;
     color: white;
     border: none;
     padding: 16px 25px;
     border-radius: 20px;
-    font-size: 16px;
-    font-weight: 600;
+	font-size: 16px;
+	font-weight: 600;
     cursor: pointer;
     transition: background-color 0.3s ease;
     width: 100%;
     margin-top: 30px;
-    margin-bottom: 10px;
+	margin-bottom: 10px;
 }
 .login-btn:hover{
-    background-color: #1e40af;
+	background-color: #1e40af;
 }
 
 .login-register-btn{
-    position: relative;
-    top: 20px;
-    left: 300px;
-    background: transparent;
-    border: none;
-    font: inherit;
-    font-size: 16px;
-    font-weight: 500;
-    color: white;
-    cursor: pointer;
-    text-decoration: none;
+	position: relative;
+	top: 20px;
+	left: 300px;
+	background: transparent;   
+	border: none;             
+	font: inherit;        
+	font-size: 16px;
+	font-weight: 500;
+	color: white;     
+	cursor: pointer;       
+	text-decoration: none;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
