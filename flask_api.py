@@ -5,7 +5,7 @@ from datetime import datetime
 import threading, time, os, asyncio
 import re
 # from konlpy.tag import Okt
-from konlpy.tag import Mecab   # ✅ Mecab 사용
+import Mecab
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
