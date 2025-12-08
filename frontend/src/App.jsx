@@ -19,6 +19,9 @@ import KakaoLogin from "./pages/Login/KakaoLogin.jsx";
 import Login from "./pages/Login/Login.jsx";
 import Register from "./pages/Register/Register.jsx";
 
+import Mypage from "./pages/Mypage/Mypage.jsx";
+import UpdateMypage from "./pages/Mypage/UpdateMypage.jsx";
+
 import { AuthProvider } from "./context/AuthContext";
 
 function Layout() {
@@ -68,6 +71,8 @@ function Layout() {
                     <Route path="/kakaoLogin" element={<KakaoLogin />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/login" element={<Login />} />
+                    <Route path="/mypage" element={<Mypage />} />
+                    <Route path="/updateMypage" element={<UpdateMypage />} />
                 </Routes>
             </main>
 

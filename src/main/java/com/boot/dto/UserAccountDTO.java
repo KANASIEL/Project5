@@ -1,7 +1,5 @@
 package com.boot.dto;
 
-import java.util.Date;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -17,5 +15,5 @@ public class UserAccountDTO {
     private String email;
     private String nickname;
     private String profileImage;
-    private Date createdAt;
+    private String createdAt;
 }

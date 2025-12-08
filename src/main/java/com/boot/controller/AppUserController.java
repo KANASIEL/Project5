@@ -29,8 +29,9 @@ public class AppUserController {
     	AppUserDTO user = userService.loginOrRegister(dto);
     	
     	if (user != null) {
-            session.setAttribute("userId", user.getUserId());  // 세션 저장
+    		session.setAttribute("userId", user.getKakaoId());  // 세션 저장
             session.setAttribute("userName", user.getNickname());  // 세션 저장
+            session.setAttribute("loginType", "KAKAO");
             
             session.setMaxInactiveInterval(60 * 60); // 세션 유지 시간 1시간 설정(초 단위)
         }
@@ -45,10 +46,12 @@ public class AppUserController {
 
         Object userId = session.getAttribute("userId");
         Object nickname = session.getAttribute("userName");
-
+        Object loginType = session.getAttribute("loginType");
+        
         result.put("loggedIn", userId != null);  
         result.put("userId", userId);
         result.put("nickname", nickname);
+        result.put("loginType", loginType);
 
         return result;
     }
