@@ -127,9 +127,93 @@
     font-size: 1.1rem;
 }
 
+/* 🔑 검색 결과 리스트 */
+.search-results {
+    margin-top: 1.5rem;
+    list-style: none;
+    padding: 0;
+    max-width: 680px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: left;
+
+    /* ✅ 높이 제한 + 스크롤 */
+    max-height: 300px; /* 대략 5개 정도 아이템 높이에 맞춤 */
+    overflow-y: auto;
+}
+
+/* 각 아이템 */
+.search-results li {
+    margin-bottom: 0.8rem;
+}
+
+.result-item {
+    width: 100%;
+    padding: 1rem 1.2rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #1e40af;
+    background: #ffffff;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    text-align: left;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.result-item:hover {
+    background: #f3f4f6;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3);
+}
+
+/* 스크롤바 스타일 (선택사항) */
+.search-results::-webkit-scrollbar {
+    width: 8px;
+}
+
+.search-results::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+}
+
+.search-results::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.no-results {
+    margin-top: 1.5rem;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-align: center;
+}
+
 .bottom-text {
     margin-top: 4rem;
     color: rgba(255, 255, 255, 0.75);
     font-size: 1.1rem;
     font-weight: 500;
+}
+.reset-btn {
+    padding: 0 2rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: white;
+    background: rgba(255, 255, 255, 0.25);
+    border: none;
+    border-radius: 18px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.reset-btn:hover {
+    background: rgba(255, 255, 255, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(0,0,0,0.3);
 }
