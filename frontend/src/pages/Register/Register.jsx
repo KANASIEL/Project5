@@ -66,7 +66,7 @@ const SignUpForm = () => {
 
 		try {
             // 백엔드 API로 회원가입 요청
-            const response = await axios.post("http://localhost:8585/api/register", userAccountData);
+            const response = await axios.post("api/register", userAccountData);
             
             // 서버에서 받은 메시지가 중복된 아이디나 이메일인지 확인
             if (response.data === "이미 사용 중인 아이디입니다.") {

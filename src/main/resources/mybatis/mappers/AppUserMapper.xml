@@ -17,8 +17,6 @@
         SELECT
             USER_ID,
             KAKAO_ID,
-            GOOGLE_ID,
-            NAVER_ID,
             EMAIL,
             NICKNAME,
             PROFILE_IMAGE,
@@ -30,7 +28,7 @@
     <insert id="insert" parameterType="com.boot.dto.AppUserDTO">
         INSERT INTO APP_USER (USER_ID, KAKAO_ID, EMAIL, NICKNAME, PROFILE_IMAGE)
         VALUES (
-            SEQ_APP_USER.NEXTVAL,  <!-- 자동 증가 ID -->
+            APP_USER_SEQ.NEXTVAL,  <!-- 자동 증가 ID -->
             #{kakaoId, jdbcType=VARCHAR},
             #{email, jdbcType=VARCHAR},
             #{nickname, jdbcType=VARCHAR},
