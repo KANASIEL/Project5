@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.boot.dto.UserAccountDTO;
 import com.boot.service.UserAccountService;
 
+import jakarta.servlet.http.HttpSession;
+
 @RestController
 @RequestMapping("/api")
 public class UserAccountController {
@@ -25,7 +27,7 @@ public class UserAccountController {
     }
     
     @PostMapping("/login")
-    public Object login(@RequestBody UserAccountDTO dto) {
+    public Object login(@RequestBody UserAccountDTO dto, HttpSession session) {
 
         UserAccountDTO user = userAccountService.login(dto.getUser_id(), dto.getUser_password());
 
@@ -36,6 +38,12 @@ public class UserAccountController {
 
         // 로그인 성공하면 유저 정보 리턴 (비밀번호는 제외)
         user.setUser_password(null);
+        
+        session.setAttribute("userId", user.getUser_id());  // 세션 저장
+        session.setAttribute("userName", user.getNickname());  // 세션 저장
+        
+        session.setMaxInactiveInterval(60 * 60); // 세션 유지 시간 1시간 설정(초 단위)
+        
         return user;
     }
 }
