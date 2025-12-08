@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import axios from "axios";
+import "./KakaoLogin.css";
 
 const KakaoLogin = () => {
 
@@ -46,7 +47,7 @@ const KakaoLogin = () => {
     });
   };
 
-  return <button onClick={handleKakaoLogin}>카카오 로그인</button>;
+  return <button className="kakao-btn" onClick={handleKakaoLogin}>카카오 로그인</button>;
 };
 
 export default KakaoLogin;
