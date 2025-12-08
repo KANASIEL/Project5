@@ -4,8 +4,7 @@ from urllib.parse import unquote
 from datetime import datetime
 import threading, time, os, asyncio
 import re
-# from konlpy.tag import Okt
-import Mecab
+import MeCab  # ✅ mecab-python3에서 제공
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
@@ -28,17 +27,17 @@ db = client["stock"]
 collection = db["news_crawling"]
 
 # 🔥 TF-IDF 전역 변수
-# okt = Okt()
-mecab = Mecab()   # ✅ JVM 불필요
-
+mecab = MeCab.Tagger()  # ✅ JVM, 외부 사전 설치 불필요
 global_vectorizer = None
 global_feature_names = None
+
 
 def preprocess_text(text):
     if not text:
         return ""
-    text = re.sub(r'[^\w\s가-힣]', ' ', text)
+    text = re.sub(r"[^\w\s가-힣]", " ", text)
     return text.strip()
+
 
 def tokenize_korean(text):
     if not text:
@@ -46,15 +45,25 @@ def tokenize_korean(text):
     text = preprocess_text(text)
     if len(text) < 10:
         return []
-    # nouns = okt.nouns(text)
-    nouns = mecab.nouns(text)   # ✅ Mecab으로 명사 추출
-    nouns = [n for n in nouns if len(n) > 1]
+
+    # ✅ MeCab으로 명사(NNG, NNP)만 추출
+    node = mecab.parseToNode(text)
+    nouns = []
+    while node:
+        surface = node.surface
+        features = node.feature.split(",")
+        pos = features[0] if features else ""
+        if pos in ("NNG", "NNP") and len(surface) > 1:
+            nouns.append(surface)
+        node = node.next
+
     stopwords = {
-        '기자', '사진', '연합뉴스', '매일경제', '중앙일보', '조선비즈',
-        '출처', '입력', '수정', '대한', '뉴스', '시간', '지난', '이번'
+        "기자", "사진", "연합뉴스", "매일경제", "중앙일보", "조선비즈",
+        "출처", "입력", "수정", "대한", "뉴스", "시간", "지난", "이번",
     }
     tokens = [t for t in nouns if t not in stopwords and len(t) > 1]
     return tokens[:100]
+
 
 def query_to_tfidf_vector(query, vectorizer, feature_names):
     """검색 쿼리를 TF-IDF 벡터로 변환"""
@@ -65,13 +74,15 @@ def query_to_tfidf_vector(query, vectorizer, feature_names):
     if not query_tokens:
         return None
 
-    query_text = ' '.join(query_tokens)
+    query_text = " ".join(query_tokens)
     query_vec = vectorizer.transform([query_text])
     return query_vec.toarray()[0]
+
 
 @app.route("/")
 def index():
     return "Flask API is running (TF-IDF 검색 엔진)"
+
 
 @app.route("/news")
 def get_news():
@@ -92,7 +103,7 @@ def get_news():
         except Exception:
             news["pubDate"] = datetime(1970, 1, 1)
 
-    reverse = (order != "asc")
+    reverse = order != "asc"
     news_list.sort(key=lambda x: x["pubDate"], reverse=reverse)
 
     start = page * size
@@ -102,11 +113,14 @@ def get_news():
     for news in content:
         news["pubDate"] = news["pubDate"].strftime("%Y-%m-%d %H:%M:%S")
 
-    return jsonify({
-        "content": content,
-        "number": page,
-        "totalPages": (len(news_list) + size - 1) // size,
-    })
+    return jsonify(
+        {
+            "content": content,
+            "number": page,
+            "totalPages": (len(news_list) + size - 1) // size,
+        }
+    )
+
 
 @app.route("/news/search")
 def search_news():
@@ -125,15 +139,17 @@ def search_news():
 
     candidate_query = {
         "tfidf": {"$exists": True},
-        "content": {"$ne": ""}
+        "content": {"$ne": ""},
     }
     if category:
         candidate_query["category"] = category
 
-    candidates = list(
-        collection.find(candidate_query, {"_id": 0})
-        .sort("pubDate", -1)
-        .limit(1000)
+    candidates = (
+        list(
+            collection.find(candidate_query, {"_id": 0})
+            .sort("pubDate", -1)
+            .limit(1000)
+        )
     )
     print(f"📊 후보 문서: {len(candidates)}개")
 
@@ -142,14 +158,17 @@ def search_news():
 
     if global_vectorizer is None:
         token_texts = [
-            ' '.join(doc.get('tokens', []))
-            for doc in candidates if doc.get('tokens')
+            " ".join(doc.get("tokens", []))
+            for doc in candidates
+            if doc.get("tokens")
         ]
         if token_texts:
             global_vectorizer = TfidfVectorizer(max_features=5000, min_df=2)
             global_vectorizer.fit(token_texts)
             global_feature_names = global_vectorizer.get_feature_names_out()
-            print(f"✅ TF-IDF Vectorizer 학습 완료: {len(global_feature_names)}개 용어")
+            print(
+                f"✅ TF-IDF Vectorizer 학습 완료: {len(global_feature_names)}개 용어"
+            )
 
     query_vec = query_to_tfidf_vector(q, global_vectorizer, global_feature_names)
     if query_vec is None:
@@ -158,7 +177,7 @@ def search_news():
 
     scores = []
     for doc in candidates:
-        doc_tfidf = doc.get('tfidf', {})
+        doc_tfidf = doc.get("tfidf", {})
         if not doc_tfidf:
             continue
 
@@ -170,17 +189,20 @@ def search_news():
 
         similarity = cosine_similarity([query_vec], [doc_vec])[0][0]
         if similarity > 0.05:
-            doc['similarity'] = float(similarity)
+            doc["similarity"] = float(similarity)
             scores.append(doc)
 
     if scores:
-        print(f"✅ 유사도 계산 완료: {len(scores)}개 문서 (평균: {np.mean([s['similarity'] for s in scores]):.3f})")
+        print(
+            f"✅ 유사도 계산 완료: {len(scores)}개 문서 "
+            f"(평균: {np.mean([s['similarity'] for s in scores]):.3f})"
+        )
     else:
         print("⚠️ 유사도 0 초과 문서 없음")
 
     scores.sort(
-        key=lambda x: (x['similarity'], x.get('pubDate', datetime.min)),
-        reverse=True
+        key=lambda x: (x["similarity"], x.get("pubDate", datetime.min)),
+        reverse=True,
     )
 
     start = page * size
@@ -191,24 +213,28 @@ def search_news():
         try:
             news["pubDate"] = datetime.strptime(
                 news.get("pubDate", "1970-01-01 00:00:00"),
-                "%Y-%m-%d %H:%M:%S"
+                "%Y-%m-%d %H:%M:%S",
             ).strftime("%Y-%m-%d %H:%M:%S")
         except Exception:
             news["pubDate"] = "1970-01-01 00:00:00"
         news.pop("tokens", None)
         news.pop("tfidf", None)
 
-    return jsonify({
-        "content": content,
-        "number": page,
-        "totalPages": (len(scores) + size - 1) // size,
-        "totalElements": len(scores)
-    })
+    return jsonify(
+        {
+            "content": content,
+            "number": page,
+            "totalPages": (len(scores) + size - 1) // size,
+            "totalElements": len(scores),
+        }
+    )
+
 
 def run_crawler():
     while True:
         asyncio.run(crawler.main())
         time.sleep(3600)
+
 
 if __name__ == "__main__":
     threading.Thread(target=run_crawler, daemon=True).start()
