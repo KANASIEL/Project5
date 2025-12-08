@@ -1,19 +1,46 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import './MainPage.css';
 
 function MainPage() {
     const [activeTab, setActiveTab] = useState('stock'); // 'stock' | 'news'
     const [searchTerm, setSearchTerm] = useState('');
+    const [nickname, setNickname] = useState(null); // 세션 닉네임 저장
+
+    // 세션에서 닉네임 가져오기
+    useEffect(() => {
+        axios
+            .get("http://localhost:8585/api/auth/session/user", { withCredentials: true })
+            .then((res) => {
+                console.log("세션 정보:", res.data);
+
+                // 백엔드에서 nickname 키로 반환하면 이걸 그대로 사용
+                if (res.data.nickname) {
+                    setNickname(res.data.nickname);
+                }
+            })
+            .catch((err) => {
+                console.error("세션 요청 오류:", err);
+            });
+    }, []);
 
     const handleSearch = (e) => {
         e.preventDefault();
         console.log(`${activeTab === 'stock' ? '주식' : '뉴스'} 검색:`, searchTerm);
-        // 여기서 API 호출
+        // API 호출 자리
     };
 
     return (
         <div className="main-wrapper">
             <main className="main-container">
+
+                {/* 🔥 로그인한 유저 닉네임 출력 */}
+                {nickname && (
+                    <div className="main-user-info">
+                        환영합니다, <strong>{nickname}</strong>님
+                    </div>
+                )}
+
                 <h1 className="main-title">Stock & News Search</h1>
 
                 <div className="main-card">
