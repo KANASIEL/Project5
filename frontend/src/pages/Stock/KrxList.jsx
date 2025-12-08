@@ -39,6 +39,31 @@ function KrxList() {
     const [recentLoading, setRecentLoading] = useState(true);
     const [rankingLoading, setRankingLoading] = useState(true);
     const ITEMS_PER_PAGE = 50;
+    const currentTabData = tab === 0 ? kospi : kosdaq;
+
+    const formatKoreanTime = (dateStr) => {
+        if (!dateStr) return "-";
+        try {
+            const date = new Date(dateStr);
+
+            // 날짜 유효성 체크
+            if (isNaN(date.getTime())) return dateStr;
+
+            // 한국 시간(-9)
+            const koreaTime = new Date(date.getTime() - 9 * 60 * 60 * 1000);
+
+            const yyyy = koreaTime.getFullYear();
+            const mm = String(koreaTime.getMonth() + 1).padStart(2, "0");
+            const dd = String(koreaTime.getDate()).padStart(2, "0");
+            const hh = String(koreaTime.getHours()).padStart(2, "0");
+            const min = String(koreaTime.getMinutes()).padStart(2, "0");
+            const ss = String(koreaTime.getSeconds()).padStart(2, "0");
+
+            return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
+        } catch {
+            return dateStr;
+        }
+    };
 
     // 데이터 로드 (생략 - 그대로)
     useEffect(() => {
@@ -210,7 +235,11 @@ function KrxList() {
         <Box className="krx-page-wrapper">
             <Box className="krx-main-content">
                 <Typography className="krx-page-title">KRX 실시간 시세표 (시가총액)</Typography>
-
+                {currentTabData.length > 0 && (
+                    <Typography className="krx-crawled-time">
+                        기준 시간: {formatKoreanTime(currentTabData[0].crawled_at)}
+                    </Typography>
+                )}
                 {/* 최근 본 종목 */}
                 {recentLoading ? (
                     <Skeleton className="krx-recent-skeleton" />
