@@ -32,7 +32,7 @@ const Login = () => {
 
             // 로그인 성공 → 메인 페이지 이동
             alert("로그인 성공!");
-            navigate("/main");
+            navigate("/");
 
         } catch (error) {
             console.error(error);

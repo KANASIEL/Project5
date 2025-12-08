@@ -44,7 +44,7 @@ const KakaoLogin = () => {
                 alert("로그인 성공!");
 
                 // ✅ 로그인 성공 시 메인 페이지로 이동
-                navigate("/main");
+                navigate("/");
               })
               .catch(err => {
                 console.error("서버 오류:", err);
