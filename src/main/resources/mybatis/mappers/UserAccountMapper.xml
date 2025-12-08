@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.boot.dao.UserAccountDAO">
+    
+    <!-- 회원 정보 삽입 쿼리 -->
+    <insert id="insertUserAccount" parameterType="com.boot.dto.UserAccountDTO">
+        INSERT INTO user_account (user_num, user_id, user_password, email, nickname, profile_image)
+        VALUES (
+			user_account_seq.NEXTVAL,
+			#{user_id}, 
+			#{user_password,jdbcType=VARCHAR}, 
+			#{email}, #{nickname}, 
+			#{profileImage})
+    </insert>
+
+    <!-- 사용자 아이디로 조회 -->
+    <select id="findByUserId" parameterType="String" resultType="com.boot.dto.UserAccountDTO">
+        SELECT * FROM user_account WHERE user_id = #{userId}
+    </select>
+
+    <!-- 사용자 이메일로 조회 -->
+    <select id="findByEmail" parameterType="String" resultType="com.boot.dto.UserAccountDTO">
+        SELECT * FROM user_account WHERE email = #{email}
+    </select>
+
+</mapper>
