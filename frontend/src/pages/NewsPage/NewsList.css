@@ -567,5 +567,10 @@
   display: block; /* inline-block 제거 */
 }
 
-
+.similarity-score {
+  color: #4CAF50;
+  font-weight: bold;
+  font-size: 0.85em;
+  margin-right: 8px;
+}
 
