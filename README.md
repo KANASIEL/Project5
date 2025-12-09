@@ -33,7 +33,7 @@ pip install pymongo
 스프링부트 window -> preferences -> java compiler 에서 Store information about method paremeter 체크 후 Apply
 
 
-- 형태소분석/랭킹/챗봇
+형태소분석/랭킹/챗봇
 - pip install openai python-dotenv
 - pip install fastapi uvicorn pydantic
 cd C:\dev\work_springboot\Project5\scripts
