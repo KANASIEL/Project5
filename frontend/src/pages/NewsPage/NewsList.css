@@ -1,3 +1,129 @@
+/* ===== 1. 전체 레이아웃 컨테이너 (추가) ===== */
+.layout-container {
+  display: flex; 
+  justify-content: center; 
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 10px 0;
+  gap: 20px;
+  /* (추가/확인) sticky 요소의 컨테이너는 overflow: hidden이 없어야 합니다. */
+  overflow: visible; /* 명시적으로 추가하여 혹시 모를 hidden 설정을 방지 */
+}
+
+
+/* ===== 2. 사이드바 공통 스타일 (추가) ===== */
+.sidebar-left,
+.sidebar-right {
+  width: 250px; /* 사이드바 고정 너비 */
+  flex-shrink: 0; /* 크기가 줄어들지 않도록 설정 */
+  /* 스크롤 시 고정되도록 설정 */
+  position: sticky;
+  top: 200px; /* 상단에서부터의 거리 */
+  align-self: flex-start; /* 컨테이너 시작점에 붙도록 */
+}
+
+.sidebar-section {
+  background: #fcfcfc;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 15px 12px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.sidebar-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e40af;
+  padding: 5px 8px 10px;
+  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 10px;
+}
+
+
+/* ===== 3. 왼쪽 사이드바 (최근 본 기사) 스타일 (추가) ===== */
+.recent-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.recent-item {
+  padding: 8px 8px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.recent-item:hover {
+  background: #f3f3f3;
+}
+
+.recent-media {
+  display: block;
+  font-size: 10px;
+  color: #888;
+  margin-bottom: 2px;
+}
+
+.recent-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+  line-height: 1.4;
+  margin: 0;
+  /* 말줄임표 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* 두 줄까지 표시 */
+  -webkit-box-orient: vertical;
+}
+
+
+/* ===== 4. 오른쪽 사이드바 (언론사) 스타일 (추가) ===== */
+.media-category-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.media-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 8px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.media-item:hover {
+  background: #f3f3f3;
+}
+
+.media-logo-sidebar {
+  width: 20px; /* 로고 크기 조정 */
+  height: 20px;
+  object-fit: contain;
+  margin-right: 10px;
+  border-radius: 4px;
+}
+
+.media-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+/* 기존 .media-logo 충돌 방지 */
+.news-meta .media-logo {
+    width: 70px;
+    height: 30px;
+    object-fit: contain;
+    margin-right: 6px;
+    opacity: 0.9;
+}
+
 /* ===== 전체 컨테이너 ===== */
 .news-container {
   max-width: 1100px;
@@ -6,6 +132,7 @@
   font-family: "Pretendard", "Segoe UI", sans-serif;
   color: #222;
 }
+
 
 /* ===== 제목 ===== */
 .news-container h2 {
@@ -573,4 +700,3 @@
   font-size: 0.85em;
   margin-right: 8px;
 }
-
