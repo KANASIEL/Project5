@@ -1,40 +1,50 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
 
 const AuthContext = createContext();
 
+// 전역 Auth Provider
 export const AuthProvider = ({ children }) => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [userName, setUserName] = useState("");
+    const [nickname, setNickname] = useState("");
 
-    // 🔥 앱 시작 시 서버 세션 자동 확인 (새로고침해도 로그인 유지 핵심)
+    // ---------------------------------------------------------
+    // 새로고침(브라우저 reload) 시 localStorage에서 토큰 복원
+    // ---------------------------------------------------------
     useEffect(() => {
-        axios
-            .get("http://localhost:8585/api/auth/session/user", {
-                withCredentials: true,
-            })
-            .then((res) => {
-                if (res.data.loggedIn) {
-                    setIsLoggedIn(true);
-                    setUserName(res.data.nickname);
-                }
-            })
-            .catch((err) => console.log("세션 체크 실패:", err));
+        const storedToken = localStorage.getItem("jwtToken");
+        const storedNickname = localStorage.getItem("nickname");
+
+        // 토큰이 있으면 axios 기본 헤더 설정
+        if (storedToken) {
+            axios.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`;
+            setIsLoggedIn(true);
+            setNickname(storedNickname || "");
+        }
     }, []);
 
-    const loginSuccess = (nickname) => {
+    // 로그인 성공 후 실행되는 함수
+    const loginSuccess = (nicknameValue) => {
         setIsLoggedIn(true);
-        setUserName(nickname);
+        setNickname(nicknameValue);
     };
 
+    // 로그아웃 기능
     const logout = () => {
         setIsLoggedIn(false);
-        setUserName("");
+        setNickname("");
+
+        // localStorage 제거
+        localStorage.removeItem("jwtToken");
+        localStorage.removeItem("nickname");
+
+        // axios 헤더 제거
+        delete axios.defaults.headers.common["Authorization"];
     };
 
     return (
         <AuthContext.Provider
-            value={{ isLoggedIn, userName, loginSuccess, logout }}
+            value={{ isLoggedIn, nickname, loginSuccess, logout }}
         >
             {children}
         </AuthContext.Provider>

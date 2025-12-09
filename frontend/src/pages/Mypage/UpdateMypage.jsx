@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { useAuth } from "../../context/AuthContext";
 import "./UpdateMypage.css";
 
 const ModifyUserInfo = () => {
     const [user, setUser] = useState(null);
+	const { loginSuccess } = useAuth();
 
     const [email, setEmail] = useState("");
     const [nickname, setNickname] = useState("");
@@ -12,28 +14,37 @@ const ModifyUserInfo = () => {
     const [preview, setPreview] = useState(null);
     const [errorMsg, setErrorMsg] = useState("");
 
-    // 비밀번호 유효성 체크: 8자 이상, 특수문자 포함
+    // 비밀번호 유효성 체크
     const passwordValidation = (password) => {
         const regex = /^(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
         return regex.test(password);
     };
 
-    // 유저 정보 불러오기
-	useEffect(() => {
-	    axios
-	        .get("http://localhost:8585/api/info", { withCredentials: true })
-	        .then((res) => {
-	            setUser(res.data);
-	            setEmail(res.data.email);
-	            setNickname(res.data.nickname);
+    // 유저 정보 불러오기 (JWT)
+    useEffect(() => {
+        const token = localStorage.getItem("jwtToken");
 
-	            // 기존 이미지가 있을 경우 전체 URL로 변환
-	            if (res.data.profileImage) {
-	                setPreview(`http://localhost:8585/uploads/${encodeURIComponent(res.data.profileImage)}`);
-	            }
-	        })
-	        .catch((err) => console.error(err));
-	}, []);
+        if (!token) return;
+
+        axios
+            .get("http://localhost:8585/api/info", {
+                headers: { Authorization: `Bearer ${token}` },
+            })
+            .then((res) => {
+                setUser(res.data);
+                setEmail(res.data.email);
+                setNickname(res.data.nickname);
+
+                if (res.data.profileImage) {
+                    setPreview(
+                        `http://localhost:8585/uploads/${encodeURIComponent(
+                            res.data.profileImage
+                        )}`
+                    );
+                }
+            })
+            .catch((err) => console.error(err));
+    }, []);
 
     // 이미지 미리보기
     const handleImageChange = (e) => {
@@ -47,38 +58,41 @@ const ModifyUserInfo = () => {
     const handleSubmit = () => {
         setErrorMsg("");
 
-        // 비밀번호 유효성 체크
         if (password && !passwordValidation(password)) {
             setErrorMsg("비밀번호는 8자 이상이고 특수문자를 포함해야 합니다.");
             return;
         }
 
-        // DTO 필드명 기준으로 FormData 생성
+        const token = localStorage.getItem("jwtToken");
+
         const formData = new FormData();
-        formData.append("user_id", user.userId);           // DTO: user_id
+        formData.append("user_id", user.user_id);
         formData.append("email", email);
         formData.append("nickname", nickname);
-        if (password) formData.append("user_password", password); // DTO: user_password
+        if (password) formData.append("user_password", password);
         if (profileImage) formData.append("profileImage", profileImage);
 
         axios
             .post("http://localhost:8585/api/modifyUser", formData, {
-                withCredentials: true,
-                headers: { "Content-Type": "multipart/form-data" },
+                headers: {
+                    Authorization: `Bearer ${token}`, // 🔥 JWT 추가
+                    "Content-Type": "multipart/form-data",
+                },
             })
-            .then((res) => {
-                if (res.data === 1) {
-                    alert("회원 정보가 수정되었습니다!");
-                    window.location.href = "/mypage";
-                } else {
-                    alert("수정 실패");
-                }
-            })
-            .catch((err) => {
-                console.error(err);
-                alert("오류 발생: 서버에서 데이터를 받지 못했습니다.");
-            });
-    };
+			.then((res) => {
+	            if (res.data === 1) {
+
+	                // 🔥 닉네임 변경사항 프론트에 즉시 적용
+	                localStorage.setItem("nickname", nickname);
+	                loginSuccess(nickname);
+
+	                alert("회원 정보가 수정되었습니다!");
+	                window.location.href = "/mypage";
+	            } else {
+	                alert("수정 실패");
+	            }
+	        })
+	    };
 
     if (!user) return <p>불러오는 중...</p>;
 
@@ -89,7 +103,7 @@ const ModifyUserInfo = () => {
 
                 <div className="profile-area">
                     <img
-                        src={preview ? preview : "/Default-Profile.png"}
+                        src={preview || "/Default-Profile.png"}
                         alt="프로필 미리보기"
                         className="profile-preview"
                     />
@@ -106,7 +120,7 @@ const ModifyUserInfo = () => {
 
                 <div className="modify-item">
                     <label>아이디</label>
-                    <p className="readonly-box">{user.userId}</p>
+                    <p className="readonly-box">{user.user_id}</p>
                 </div>
 
                 <div className="modify-item">
