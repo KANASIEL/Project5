@@ -208,7 +208,7 @@ function StockDetail() {
                                     borderBottom: i < news.length - 1 ? "1px solid #eee" : "none",
                                 }}
                             >
-                                <Typography variant="body1" fontWeight="medium">
+                                <Typography variant="body1" fontWeight="medium" component="div">
                                     <a
                                         href={item.link}
                                         target="_blank"
