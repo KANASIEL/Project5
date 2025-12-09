@@ -15,7 +15,7 @@ if not MONGO_URI:
     raise RuntimeError("MONGO_URI not set in crawler")
 
 # Atlas에서 복사한 mongodb+srv://... 그대로 MONGO_URI에 들어가 있어야 함
-client = MongoClient(MONGO_URI, server_api=ServerApi("1"))
+client = MongoClient(MONGO_URI, server_api=ServerApi('1'))
 db = client["stock"]
 collection = db["news_crawling"]
 
@@ -29,7 +29,7 @@ CATEGORY_URLS = {
     "중기/벤처": "https://news.naver.com/breakingnews/section/101/771",
     "글로벌 경제": "https://news.naver.com/breakingnews/section/101/260",
     "생활경제": "https://news.naver.com/breakingnews/section/101/310",
-    "경제 일반": "https://news.naver.com/breakingnews/section/101/263",
+    "경제 일반": "https://news.naver.com/breakingnews/section/101/263"
 }
 
 HEADERS = {"User-Agent": "Mozilla/5.0"}
@@ -84,9 +84,7 @@ async def fetch_news_detail(session, link):
                 content = content_tag.get_text(separator="\n").strip()
 
             # 언론사
-            meta_author = soup.select_one(
-                "meta[property='og:article:author'], meta[name='author']"
-            )
+            meta_author = soup.select_one("meta[property='og:article:author'], meta[name='author']")
             if meta_author and meta_author.has_attr("content"):
                 media = meta_author["content"].strip()
 
@@ -95,7 +93,7 @@ async def fetch_news_detail(session, link):
             if meta_image and meta_image.has_attr("content"):
                 image_url = meta_image["content"].strip()
 
-            # 작성일 (문자열)
+            # 작성일
             meta_date = soup.select_one('meta[property="article:published_time"]')
             if meta_date and meta_date.has_attr("content"):
                 pubDate = meta_date["content"].strip()
@@ -106,22 +104,14 @@ async def fetch_news_detail(session, link):
 
             # 언론사 로고
             def first_url_from_srcset(s):
-                if not s:
-                    return ""
+                if not s: return ""
                 parts = s.split(",")
                 first = parts[0].strip().split(" ")[0]
                 return first
 
             logo_tag = soup.select_one("img.media_end_head_top_logo_img")
             if logo_tag:
-                for a in (
-                    "src",
-                    "data-src",
-                    "data-original",
-                    "data-lazy-src",
-                    "data-srcset",
-                    "srcset",
-                ):
+                for a in ("src", "data-src", "data-original", "data-lazy-src", "data-srcset", "srcset"):
                     if logo_tag.has_attr(a):
                         val = logo_tag.get(a, "").strip()
                         if a in ("srcset", "data-srcset"):
@@ -164,7 +154,7 @@ async def fetch_news_list(session, url, max_items=30):
             html = await resp.text()
             soup = BeautifulSoup(html, "lxml")
             items = soup.select("a.sa_text_title")
-
+            
             for i, a in enumerate(items):
                 if i >= max_items:
                     break
@@ -195,62 +185,46 @@ async def crawl_category(session, category, url):
 
         collection.update_one(
             {"link": news["link"]},
-            {
-                "$setOnInsert": {
-                    "title": news["title"],
-                    "link": news["link"],
-                    "category": category,
-                    "author": "",
-                    "content": "",
-                    "media": "",
-                    "mediaLogo": "",
-                    "image_url": "",
-                    "pubDate": None,  # 처음에는 None
-                }
-            },
-            upsert=True,
+            {"$setOnInsert": {
+                "title": news["title"],
+                "link": news["link"],
+                "category": category,
+                "author": "",
+                "content": "",
+                "media": "",
+                "mediaLogo": "",
+                "image_url": "",
+                "pubDate": ""
+            }},
+            upsert=True
         )
 
     results = await asyncio.gather(*tasks)
-
-    for (author, content, media, mediaLogo, image_url, pubDate), news in zip(
-        results, valid_news
-    ):
-        has_title = bool(news.get("title", "").strip())
+    
+    for (author, content, media, mediaLogo, image_url, pubDate), news in zip(results, valid_news):
+        # 1) 최소 품질 조건 정의
+        has_title   = bool(news.get("title", "").strip())
         has_content = bool(content and content.strip())
-        has_media = bool(media and media.strip())
-        has_date = bool(pubDate and pubDate.strip())
-
+        has_media   = bool(media and media.strip())
+        has_date    = bool(pubDate and pubDate.strip())
+        
+        # 2) 본문도 없고, 언론사/날짜도 없으면 그냥 삭제(또는 스킵)
         if not has_title or (not has_content and not (has_media and has_date)):
             log(f"[DROP] 내용 부족으로 삭제: {news['title']}")
             collection.delete_one({"link": news["link"]})
             continue
-
-        # pubDate 문자열 → datetime 변환
-        pub_date_dt = None
-        if has_date:
-            s = pubDate[:19]  # "2025-12-09T01:23:45+09:00" 형식 대비
-            for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S"):
-                try:
-                    pub_date_dt = datetime.strptime(s, fmt)
-                    break
-                except ValueError:
-                    continue
-        if pub_date_dt is None:
-            pub_date_dt = datetime(1970, 1, 1)
-
+            
+        # 3) 정상 기사만 업데이트
         collection.update_one(
             {"link": news["link"]},
-            {
-                "$set": {
-                    "author": author,
-                    "content": content,
-                    "media": media,
-                    "mediaLogo": mediaLogo,
-                    "image_url": image_url,
-                    "pubDate": pub_date_dt,  # Date 타입으로 저장
-                }
-            },
+            {"$set": {
+                "author": author,
+                "content": content,
+                "media": media,
+                "mediaLogo": mediaLogo,
+                "image_url": image_url,
+                "pubDate": pubDate
+            }}
         )
 
     log(f"✅ {category} 뉴스 크롤링 완료. 총 저장: {len(valid_news)}건")
@@ -273,3 +247,10 @@ async def periodic_crawl():
         try:
             await main()
         except Exception as e:
+            log(f"⚠ 크롤링 중 오류 발생: {e}")
+        next_interval = random.randint(3, 10)
+        log(f"크롤링 완료. 다음 크롤링까지 {next_interval}분 대기")
+        await asyncio.sleep(next_interval * 60)
+
+if __name__ == "__main__":
+    asyncio.run(periodic_crawl())
