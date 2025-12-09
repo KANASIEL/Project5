@@ -60,32 +60,7 @@ public class AppUserController {
 
 	    return ResponseEntity.ok(response);
 	}
-	
-	@GetMapping("/auth/naver/callback")
-	public ResponseEntity<?> naverCallback(
-	        @RequestParam String code,
-	        @RequestParam String state) {
 
-	    // 1) 네이버 토큰 요청 → accessToken 가져오기
-	    Map<String, String> token = naverLoginService.getAccessToken(code, state);
-
-	    // 2) 네이버 프로필 요청
-	    AppUserDTO dto = naverLoginService.getUserInfo(token.get("access_token"));
-
-	    // 3) DB 로그인/회원가입 처리
-	    AppUserDTO user = userService.loginOrRegister(dto);
-
-	    // 4) JWT 생성
-	    String jwt = jwtUtil.createToken(user.getNaverId(), "NAVER");
-
-	    // 5) 프론트에 전달
-	    return ResponseEntity.ok(Map.of(
-	        "token", jwt,
-	        "user", user
-	    ));
-	}
-
-    
     //로그아웃
     @PostMapping("/logout")
     public Map<String, Object> logout() {

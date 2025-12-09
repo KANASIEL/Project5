@@ -46,9 +46,4 @@ public class AppUserServiceImpl implements AppUserService{
         return dao.findByKakaoId(kakaoId);
     }
 
-	@Override
-	public AppUserDTO findByNaverId(String naverId) {
-		return dao.findByNaverId(naverId);
-	}
-
 }
