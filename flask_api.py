@@ -32,19 +32,18 @@ def _parse_pub_date(value):
         return value
 
     if isinstance(value, str):
-        # 네이버 메타 태그(article:published_time)는 보통 ISO8601 형태
-        # 예: 2025-12-09T10:23:45+09:00 또는 2025-12-09T10:23:45
+        v = value.strip()
+        if not v:
+            return None
+
         try:
-            # Python 3.11 이상이면 대부분 fromisoformat으로 처리 가능
-            return datetime.fromisoformat(value.replace("Z", "+00:00"))
+            return datetime.fromisoformat(v.replace("Z", "+00:00"))
         except Exception:
             pass
 
-        # 혹시 모를 다른 포맷 대비
-        for fmt in ("%Y-%m-%d %H:%M:%S",
-                    "%Y-%m-%d"):
+        for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
             try:
-                return datetime.strptime(value, fmt)
+                return datetime.strptime(v, fmt)
             except ValueError:
                 continue
 
@@ -54,19 +53,24 @@ def _parse_pub_date(value):
 def _sort_and_page(query, page, size, order):
     news_list = list(collection.find(query, {"_id": 0}))
 
-    # pubDate를 datetime으로 변환 (파싱 실패 시 1970-01-01로)
+    parsed_list = []
     for news in news_list:
         parsed = _parse_pub_date(news.get("pubDate"))
-        news["pubDate"] = parsed if parsed is not None else datetime(1970, 1, 1)
+        if parsed is None:
+            # 날짜가 없거나 파싱 불가하면 응답에서 제외
+            continue
+        news["pubDate"] = parsed
+        parsed_list.append(news)
 
-    reverse = (order != "asc")
+    news_list = parsed_list
+
+    reverse = order != "asc"
     news_list.sort(key=lambda x: x["pubDate"], reverse=reverse)
 
     start = page * size
     end = start + size
     content = news_list[start:end]
 
-    # 응답에서는 문자열로 내려줌
     for news in content:
         news["pubDate"] = news["pubDate"].strftime("%Y-%m-%d %H:%M:%S")
 
@@ -90,13 +94,7 @@ def get_news():
 
     content, total_pages = _sort_and_page(query, page, size, order)
 
-    return jsonify(
-        {
-            "content": content,
-            "number": page,
-            "totalPages": total_pages,
-        }
-    )
+    return jsonify({"content": content, "number": page, "totalPages": total_pages})
 
 
 @app.route("/news/search")
@@ -128,13 +126,7 @@ def search_news():
 
     content, total_pages = _sort_and_page(query, page, size, order)
 
-    return jsonify(
-        {
-            "content": content,
-            "number": page,
-            "totalPages": total_pages,
-        }
-    )
+    return jsonify({"content": content, "number": page, "totalPages": total_pages})
 
 
 def run_crawler():
