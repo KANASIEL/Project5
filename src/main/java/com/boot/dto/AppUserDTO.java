@@ -12,9 +12,11 @@ import lombok.NoArgsConstructor;
 public class AppUserDTO {
 	private Long userId;
     private String kakaoId;
+    private String naverId;
     private String email;
     private String nickname;
     private String profileImage;
+    private String socialType;
     private Date createdAt;
 
 }

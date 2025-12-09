@@ -29,9 +29,15 @@ public class AppUserServiceImpl implements AppUserService{
     }
 
     private AppUserDTO getUserByAnyId(AppUserDTO dto) {
-        if (dto.getKakaoId() != null) {
+    	
+    	if (dto.getKakaoId() != null) {
             return dao.findByKakaoId(dto.getKakaoId());
         }
+
+        if (dto.getNaverId() != null) {
+            return dao.findByNaverId(dto.getNaverId());
+        }
+
         return null;
     }
 
@@ -39,5 +45,10 @@ public class AppUserServiceImpl implements AppUserService{
     public AppUserDTO findByKakaoId(String kakaoId) {
         return dao.findByKakaoId(kakaoId);
     }
+
+	@Override
+	public AppUserDTO findByNaverId(String naverId) {
+		return dao.findByNaverId(naverId);
+	}
 
 }

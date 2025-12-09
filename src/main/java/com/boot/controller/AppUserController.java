@@ -1,20 +1,20 @@
 package com.boot.controller;
 
-import java.util.HashMap; 
+import java.util.HashMap;  
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping; 
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.boot.dto.AppUserDTO;
 import com.boot.service.AppUserService;
 import com.boot.util.JwtUtil;
-
-import jakarta.servlet.http.HttpSession;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -31,21 +31,58 @@ public class AppUserController {
 	@PostMapping("/loginOrRegister")
 	public ResponseEntity<?> loginOrRegister(@RequestBody AppUserDTO dto) {
 
+	    //socialType 자동 감지 (프론트가 안 보내도 처리됨)
+	    String socialType = dto.getSocialType();
+
+	    if (socialType == null) {
+	        if (dto.getKakaoId() != null) socialType = "KAKAO";
+	        else if (dto.getNaverId() != null) socialType = "NAVER";
+	        else return ResponseEntity.status(400).body("socialType not provided");
+	    }
+
+	    //회원 조회 또는 자동 가입
 	    AppUserDTO user = userService.loginOrRegister(dto);
 
 	    if (user == null) {
 	        return ResponseEntity.status(401).body("Login failed.");
 	    }
 
-	    // JWT 토큰 발급
-	    String token = jwtUtil.createToken(user.getKakaoId(),"KAKAO");
+	    //JWT 생성
+	    String token = jwtUtil.createToken(
+	            socialType.equals("KAKAO") ? user.getKakaoId() : user.getNaverId(),
+	            socialType
+	    );
 
-	    // 프론트에 내려줄 응답 형태
+	    //응답 구성
 	    Map<String, Object> response = new HashMap<>();
 	    response.put("user", user);
 	    response.put("token", token);
 
 	    return ResponseEntity.ok(response);
+	}
+	
+	@GetMapping("/auth/naver/callback")
+	public ResponseEntity<?> naverCallback(
+	        @RequestParam String code,
+	        @RequestParam String state) {
+
+	    // 1) 네이버 토큰 요청 → accessToken 가져오기
+	    Map<String, String> token = naverLoginService.getAccessToken(code, state);
+
+	    // 2) 네이버 프로필 요청
+	    AppUserDTO dto = naverLoginService.getUserInfo(token.get("access_token"));
+
+	    // 3) DB 로그인/회원가입 처리
+	    AppUserDTO user = userService.loginOrRegister(dto);
+
+	    // 4) JWT 생성
+	    String jwt = jwtUtil.createToken(user.getNaverId(), "NAVER");
+
+	    // 5) 프론트에 전달
+	    return ResponseEntity.ok(Map.of(
+	        "token", jwt,
+	        "user", user
+	    ));
 	}
 
     

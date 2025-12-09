@@ -19,6 +19,8 @@ import KrxDetail from "./pages/Stock/KrxDetail.jsx";
 
 import KakaoLogin from "./pages/Login/KakaoLogin.jsx";
 import Login from "./pages/Login/Login.jsx";
+import NaverLogin from "./pages/Login/NaverLogin.jsx";
+import NaverCallback from "./pages/Login/NaverCallback.jsx";
 import Register from "./pages/Register/Register.jsx";
 
 import Mypage from "./pages/Mypage/Mypage.jsx";
@@ -71,6 +73,8 @@ function Layout() {
                     <Route path="/krx/:code" element={<KrxDetail />} />
                     <Route path="/news" element={<NewsList />} />
                     <Route path="/kakaoLogin" element={<KakaoLogin />} />
+                    <Route path="/naverLogin" element={<NaverLogin />} />
+                    <Route path="/login/naver/callback" element={<NaverCallback />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/mypage" element={<Mypage />} />
