@@ -167,6 +167,8 @@ async def fetch_news_list(session, url, max_items=30):
         log(f"⚠ 뉴스 리스트 크롤링 실패: {url} / Error: {e}")
     return news_list
 
+from datetime import datetime
+
 # -------------------------
 # 카테고리별 크롤링
 # -------------------------
@@ -185,49 +187,69 @@ async def crawl_category(session, category, url):
 
         collection.update_one(
             {"link": news["link"]},
-            {"$setOnInsert": {
-                "title": news["title"],
-                "link": news["link"],
-                "category": category,
-                "author": "",
-                "content": "",
-                "media": "",
-                "mediaLogo": "",
-                "image_url": "",
-                "pubDate": ""
-            }},
-            upsert=True
+            {
+                "$setOnInsert": {
+                    "title": news["title"],
+                    "link": news["link"],
+                    "category": category,
+                    "author": "",
+                    "content": "",
+                    "media": "",
+                    "mediaLogo": "",
+                    "image_url": "",
+                    "pubDate": None,   # 처음에는 None
+                }
+            },
+            upsert=True,
         )
 
     results = await asyncio.gather(*tasks)
-    
-    for (author, content, media, mediaLogo, image_url, pubDate), news in zip(results, valid_news):
+
+    for (author, content, media, mediaLogo, image_url, pubDate), news in zip(
+        results, valid_news
+    ):
         # 1) 최소 품질 조건 정의
-        has_title   = bool(news.get("title", "").strip())
+        has_title = bool(news.get("title", "").strip())
         has_content = bool(content and content.strip())
-        has_media   = bool(media and media.strip())
-        has_date    = bool(pubDate and pubDate.strip())
-        
-        # 2) 본문도 없고, 언론사/날짜도 없으면 그냥 삭제(또는 스킵)
+        has_media = bool(media and media.strip())
+        has_date = bool(pubDate and pubDate.strip())
+
+        # 2) 본문도 없고, 언론사/날짜도 없으면 삭제
         if not has_title or (not has_content and not (has_media and has_date)):
             log(f"[DROP] 내용 부족으로 삭제: {news['title']}")
             collection.delete_one({"link": news["link"]})
             continue
-            
-        # 3) 정상 기사만 업데이트
+
+        # 3) pubDate 문자열 → datetime 변환
+        pub_date_dt = None
+        if has_date:
+            s = pubDate[:19]  # "2025-12-09T01:23:45+09:00" 형식 대비
+            for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S"):
+                try:
+                    pub_date_dt = datetime.strptime(s, fmt)
+                    break
+                except ValueError:
+                    continue
+        if pub_date_dt is None:
+            pub_date_dt = datetime(1970, 1, 1)
+
+        # 4) 정상 기사만 업데이트
         collection.update_one(
             {"link": news["link"]},
-            {"$set": {
-                "author": author,
-                "content": content,
-                "media": media,
-                "mediaLogo": mediaLogo,
-                "image_url": image_url,
-                "pubDate": pubDate
-            }}
+            {
+                "$set": {
+                    "author": author,
+                    "content": content,
+                    "media": media,
+                    "mediaLogo": mediaLogo,
+                    "image_url": image_url,
+                    "pubDate": pub_date_dt,  # ← datetime으로 저장
+                }
+            },
         )
 
     log(f"✅ {category} 뉴스 크롤링 완료. 총 저장: {len(valid_news)}건")
+
 
 # -------------------------
 # 전체 카테고리 크롤링
