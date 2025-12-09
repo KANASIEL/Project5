@@ -21,25 +21,57 @@ db = client["stock"]
 collection = db["news_crawling"]
 
 
+def _parse_pub_date(value):
+    """
+    pubDate를 datetime으로 변환.
+    - 이미 datetime이면 그대로 반환
+    - 문자열이면 여러 포맷을 시도해서 파싱
+    - 실패하면 None
+    """
+    if isinstance(value, datetime):
+        return value
+
+    if isinstance(value, str):
+        # 네이버 메타 태그(article:published_time)는 보통 ISO8601 형태
+        # 예: 2025-12-09T10:23:45+09:00 또는 2025-12-09T10:23:45
+        try:
+            # Python 3.11 이상이면 대부분 fromisoformat으로 처리 가능
+            return datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except Exception:
+            pass
+
+        # 혹시 모를 다른 포맷 대비
+        for fmt in ("%Y-%m-%d %H:%M:%S",
+                    "%Y-%m-%d"):
+            try:
+                return datetime.strptime(value, fmt)
+            except ValueError:
+                continue
+
+    return None
+
+
 def _sort_and_page(query, page, size, order):
-  news_list = list(collection.find(query, {"_id": 0}))
+    news_list = list(collection.find(query, {"_id": 0}))
 
-  # pubDate가 datetime이 아니면 기본값
-  for news in news_list:
-      if not isinstance(news.get("pubDate"), datetime):
-          news["pubDate"] = datetime(1970, 1, 1)
+    # pubDate를 datetime으로 변환 (파싱 실패 시 1970-01-01로)
+    for news in news_list:
+        parsed = _parse_pub_date(news.get("pubDate"))
+        news["pubDate"] = parsed if parsed is not None else datetime(1970, 1, 1)
 
-  reverse = (order != "asc")
-  news_list.sort(key=lambda x: x["pubDate"], reverse=reverse)
+    reverse = (order != "asc")
+    news_list.sort(key=lambda x: x["pubDate"], reverse=reverse)
 
-  start = page * size
-  end = start + size
-  content = news_list[start:end]
+    start = page * size
+    end = start + size
+    content = news_list[start:end]
 
-  for news in content:
-      news["pubDate"] = news["pubDate"].strftime("%Y-%m-%d %H:%M:%S")
+    # 응답에서는 문자열로 내려줌
+    for news in content:
+        news["pubDate"] = news["pubDate"].strftime("%Y-%m-%d %H:%M:%S")
 
-  return content, (len(news_list) + size - 1) // size
+    total_pages = (len(news_list) + size - 1) // size
+    return content, total_pages
 
 
 @app.route("/")
