@@ -7,6 +7,8 @@ import {
     useLocation,
 } from "react-router-dom";
 
+import "./App.css"
+
 import Header from "./common/Header.jsx";
 import Footer from "./common/Footer.jsx";
 
