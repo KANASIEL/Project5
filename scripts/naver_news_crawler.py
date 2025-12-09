@@ -186,33 +186,11 @@ async def fetch_news_list(session, url, max_items=1000):
         log(f"⚠ 뉴스 리스트 크롤링 실패: {url} / Error: {e}")
     return news_list
 
-# 🔹여러 페이지(예전 기사까지) 돌기
-async def fetch_news_list_with_pages(session, base_url, max_pages=5, max_items_per_page=50):
-    all_news = []
-    for page in range(1, max_pages + 1):
-        url = f"{base_url}?page={page}"
-        log(f"  - 리스트 크롤링: {url}")
-        page_news = await fetch_news_list(session, url, max_items=max_items_per_page)
-
-        # 더 이상 아이템 없으면 중단
-        if not page_news:
-            break
-
-        all_news.extend(page_news)
-    return all_news
-
 # -------------------------
 # 카테고리별 크롤링
 # -------------------------
 async def crawl_category(session, category, url):
-    # 여러 페이지(과거 기사까지) 크롤링
-    news_list = await fetch_news_list_with_pages(
-        session,
-        url,
-        max_pages=5,          # 몇 페이지까지 돌지
-        max_items_per_page=50 # 페이지당 최대 기사 수
-    )
-
+    news_list = await fetch_news_list(session, url)
     tasks = []
     valid_news = []
 
