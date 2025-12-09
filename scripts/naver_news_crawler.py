@@ -205,13 +205,14 @@ async def fetch_news_list_with_pages(session, base_url, max_pages=5, max_items_p
 # 카테고리별 크롤링
 # -------------------------
 async def crawl_category(session, category, url):
-#   news_list = await fetch_news_list(session, url)
- 	news_list = await fetch_news_list_with_pages(
+    # 여러 페이지(과거 기사까지) 크롤링
+    news_list = await fetch_news_list_with_pages(
         session,
         url,
         max_pages=5,          # 몇 페이지까지 돌지
         max_items_per_page=50 # 페이지당 최대 기사 수
     )
+
     tasks = []
     valid_news = []
 
