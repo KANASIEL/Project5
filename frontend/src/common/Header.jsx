@@ -4,7 +4,7 @@ import Logout from "../pages/Login/Logout";
 import "./Header.css";
 
 export default function Header() {
-    const { isLoggedIn, userName, logout } = useAuth();
+    const { isLoggedIn, nickname, logout } = useAuth();
 
     return (
         <header className="stock-header">
@@ -26,7 +26,7 @@ export default function Header() {
                     {isLoggedIn ? (
                         <div className="stock-header__user-logged">
                             <span className="stock-header__user-name">
-                                {userName}님
+                                {nickname}님	
                             </span>
                             <Link to="/mypage" className="stock-header__user-link">
                                 마이페이지

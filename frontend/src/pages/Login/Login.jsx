@@ -7,7 +7,7 @@ import "./Login.css";
 
 const Login = () => {
     const navigate = useNavigate();
-    const { loginSuccess } = useAuth();  // 🔥 여기 수정
+    const { loginSuccess } = useAuth();  // 로그인 상태 업데이트 함수
 
     const [userId, setUserId] = useState("");
     const [userPassword, setUserPassword] = useState("");
@@ -29,19 +29,39 @@ const Login = () => {
                 { withCredentials: true }
             );
 
+            // 문자열이면 백엔드 에러 메시지
             if (typeof response.data === "string") {
                 setErrorMsg(response.data);
                 return;
             }
 
-            // 🔥 전역 로그인 상태에 닉네임 저장
-            loginSuccess(response.data.nickname);
+            // -------------------------------------------
+            // 서버에서 온 JWT 토큰 저장
+            // -------------------------------------------
+			const token = response.data.token;
+			const nickname = response.data.user.nickname;
+
+            if (!token) {
+                setErrorMsg("서버에서 토큰을 받지 못했습니다.");
+                return;
+            }
+
+            // 1) localStorage 저장 → 새로고침해도 유지됨
+            localStorage.setItem("jwtToken", token);
+            localStorage.setItem("nickname", nickname);
+
+            // 2) axios 요청 시 자동으로 Authorization 추가되도록 설정
+            axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+            // -------------------------------------------
+
+            // 🔥 전역(context)에도 로그인 정보 업데이트
+            loginSuccess(nickname);
 
             alert("로그인 성공!");
             navigate("/");
 
         } catch (error) {
-            console.error(error);
+            console.error("로그인 오류:", error);
             setErrorMsg("로그인 중 오류가 발생했습니다.");
         }
     };
