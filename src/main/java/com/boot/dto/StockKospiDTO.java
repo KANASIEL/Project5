@@ -29,4 +29,5 @@ public class StockKospiDTO {
     private Integer rank;             // 순위
     private Double roe;               // ROE
     private Long volume;              // 거래량
+    private String search;  // 추가 (예: "삼성전자 005930 삼성전자 전자")
 }

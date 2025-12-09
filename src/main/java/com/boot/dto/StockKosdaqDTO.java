@@ -29,4 +29,5 @@ public class StockKosdaqDTO {
     private Integer rank;             // 순위
     private Double roe;               // ROE
     private Long volume;              // 거래량
+    private String search;
 }

@@ -23,17 +23,18 @@ public class StockKrxController {
     private final StockKosdaqService kosdaqService;
     private final RecentStockService recentStockService;
     private final RankingService rankingService;
+    private final StockCacheService stockCacheService;
 
-    // 1. KOSPI 목록
+
+    // StockKrxController.java  두 메서드만 이렇게 바꿔!
     @GetMapping("/krx/kospi/list")
-    public List<StockKospiDTO> getKospiList() {
-        return kospiService.findAll();
+    public List<Map<String, Object>> getKospiList() {
+        return stockCacheService.getKospiList();
     }
 
-    // 2. KOSDAQ 목록
     @GetMapping("/krx/kosdaq/list")
-    public List<StockKosdaqDTO> getKosdaqList() {
-        return kosdaqService.findAll();
+    public List<Map<String, Object>> getKosdaqList() {
+        return stockCacheService.getKosdaqList();
     }
 
     // 3. 종목 상세 정보 (KOSPI + KOSDAQ 통합)
