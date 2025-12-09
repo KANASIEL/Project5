@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { jwtDecode } from "jwt-decode";   //JWT 해석
 import { useAuth } from "../../context/AuthContext";
 import "./UpdateMypage.css";
 
