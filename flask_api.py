@@ -9,6 +9,10 @@ from pymongo.server_api import ServerApi
 
 import scripts.naver_news_crawler as crawler
 
+# 🔹 Redis 추가
+import redis
+import json
+
 app = Flask(__name__)
 CORS(app)
 
@@ -19,6 +23,11 @@ if not MONGO_URI:
 client = MongoClient(MONGO_URI, server_api=ServerApi("1"))
 db = client["stock"]
 collection = db["news_crawling"]
+
+# 🔹 로컬 테스트 기준 Redis (포트 6380)
+REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6380/0")
+redis_client = redis.from_url(REDIS_URL, decode_responses=True)
+CACHE_TTL = 60  # 초, 1분 캐시
 
 
 def _parse_pub_date(value):
@@ -50,32 +59,59 @@ def _parse_pub_date(value):
     return None
 
 
+# 🔹 Mongo 쿼리에서 바로 정렬 + 페이지네이션
 def _sort_and_page(query, page, size, order):
-    news_list = list(collection.find(query, {"_id": 0}))
+    sort_dir = -1 if order != "asc" else 1
 
-    parsed_list = []
-    for news in news_list:
+    cursor = (
+        collection.find(query, {"_id": 0})
+        .sort("pubDate", sort_dir)
+        .skip(page * size)
+        .limit(size)
+    )
+
+    content = []
+    for news in cursor:
         parsed = _parse_pub_date(news.get("pubDate"))
         if parsed is None:
-            # 날짜가 없거나 파싱 불가하면 응답에서 제외
             continue
-        news["pubDate"] = parsed
-        parsed_list.append(news)
+        news["pubDate"] = parsed.strftime("%Y-%m-%d %H:%M:%S")
+        content.append(news)
 
-    news_list = parsed_list
+    total_count = collection.count_documents(query)
+    total_pages = (total_count + size - 1) // size
 
-    reverse = order != "asc"
-    news_list.sort(key=lambda x: x["pubDate"], reverse=reverse)
-
-    start = page * size
-    end = start + size
-    content = news_list[start:end]
-
-    for news in content:
-        news["pubDate"] = news["pubDate"].strftime("%Y-%m-%d %H:%M:%S")
-
-    total_pages = (len(news_list) + size - 1) // size
     return content, total_pages
+
+
+# 🔹 Redis 캐시 유틸
+def _cache_key(prefix, category, page, size, order):
+    cat = category or ""
+    return f"{prefix}:cat={cat}:page={page}:size={size}:order={order}"
+
+
+def get_news_with_cache(prefix, category, page, size, order, query):
+    key = _cache_key(prefix, category, page, size, order)
+
+    # 1) 캐시 조회
+    try:
+        cached = redis_client.get(key)
+        if cached:
+            return json.loads(cached)
+    except Exception:
+        cached = None  # Redis 죽어 있어도 앱은 계속 돌아가게
+
+    # 2) 캐시 미스 → Mongo에서 조회
+    content, total_pages = _sort_and_page(query, page, size, order)
+    result = {"content": content, "number": page, "totalPages": total_pages}
+
+    # 3) 캐시에 저장
+    try:
+        redis_client.setex(key, CACHE_TTL, json.dumps(result))
+    except Exception:
+        pass
+
+    return result
 
 
 @app.route("/")
@@ -92,9 +128,9 @@ def get_news():
 
     query = {"category": category} if category else {}
 
-    content, total_pages = _sort_and_page(query, page, size, order)
-
-    return jsonify({"content": content, "number": page, "totalPages": total_pages})
+    # 🔹 Redis 캐시 사용
+    result = get_news_with_cache("news", category, page, size, order, query)
+    return jsonify(result)
 
 
 @app.route("/news/search")
@@ -124,8 +160,8 @@ def search_news():
     else:
         query = or_query
 
+    # 검색은 일단 캐시 없이 바로 Mongo 조회
     content, total_pages = _sort_and_page(query, page, size, order)
-
     return jsonify({"content": content, "number": page, "totalPages": total_pages})
 
 
@@ -139,7 +175,3 @@ if __name__ == "__main__":
     threading.Thread(target=run_crawler, daemon=True).start()
     port = int(os.environ.get("PORT", 8585))
     app.run(host="0.0.0.0", port=port, debug=False)
-    
-    
-#저장된 뉴스들을 날짜 기준으로 정렬·검색해서 React 프론트에 JSON으로 제공하고, 
-#동시에 뒤에서 계속 새 뉴스를 수집하게 만드는 것
