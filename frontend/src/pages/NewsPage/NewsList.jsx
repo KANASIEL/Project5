@@ -196,12 +196,7 @@ function NewsList() {
 
   // ⭐ 최근본에서 모달 열기 (친구 코드)
   const openModalFromRecent = (recentNewsItem) => {
-    const fullNewsItem = items.find(n =>
-      n._id === recentNewsItem._id || n.link === recentNewsItem.link
-    );
-    if (fullNewsItem) {
-      openModal(fullNewsItem);
-    }
+     setSelectedNews(recentNewsItem);   // 바로 모달에 넣기
   };
 
   const openModal = (news) => {
@@ -223,7 +218,13 @@ function NewsList() {
       title: newsItem.title,
       media: newsItem.media,
       _id: newsItem._id,
-      link: newsItem.link
+      link: newsItem.link,
+      content: newsItem.content,
+      image_url: newsItem.image_url,
+      mediaLogo: newsItem.mediaLogo,
+      pubDate: newsItem.pubDate,
+      score: newsItem.score,
+      author: newsItem.author,
     };
     setRecentlyViewed(prevList => {
       const filteredList = prevList.filter(item => item.title !== newsData.title);
@@ -231,14 +232,6 @@ function NewsList() {
     });
   };
 
-  // 언론사 목록 (친구 코드)
-  const MEDIA_COMPANIES = [
-    { id: 1, name: "조선일보", logo: "https://via.placeholder.com/30x30/0000FF/FFFFFF?text=CS" },
-    { id: 2, name: "중앙일보", logo: "https://via.placeholder.com/30x30/FF0000/FFFFFF?text=JA" },
-    { id: 3, name: "동아일보", logo: "https://via.placeholder.com/30x30/008000/FFFFFF?text=DA" },
-    { id: 4, name: "경향신문", logo: "https://via.placeholder.com/30x30/FFA500/FFFFFF?text=KH" },
-    { id: 5, name: "한국경제", logo: "https://via.placeholder.com/30x30/000000/FFFFFF?text=HK" },
-  ];
 
   const listToShow = items;
 
@@ -275,8 +268,8 @@ function NewsList() {
           {/* 🔵 검색결과 힌트 */}
           {initialKeyword && (
             <div className="search-hint">
-              💡 "<strong>{initialKeyword}</strong>" 검색 결과 ({items.length}건)
-              {isSearching && <span> 📊 TF-IDF 랭킹 적용됨</span>}
+               "<strong>{initialKeyword}</strong>" 검색 결과 ({items.length}건)
+              {isSearching && <span>  TF-IDF 랭킹 적용됨</span>}
             </div>
           )}
 
@@ -418,21 +411,6 @@ function NewsList() {
               <button onClick={() => goToPage(page + 1)} disabled={page + 1 === totalPages}>다음</button>
             </div>
           )}
-        </div>
-      </div>
-
-      {/* ⭐ 3. 오른쪽 사이드바: 언론사 (친구 코드) */}
-      <div className="sidebar-right">
-        <div className="sidebar-section media-section">
-          <h3 className="sidebar-title">📰 언론사</h3>
-          <ul className="media-category-list">
-            {MEDIA_COMPANIES.map((company) => (
-              <li key={company.id} className="media-item">
-                <img src={company.logo} alt={company.name} className="media-logo-sidebar" />
-                <span className="media-name">{company.name}</span>
-              </li>
-            ))}
-          </ul>
         </div>
       </div>
 
