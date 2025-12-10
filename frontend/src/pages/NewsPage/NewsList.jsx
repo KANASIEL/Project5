@@ -18,6 +18,9 @@ function NewsList() {
   // 🔵 당신 코드: AI 요약
   const [aiSummary, setAiSummary] = useState("");
   const [summaryLoading, setSummaryLoading] = useState(false);
+  
+  // ⭐ 거래대금 Top5 (추가)
+  const [tradeRanking, setTradeRanking] = useState([]);
 
   const pageSize = 5;
   
@@ -67,6 +70,21 @@ function NewsList() {
       console.error("Failed to save recent news to localStorage:", error);
     }
   }, [recentlyViewed]);
+  
+  // ⭐ 거래대금 랭킹 Top5 불러오기 (30초마다 갱신) - 추가
+   useEffect(() => {
+     const loadRanking = () => {
+       fetch(`${springBaseUrl}/api/krx/ranking/trade`)
+         .then((res) => res.json())
+         .then((data) => setTradeRanking(data || []))
+         .catch(() => {});
+     };
+     loadRanking();
+     const id = setInterval(loadRanking, 30000);
+     return () => clearInterval(id);
+   }, []);
+  
+  
 
   // 🔵 AI 요약 (당신 코드)
   const fetchAiSummary = async (query) => {
@@ -405,6 +423,35 @@ function NewsList() {
           )}
         </div>
       </div>
+	  
+	  {/* ⭐ 3. 오른쪽 사이드바: 거래대금 Top 5 */}
+	  <div className="sidebar-right">
+	    <div className="sidebar-section stock-ranking-section">
+	      <h3 className="sidebar-title">📊 거래대금 Top 5</h3>
+	      <ul className="stock-ranking-list">
+	        {tradeRanking.slice(0, 5).map((item, i) => (
+	          <li
+	            key={item.code || i}
+	            className="stock-ranking-item"
+	            // 필요하면 종목 상세로 이동
+	            onClick={() => navigate(`/krx/${item.code}`)}
+	          >
+	            <div className="stock-ranking-left">
+	              <span className="stock-ranking-rank">{i + 1}위</span>
+	              <div className="stock-ranking-name">{item.name}</div>
+	            </div>
+	            <div className="stock-ranking-amount">
+	              {item.score?.toLocaleString()}억
+	            </div>
+	          </li>
+	        ))}
+	      </ul>
+	    </div>
+	  </div>
+
+	  
+	  
+	  
 
       {/* ⭐ 4. 모달 (친구 코드 + 당신 코드 score 표시) */}
       {selectedNews && (
