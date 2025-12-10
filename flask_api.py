@@ -92,9 +92,10 @@ def get_news():
 
     query = {"category": category} if category else {}
 
-    content, total_pages = _sort_and_page(query, page, size, order)
+    # 🔹 캐시 레이어 사용
+    result = get_news_with_cache("news", query, page, size, order)
+    return jsonify(result)
 
-    return jsonify({"content": content, "number": page, "totalPages": total_pages})
 
 
 @app.route("/news/search")
@@ -139,3 +140,7 @@ if __name__ == "__main__":
     threading.Thread(target=run_crawler, daemon=True).start()
     port = int(os.environ.get("PORT", 8585))
     app.run(host="0.0.0.0", port=port, debug=False)
+    
+    
+#저장된 뉴스들을 날짜 기준으로 정렬·검색해서 React 프론트에 JSON으로 제공하고, 
+#동시에 뒤에서 계속 새 뉴스를 수집하게 만드는 것
