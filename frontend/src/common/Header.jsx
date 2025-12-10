@@ -18,7 +18,7 @@ export default function Header() {
                 <nav className="stock-header__nav">
                     <Link to="/" className="stock-header__nav-item">홈</Link>
                     <Link to="/krx/list" className="stock-header__nav-item">국내주식</Link>
-                    <Link to="/news" className="stock-header__nav-item">뉴스</Link>
+                    <a href="/news" className="stock-header__nav-item">뉴스</a>
                     <Link to="#" className="stock-header__nav-item">About</Link>
                 </nav>
 
