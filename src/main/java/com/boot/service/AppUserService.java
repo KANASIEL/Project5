@@ -11,9 +11,11 @@ public interface AppUserService {
     AppUserDTO findByKakaoId(String kakaoId);
     
     AppUserDTO findByNaverId(String naverId);
+    
+    AppUserDTO findByGoogleId(String naverId);
 
     String getAccessToken(String code, String state);
     AppUserDTO getUserInfo(String accessToken);
     
-    public Map<String, Object> getNaverProfile(String accessToken);
+    Map<String, Object> getNaverProfile(String accessToken);
 }

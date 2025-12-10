@@ -71,7 +71,7 @@ const KakaoLogin = () => {
 
     return (
         <button className="kakao-btn" onClick={handleKakaoLogin}>
-            카카오 로그인
+            카카오로 로그인
         </button>
     );
 };

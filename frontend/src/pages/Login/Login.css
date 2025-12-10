@@ -73,8 +73,8 @@
     border: none;
     padding: 16px 1px;
     border-radius: 20px;
-	font-size: 16px;
-	font-weight: 600;
+	font-size: 18px;
+	font-weight: bold;
     cursor: pointer;
     transition: background-color 0.3s ease;
     width: 100%;
@@ -88,7 +88,7 @@
 .login-register-btn{
 	position: relative;
 	top: 20px;
-	left: 385px;
+	left: 305px;
 	background: transparent;   
 	border: none;             
 	font: inherit;        
@@ -99,8 +99,41 @@
 	text-decoration: none;
 }
 
+.login-hr{
+	margin: 15px auto 20px auto;
+	margin-bottom: 20px;
+	height: 2px;
+	border: none;
+	background-color: #ffffff;
+	width: 100%;
+}
 
+.hr-with-text {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 20px 0;
+}
 
+.hr-with-text::before,
+.hr-with-text::after {
+  content: "";
+  flex: 1;
+  border-bottom: 2px solid #ffffff; /* 선 색상 */
+}
+
+.hr-with-text:not(:empty)::before {
+  margin-right: 10px; /* 글자 왼쪽 공간 */
+}
+
+.hr-with-text:not(:empty)::after {
+  margin-left: 10px; /* 글자 오른쪽 공간 */
+}
+
+.hr-with-text span {
+  color: #ffffff; /* 글자 색상 */
+  font-weight: bold;
+}
 
 
 

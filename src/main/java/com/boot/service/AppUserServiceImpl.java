@@ -53,6 +53,9 @@ public class AppUserServiceImpl implements AppUserService {
             if (dto.getNaverId() != null) {
                 return dao.findByNaverId(dto.getNaverId());
             }
+            if (dto.getGoogleId() != null) {
+            	return dao.findByGoogleId(dto.getGoogleId());
+            }
         }
 
         return user;
@@ -69,6 +72,10 @@ public class AppUserServiceImpl implements AppUserService {
         if (dto.getNaverId() != null) {
             return dao.findByNaverId(dto.getNaverId());
         }
+        
+        if (dto.getGoogleId() != null) {
+        	return dao.findByGoogleId(dto.getGoogleId());
+        }
 
         return null;
     }
@@ -81,6 +88,11 @@ public class AppUserServiceImpl implements AppUserService {
     @Override
     public AppUserDTO findByNaverId(String naverId) {
         return dao.findByNaverId(naverId);
+    }
+    
+    @Override
+    public AppUserDTO findByGoogleId(String googleId) {
+    	return dao.findByGoogleId(googleId);
     }
 
 

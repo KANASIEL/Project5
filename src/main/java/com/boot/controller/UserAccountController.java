@@ -62,9 +62,6 @@ public class UserAccountController {
     @GetMapping("/info")
     public ResponseEntity<?> getUserInfo(@RequestHeader("Authorization") String authHeader) {
     	
-    	System.out.println("🔥 받은 Authorization 헤더: " + authHeader);
-
-
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.status(401).body("토큰 없음");
         }

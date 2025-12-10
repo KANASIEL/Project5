@@ -63,6 +63,19 @@
 	    FROM app_user
 	    WHERE naver_id = #{userId}
 	    
+	    UNION
+	    
+		    SELECT
+	        naver_id AS user_id,
+	        SOCIAL_TYPE,
+	        email AS email,
+	        nickname AS nickname,
+	        profile_image AS profileImage,
+	        TO_CHAR(created_at, 'YYYY-MM-DD') AS createdAt,
+	        'NAVER' AS loginType
+	    FROM app_user
+	    WHERE google_id = #{userId}
+	    
 	</select>
 	
 		

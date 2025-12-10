@@ -21,8 +21,11 @@ import KakaoLogin from "./pages/Login/KakaoLogin.jsx";
 import Login from "./pages/Login/Login.jsx";
 import NaverLogin from "./pages/Login/NaverLogin.jsx";
 import NaverCallback from "./pages/Login/NaverCallback.jsx";
+import GoogleLogin from "./pages/Login/GoogleLogin.jsx";
+import CustomGoogleButton from "./pages/Login/CustomGoogleButton.jsx";
 import CustomNaverButton from "./pages/Login/CustomNaverButton.jsx";
 import Register from "./pages/Register/Register.jsx";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 
 import Mypage from "./pages/Mypage/Mypage.jsx";
 import UpdateMypage from "./pages/Mypage/UpdateMypage.jsx";
@@ -77,6 +80,8 @@ function Layout() {
                     <Route path="/news" element={<NewsList />} />
                     <Route path="/kakaoLogin" element={<KakaoLogin />} />
                     <Route path="/naverLogin" element={<NaverLogin />} />
+                    <Route path="/googleLogin" element={<GoogleLogin />} />
+                    <Route path="/customGoogleButton" element={<CustomGoogleButton />} />
                     <Route path="/login/naver/callback" element={<NaverCallback />} />
                     <Route path="/customNaverButton" element={<CustomNaverButton />} />
                     <Route path="/register" element={<Register />} />
@@ -93,11 +98,13 @@ function Layout() {
 
 function App() {
     return (
-        <Router>
-		<AuthProvider>
-            <Layout />
-		</AuthProvider>
-        </Router>
+			<GoogleOAuthProvider clientId="925554401773-fojodmg8ktecqu8g8usn87ifkh78fafc.apps.googleusercontent.com">
+				<AuthProvider>
+			        <Router>
+		            	<Layout />
+        			</Router>
+				</AuthProvider>
+			</GoogleOAuthProvider>
     );
 }
 

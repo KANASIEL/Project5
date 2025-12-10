@@ -4,7 +4,9 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import KakaoLogin from "./KakaoLogin";
 import NaverLogin from "./NaverLogin";
+import GoogleLogin from "./GoogleLogin";
 import CustomNaverButton from "../../pages/Login/CustomNaverButton.jsx";
+import CustomGoogleButton from "../../pages/Login/CustomGoogleButton";
 import "./Login.css";
 
 const Login = () => {
@@ -107,11 +109,19 @@ const Login = () => {
                     <button type="submit" className="login-btn">
                         로그인
                     </button>
-
+					
+					<div class="hr-with-text">
+					  <span>SNS LOGIN</span>
+					</div>
+					
                     <KakaoLogin />
 					
                     <NaverLogin />
 					<CustomNaverButton />
+					
+					
+					<GoogleLogin />
+					<CustomGoogleButton />
 
                     <button
                         type="button"

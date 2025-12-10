@@ -59,6 +59,8 @@ const Mypage = () => {
               ? "카카오 로그인"
               : user.loginType === "NAVER"
               ? "네이버 로그인"
+			  : user.loginType === "GOOGLE"
+			  ? "구글 로그인"
               : "일반 로그인"}
           </p>
         </div>
