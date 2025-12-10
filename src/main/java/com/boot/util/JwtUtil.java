@@ -45,4 +45,11 @@ public class JwtUtil {
                 .getBody()
                 .getSubject();
     }
+    
+    public String getLoginType(String token) {
+        return Jwts.parserBuilder().setSigningKey(key).build()
+                .parseClaimsJws(token)
+                .getBody()
+                .get("loginType", String.class);
+    }
 }

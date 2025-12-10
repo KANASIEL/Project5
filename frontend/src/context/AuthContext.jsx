@@ -3,52 +3,62 @@ import axios from "axios";
 
 const AuthContext = createContext();
 
-// 전역 Auth Provider
 export const AuthProvider = ({ children }) => {
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [nickname, setNickname] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState(null);
 
-    // ---------------------------------------------------------
-    // 새로고침(브라우저 reload) 시 localStorage에서 토큰 복원
-    // ---------------------------------------------------------
-    useEffect(() => {
-        const storedToken = localStorage.getItem("jwtToken");
-        const storedNickname = localStorage.getItem("nickname");
+  // 새로고침 시 localStorage에서 JWT 복원 + DB 유저 정보 불러오기
+  useEffect(() => {
+    const token = localStorage.getItem("jwtToken");
 
-        // 토큰이 있으면 axios 기본 헤더 설정
-        if (storedToken) {
-            axios.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`;
-            setIsLoggedIn(true);
-            setNickname(storedNickname || "");
-        }
-    }, []);
+    if (token && token !== "undefined") {
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-    // 로그인 성공 후 실행되는 함수
-    const loginSuccess = (nicknameValue) => {
-        setIsLoggedIn(true);
-        setNickname(nicknameValue);
-    };
+      loadUserInfo(token);
+    }
+  }, []);
 
-    // 로그아웃 기능
-    const logout = () => {
-        setIsLoggedIn(false);
-        setNickname("");
+  // 🔥 서버에서 진짜 유저 정보 가져오는 함수
+  const loadUserInfo = async (token) => {
+    try {
+      const res = await axios.get("http://localhost:8585/api/info", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-        // localStorage 제거
-        localStorage.removeItem("jwtToken");
-        localStorage.removeItem("nickname");
+      const dbUser = res.data;
 
-        // axios 헤더 제거
-        delete axios.defaults.headers.common["Authorization"];
-    };
+      setUser({
+        ...dbUser,
+        loginType: dbUser.social_type || dbUser.socialType || "LOCAL",
+      });
 
-    return (
-        <AuthContext.Provider
-            value={{ isLoggedIn, nickname, loginSuccess, logout }}
-        >
-            {children}
-        </AuthContext.Provider>
-    );
+      setIsLoggedIn(true);
+    } catch (err) {
+      console.error("사용자 정보 조회 실패:", err);
+      logout();
+    }
+  };
+
+  // 🔥 로그인 성공 → 토큰 저장 → 바로 DB 유저 정보 가져오기
+  const loginSuccess = async (token) => {
+    localStorage.setItem("jwtToken", token);
+    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+    await loadUserInfo(token); // ★ 여기! 즉시 DB 정보로 업데이트
+  };
+
+  const logout = () => {
+    localStorage.removeItem("jwtToken");
+    setUser(null);
+    setIsLoggedIn(false);
+    delete axios.defaults.headers.common["Authorization"];
+  };
+
+  return (
+    <AuthContext.Provider value={{ isLoggedIn, user, loginSuccess, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export const useAuth = () => useContext(AuthContext);

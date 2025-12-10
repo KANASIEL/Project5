@@ -1,5 +1,7 @@
 package com.boot.service;
 
+import java.util.Map;
+
 import com.boot.dto.AppUserDTO;
 
 public interface AppUserService {
@@ -7,5 +9,11 @@ public interface AppUserService {
 
 	 // 카카오 ID로 사용자 조회
     AppUserDTO findByKakaoId(String kakaoId);
+    
+    AppUserDTO findByNaverId(String naverId);
 
+    String getAccessToken(String code, String state);
+    AppUserDTO getUserInfo(String accessToken);
+    
+    public Map<String, Object> getNaverProfile(String accessToken);
 }

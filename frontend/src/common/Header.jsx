@@ -4,7 +4,7 @@ import Logout from "../pages/Login/Logout";
 import "./Header.css";
 
 export default function Header() {
-    const { isLoggedIn, nickname, logout } = useAuth();
+    const { isLoggedIn, user, logout } = useAuth();
 
     return (
         <header className="stock-header">
@@ -22,25 +22,17 @@ export default function Header() {
                     <Link to="#" className="stock-header__nav-item">About</Link>
                 </nav>
 
-                <div className="stock-header__user">
-                    {isLoggedIn ? (
-                        <div className="stock-header__user-logged">
-                            <span className="stock-header__user-name">
-                                {nickname}님	
-                            </span>
-                            <Link to="/mypage" className="stock-header__user-link">
-                                마이페이지
-                            </Link>
-
-                            {/* AuthContext logout 전달 */}
-                            <Logout onLogout={logout} />
-                        </div>
-                    ) : (
-                        <Link to="/login" className="stock-header__login-btn">
-                            로그인
-                        </Link>
-                    )}
-                </div>
+				<div className="stock-header__user">
+		          {isLoggedIn && user ? (
+		            <div className="stock-header__user-logged">
+		              <span className="stock-header__user-name">{user.nickname}님</span>
+		              <Link to="/mypage" className="stock-header__user-link">마이페이지</Link>
+		              <Logout onLogout={logout} />
+		            </div>
+		          ) : (
+		            <Link to="/login" className="stock-header__login-btn">로그인</Link>
+		          )}
+		        </div>
             </div>
         </header>
     );

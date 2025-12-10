@@ -114,4 +114,9 @@ public class UserAccountServiceImpl implements UserAccountService{
 	        return null;
 	    }
 	}
+	
+	@Override
+    public String getLoginType(String userId) {
+        return dao.getLoginType(userId);
+    }
 }

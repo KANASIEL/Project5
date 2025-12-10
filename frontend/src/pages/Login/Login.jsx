@@ -3,6 +3,8 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import KakaoLogin from "./KakaoLogin";
+import NaverLogin from "./NaverLogin";
+import CustomNaverButton from "../../pages/Login/CustomNaverButton.jsx";
 import "./Login.css";
 
 const Login = () => {
@@ -40,6 +42,7 @@ const Login = () => {
             // -------------------------------------------
 			const token = response.data.token;
 			const nickname = response.data.user.nickname;
+			const socialType = response.data.user.socialType;
 
             if (!token) {
                 setErrorMsg("서버에서 토큰을 받지 못했습니다.");
@@ -54,15 +57,15 @@ const Login = () => {
             axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
             // -------------------------------------------
 
-            // 🔥 전역(context)에도 로그인 정보 업데이트
-            loginSuccess(nickname);
+            // 전역(context)에도 로그인 정보 업데이트
+            + loginSuccess(token);
 
             alert("로그인 성공!");
             navigate("/");
 
         } catch (error) {
             console.error("로그인 오류:", error);
-            setErrorMsg("로그인 중 오류가 발생했습니다.");
+            setErrorMsg("아이디나 비밀번호가 일치하지 않습니다.");
         }
     };
 
@@ -106,6 +109,9 @@ const Login = () => {
                     </button>
 
                     <KakaoLogin />
+					
+                    <NaverLogin />
+					<CustomNaverButton />
 
                     <button
                         type="button"

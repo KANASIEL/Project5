@@ -61,6 +61,9 @@ public class UserAccountController {
     
     @GetMapping("/info")
     public ResponseEntity<?> getUserInfo(@RequestHeader("Authorization") String authHeader) {
+    	
+    	System.out.println("🔥 받은 Authorization 헤더: " + authHeader);
+
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.status(401).body("토큰 없음");
@@ -80,7 +83,7 @@ public class UserAccountController {
     }
     
     @PostMapping("/modifyUser")
-    public int modifyUser(
+    public ResponseEntity<?> modifyUser(
             @RequestParam("user_id") String userId,
             @RequestParam("email") String email,
             @RequestParam("nickname") String nickname,
@@ -99,30 +102,61 @@ public class UserAccountController {
                 account.setProfileImage(savedFileName);
             }
 
-            return userAccountService.updateUserInfo(account); // 성공하면 1 반환
+            int result = userAccountService.updateUserInfo(account);
+
+            if (result == 1) {
+
+                // 🔥 DB에서 loginType 가져오기 (LOCAL / KAKAO / NAVER)
+                String loginType = userAccountService.getLoginType(userId);
+
+                // 🔥 generateToken() 말고 createToken() 사용
+                String newToken = jwtUtil.createToken(userId, loginType);
+
+                Map<String, Object> response = new HashMap<>();
+                response.put("result", 1);
+                response.put("token", newToken);
+
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.ok(Map.of("result", 0));
+            }
+
         } catch (Exception e) {
             e.printStackTrace();
-            return 0; // 실패
+            return ResponseEntity.status(500).body("Error");
         }
     }
 
 
     
     @PostMapping("/deleteUser")
-    public int deleteUser(HttpSession session) {
+    public ResponseEntity<?> deleteUser(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body("토큰 없음");
+            }
 
-        String userId = (String) session.getAttribute("userId");
-        String loginType = (String) session.getAttribute("loginType");
+            String token = authHeader.substring(7);
 
-        if (userId == null || loginType == null) {
-            System.out.println("❌ 세션 정보 없음 → 실패");
-            return 0;
+            if (!jwtUtil.validateToken(token)) {
+                return ResponseEntity.status(401).body("유효하지 않은 토큰");
+            }
+
+            String userId = jwtUtil.getUsername(token);
+            String loginType = jwtUtil.getLoginType(token);
+
+            // null 체크
+            if (userId == null || loginType == null) {
+                return ResponseEntity.status(400).body("userId 또는 loginType이 null");
+            }
+
+            int result = userAccountService.deleteUser(userId, loginType);
+
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            e.printStackTrace(); // 서버 로그 확인
+            return ResponseEntity.status(500).body("서버 오류 발생");
         }
-
-        int result = userAccountService.deleteUser(userId, loginType);
-
-        if (result > 0) session.invalidate();
-        return result;
     }
 
 }
