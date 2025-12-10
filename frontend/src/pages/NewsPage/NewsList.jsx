@@ -265,14 +265,6 @@ function NewsList() {
       {/* 🔵 2. 중앙: 뉴스 메인 (합성) */}
       <div className="news-main">
         <div className="news-container">
-          {/* 🔵 검색결과 힌트 */}
-          {initialKeyword && (
-            <div className="search-hint">
-               "<strong>{initialKeyword}</strong>" 검색 결과 ({items.length}건)
-              {isSearching && <span>  TF-IDF 랭킹 적용됨</span>}
-            </div>
-          )}
-
           {/* 검색창 */}
           <div className="search-box">
             <input
