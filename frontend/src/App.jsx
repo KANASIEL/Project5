@@ -37,6 +37,7 @@ function Layout() {
     const isMainPage = location.pathname === "/";
     const isLogin = location.pathname === "/login";
     const isRegister = location.pathname === "/register";
+	const isMypage = location.pathname === "/mypage";
 
     return (
         <div
@@ -48,7 +49,10 @@ function Layout() {
                 // 다른 페이지는 흰색 배경
                 background: (isMainPage || isLogin || isRegister)
                     ? "linear-gradient(135deg, #0f172a 0%, #1e40af 50%, #3b82f6 100%) fixed"
+					: isMypage
+					? "#f5f7fa"
                     : "#ffffff",
+					
                 backgroundAttachment: (isMainPage || isLogin || isRegister) ? "fixed" : "static",
                 color: (isMainPage || isLogin || isRegister) ? "white" : "#222222",
             }}

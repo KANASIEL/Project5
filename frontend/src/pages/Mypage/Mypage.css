@@ -1,13 +1,6 @@
-/* 전체 영역 */
-.mypage-wrap{
-	justify-content: center;
-	    padding: 40px 20px;
-	    background: #f5f7fa;
-	    min-height: auto;
-}
 
 .mypage-container {
-    width: 400px;
+    width: 450px;
     margin: 40px auto -10px;
     padding: 25px;
     background: #ffffff;
