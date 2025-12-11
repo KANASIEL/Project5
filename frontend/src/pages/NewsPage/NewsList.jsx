@@ -542,7 +542,10 @@ function NewsList() {
 				<div className="modal-overlay" onClick={closeModal}>
 					<div className="modal-content" onClick={(e) => e.stopPropagation()}>
 						<div className="modal-header">
-							<h2 dangerouslySetInnerHTML={{ __html: selectedNews.title || "" }} />
+							<h2
+								className="modal-title"
+								dangerouslySetInnerHTML={{ __html: selectedNews.title || "" }}
+							/>
 							<button className="modal-close-btn" onClick={closeModal}>×</button>
 						</div>
 						<div className="modal-body">
@@ -585,3 +588,4 @@ function NewsList() {
 }
 
 export default NewsList;
+
