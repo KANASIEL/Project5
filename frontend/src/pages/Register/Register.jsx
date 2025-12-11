@@ -30,61 +30,74 @@ const SignUpForm = () => {
     };
 
     // 폼 제출 처리
-    const handleSubmit = async (event) => {
-        event.preventDefault();
-		
-		setEmailError("");
-        setPasswordError("");
-        setUserIdError("");
-        setMessage("");
+	const handleSubmit = async (event) => {
+	    event.preventDefault();
 
-        const validationErrors = [];
-        // 유효성 검사
-        if (userPassword && !passwordValidation(userPassword)) {
-            setPasswordError("비밀번호는 최소 8자 이상,특수문자를 포함해야 합니다.");
-			validationErrors.push("비밀번호 유효성 검사 실패");
-        }
-        if (email && !emailValidation(email)) {
-            setEmailError("유효한 이메일 주소를 입력해주세요.");
-			validationErrors.push("이메일 유효성 검사 실패");
-        }
-        if (userId.trim() === "") {
-            validationErrors.push("아이디는 필수 입력 사항입니다.");
-        }
-        if (validationErrors.length > 0) {
-            return; // 유효성 검사 실패 시 폼 제출을 막음
-        }
+	    setEmailError("");
+	    setPasswordError("");
+	    setUserIdError("");
+	    setMessage("");
 
-        // 유효성 검사 통과 후 서버로 요청 보내기
-        const userAccountData = {
-            user_id: userId,
-            email: email,
-            nickname: nickname,
-            profileImage: profileImage,
-            user_password: userPassword, // 비밀번호는 서버로 전송
-        };
+	    const validationErrors = [];
 
-		try {
-            // 백엔드 API로 회원가입 요청
-            const response = await axios.post("api/register", userAccountData);
-            
-            // 서버에서 받은 메시지가 중복된 아이디나 이메일인지 확인
-            if (response.data === "이미 사용 중인 아이디입니다.") {
-                setUserIdError(response.data);  // 아이디 중복 메시지
-            } else if (response.data === "이미 사용 중인 이메일입니다.") {
-                setEmailError(response.data);  // 이메일 중복 메시지
-            } else {
-				//회원가입 성공 시 메인화면 이동
-				
-				alert("회원가입 완료되었습니다.")
-				navigate("/main");
-            }
+	    if (userPassword && !passwordValidation(userPassword)) {
+	        setPasswordError("비밀번호는 최소 8자 이상, 특수문자를 포함해야 합니다.");
+	        validationErrors.push("비밀번호 유효성 검사 실패");
+	    }
+	    if (email && !emailValidation(email)) {
+	        setEmailError("유효한 이메일 주소를 입력해주세요.");
+	        validationErrors.push("이메일 유효성 검사 실패");
+	    }
+	    if (userId.trim() === "") {
+	        validationErrors.push("아이디는 필수 입력 사항입니다.");
+	    }
+	    if (validationErrors.length > 0) return;
 
-        } catch (error) {
-            setMessage("회원가입에 실패했습니다.");
-            console.error(error);
-        }
-    };
+	    // ------------------------------------
+	    // 🔥 FormData 생성
+	    // ------------------------------------
+	    const formData = new FormData();
+
+	    // JSON 데이터를 Blob으로 감싸 넣기
+	    const userJson = {
+	        user_id: userId,
+	        user_password: userPassword,
+	        email: email,
+	        nickname: nickname,
+	    };
+
+	    formData.append(
+	        "user",
+	        new Blob([JSON.stringify(userJson)], { type: "application/json" })
+	    );
+
+	    // 파일 추가
+	    if (profileImage) {
+	        formData.append("profileImage", profileImage);
+	    }
+
+	    try {
+	        const response = await axios.post("/api/register", formData, {
+	            headers: {
+	                "Content-Type": "multipart/form-data",
+	            },
+	        });
+
+	        if (response.data === "이미 사용 중인 아이디입니다.") {
+	            setUserIdError(response.data);
+	        } else if (response.data === "이미 사용 중인 이메일입니다.") {
+	            setEmailError(response.data);
+	        } else {
+	            alert("회원가입 완료되었습니다.");
+	            navigate("/");
+	        }
+
+	    } catch (error) {
+	        setMessage("회원가입에 실패했습니다.");
+	        console.error(error);
+	    }
+	};
+
 
     return (
         <div className="regiter-wrapper">

@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,11 +33,14 @@ public class UserAccountController {
 	private JwtUtil jwtUtil;
 
     // 회원가입 처리
-    @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody UserAccountDTO userAccountDTO) {
-        String result = userAccountService.register(userAccountDTO);
-        return ResponseEntity.ok(result);  // 성공 메시지를 반환
-    }
+	@PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<String> register(
+	        @RequestPart("user") UserAccountDTO userAccountDTO,
+	        @RequestPart(value = "profileImage", required = false) MultipartFile profileImage
+	) {
+	    String result = userAccountService.register(userAccountDTO, profileImage);
+	    return ResponseEntity.ok(result);
+	}
     
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody UserAccountDTO dto) {
