@@ -15,9 +15,10 @@ function NewsList() {
 	const [isSearching, setIsSearching] = useState(false);
 	const [order, setOrder] = useState("desc");
 
-	// 🔵 완전 수정: AI 요약 상태 (chat_summary_lib 연동)
+	// 🔵 AI 요약 상태 (chat_summary_lib 연동)
 	const [aiSummary, setAiSummary] = useState(null); // ✅ 객체로 변경
 	const [summaryLoading, setSummaryLoading] = useState(false);
+	const [isInitialLoad, setIsInitialLoad] = useState(true);
 
 	// 🔵 오타 교정 상태
 	const [correction, setCorrection] = useState(null);
@@ -91,7 +92,7 @@ function NewsList() {
 
 
 
-	// 🔵 ✅ 완전 수정: AI 요약 (chat_summary_lib 완벽 연동)
+	// 🔵 AI 요약 (chat_summary_lib 완벽 연동)
 	const fetchAiSummary = async (query) => {
 		if (!query?.trim()) {
 			setAiSummary(null);
@@ -228,23 +229,43 @@ function NewsList() {
 
 	// 🔵 초기 로드
 	useEffect(() => {
-		if (initialKeyword) {
-			setKeyword(initialKeyword);
-			setIsSearching(true);
-			fetchNews(initialCategory || activeCategory, 0, initialKeyword, order);
-			// ❌ 여기서는 fetchAiSummary / fetchCorrection 호출 안 함
-		} else {
-			// 검색어 없을 때 기본 카테고리 뉴스
-			fetchNews(initialCategory || activeCategory, 0, "", order);
-		}
-		if (initialCategory) {
-			setActiveCategory(initialCategory);
-		}
-	}, [initialKeyword, initialCategory]);
+	  if (initialKeyword) {
+	    setKeyword(initialKeyword);
+	    setIsSearching(true);
+	    setAiSummary(null);
+	    setCorrection(null);
+	    
+	    fetchNews(initialCategory || activeCategory, 0, initialKeyword, order);
+	    
+	    // ✅ 초기 로드일 때만 AI/교정 실행
+	    if (isInitialLoad) {
+	      setTimeout(() => fetchAiSummary(initialKeyword), 500);
+	      fetchCorrection(initialKeyword);
+	    }
+	  } else {
+	    // 검색어 없을 때 기본 카테고리 뉴스
+	    fetchNews(initialCategory || activeCategory, 0, "", order);
+	    setAiSummary(null);
+	    setCorrection(null);
+	  }
+	  
+	  if (initialCategory) {
+	    setActiveCategory(initialCategory);
+	  }
+	  
+	  // 🔵 초기 로드 완료 후 false로 변경 (중복 방지)
+	  setIsInitialLoad(false);
+	}, [initialKeyword, initialCategory, isInitialLoad]); // ✅ isInitialLoad 의존성 추가
 
 	useEffect(() => {
+		// 검색 상태면 AI/교정 필요없음 → 스킵
+		if (isSearching && keyword.trim()) {
+			fetchNews(activeCategory, 0, keyword, order);
+			return;
+		}
+
 		fetchNews(activeCategory, 0, keyword, order);
-	}, [activeCategory, order]);
+	}, [activeCategory, order, isSearching, keyword]);
 
 	// 🔵 선택적 재검색
 	const handleReSearch = (term) => {
@@ -287,10 +308,11 @@ function NewsList() {
 
 	const handleCategoryChange = (newCategory) => {
 		setActiveCategory(newCategory);
-		const qs = new URLSearchParams();
-		qs.append("category", newCategory);
-		if (keyword.trim()) qs.append("q", keyword.trim());
-		navigate(`/news?${qs.toString()}`, { replace: true });
+		if (!keyword.trim()) {
+			const qs = new URLSearchParams();
+			qs.append("category", newCategory);
+			navigate(`/news?${qs.toString()}`, { replace: true });
+		}
 	};
 
 	// ⭐ 모달/최근본 함수들 (변경없음)
@@ -619,3 +641,4 @@ function NewsList() {
 }
 
 export default NewsList;
+
