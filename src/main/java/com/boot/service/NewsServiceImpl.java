@@ -1,6 +1,9 @@
 package com.boot.service;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -8,10 +11,15 @@ import java.util.stream.Collectors;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import com.boot.dao.SearchLogRepository;
 import com.boot.dao.StockNewsRepository;
 import com.boot.dto.StockNews;
 
@@ -20,14 +28,23 @@ public class NewsServiceImpl implements NewsService {
 
     private final StockNewsRepository stockNewsRepository;
     private final NlpService nlpService;
+    private final SearchLogRepository searchLogRepository;
+    private final MongoTemplate mongoTemplate;
 
     // 🔵 FastAPI 연동용 RestTemplate & 기본 URL
     private final RestTemplate restTemplate = new RestTemplate();
     private static final String FASTAPI_BASE_URL = "http://localhost:8000";
 
-    public NewsServiceImpl(StockNewsRepository stockNewsRepository, NlpService nlpService) {
+    public NewsServiceImpl(
+            StockNewsRepository stockNewsRepository,
+            NlpService nlpService,
+            MongoTemplate mongoTemplate,
+            SearchLogRepository searchLogRepository
+    ) {
         this.stockNewsRepository = stockNewsRepository;
         this.nlpService = nlpService;
+        this.mongoTemplate = mongoTemplate;
+        this.searchLogRepository = searchLogRepository;
     }
 
     @Override
@@ -237,4 +254,41 @@ public class NewsServiceImpl implements NewsService {
             );
         }
     }
+    
+ // 인기 검색어 (최근 n시간 집계)
+    @Override
+    public List<Map<String, Object>> getTrendingKeywords(int hours) {
+
+        LocalDateTime since = LocalDateTime.now().minusHours(hours);
+        Date sinceDate = Date.from(since.atZone(ZoneId.systemDefault()).toInstant());
+
+        Aggregation agg = Aggregation.newAggregation(
+                Aggregation.match(
+                        Criteria.where("timestamp").gte(sinceDate)
+                ),
+                Aggregation.group("keyword")
+                        .count().as("count"),
+                Aggregation.sort(Sort.Direction.DESC, "count"),
+                Aggregation.limit(50) 
+        );
+
+        AggregationResults<Map> results =
+                mongoTemplate.aggregate(agg, "search_log", Map.class);
+
+        List<Map<String, Object>> rawList = results.getMappedResults().stream()
+                .map(m -> Map.of(
+                        "keyword", m.get("_id"),
+                        "count", m.get("count")
+                ))
+                .toList();
+
+        return rawList.stream()
+                .map(m -> Map.of(
+                        "keyword", m.get("keyword"),
+                        "count", m.get("count")
+                ))
+                .limit(5)
+                .toList();
+    }
+
 }
