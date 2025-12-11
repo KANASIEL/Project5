@@ -35,6 +35,8 @@ import UpdateMypage from "./pages/Mypage/UpdateMypage.jsx";
 
 import { AuthProvider } from "./context/AuthContext";
 
+import CustomSelect from "./common/CustomSelect.jsx";
+
 function Layout() {
     const location = useLocation();
     const isMainPage = location.pathname === "/";

@@ -18,6 +18,9 @@
   
   "needLogin": "ログインが必要です。",
   "profile": "プロフィール",
+  "profileImg": "プロフィール画像",
+  "noFile" : "ファイルが選択されていません",
+  "select" : "選択",
   "id": "ID",
   "pw": "パスワード",
   "nickname": "ニックネーム",
@@ -34,6 +37,7 @@
   "deleteSuccess": "退会が完了しました。",
   "deleteFail": "退会に失敗しました。",
   "serverError": "サーバーエラーが発生しました。",
+  "loginFail" : "IDやパスワードが一致しません。",
   
   "profilePreviewAlt": "プロフィールプレビュー",
   "changePhoto": "写真を変更",
@@ -42,5 +46,13 @@
   "errorPassword": "パスワードは8文字以上で、記号を含める必要があります。",
   "submit": "保存する",
   "success": "会員情報が更新されました！",
-  "failed": "更新に失敗しました。"
+  "failed": "更新に失敗しました。",
+  
+  "errorEmail": "有効なメールアドレスを入力してください。",
+  "errorUserId": "ユーザーIDは必須項目です。",
+  "duplicateId": "既に使用されているユーザーIDです。",
+  "duplicateEmail": "既に使用されているメールアドレスです。",
+  "registerSuccess": "会員登録が完了しました。",
+  "registerFail": "会員登録に失敗しました。"
+  
 }

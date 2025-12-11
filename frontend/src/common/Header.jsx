@@ -3,16 +3,16 @@ import { useAuth } from "../context/AuthContext";
 import Logout from "../pages/Login/Logout";
 import { useTranslation } from "react-i18next";
 import i18n from "../i18n";
+import CustomSelect from "../common/CustomSelect";
 import "./Header.css";
 
 export default function Header() {
     const { isLoggedIn, user, logout } = useAuth();
     const { t } = useTranslation();
 
-	const changeLang = (e) => {
-	    const lang = e.target.value;
+	const changeLang = (lang) => {
 	    i18n.changeLanguage(lang);
-	    localStorage.setItem("i18nextLng", lang); // ⭐ 선택한 언어 저장
+	    localStorage.setItem("i18nextLng", lang);
 	};
 
     return (
@@ -37,16 +37,7 @@ export default function Header() {
                 <div className="stock-header__user">
 
                     {/* 언어 선택 */}
-                    <select
-                        className="stock-header__lang-select"
-                        onChange={changeLang}
-                        defaultValue={i18n.language}
-                        style={{ marginRight: "10px", padding: "4px" }}
-                    >
-                        <option value="ko">한국어</option>
-                        <option value="en">English</option>
-                        <option value="ja">日本語</option>
-                    </select>
+					<CustomSelect value={i18n.language} onChange={changeLang} />
 
                     {isLoggedIn && user ? (
                         <div className="stock-header__user-logged">
