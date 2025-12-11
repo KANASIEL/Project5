@@ -145,10 +145,34 @@ public class StockKrxController {
         return recentStockService.getRecentStocks();
     }
 
-    // ---------- 거래대금 랭킹 ----------
+    // 거래대금 Top 10
     @GetMapping("/krx/ranking/trade")
     public List<RankingDTO> getTradeRanking() {
-        return rankingService.getTradeRankingTop5();
+        return rankingService.getTopByTradeAmount();
+    }
+
+    // 거래량 Top 10
+    @GetMapping("/krx/ranking/volume")
+    public List<RankingDTO> getVolumeRanking() {
+        return rankingService.getTopByVolume();
+    }
+
+    // 등락률 Top 10
+    @GetMapping("/krx/ranking/change")
+    public List<RankingDTO> getChangeRanking() {
+        return rankingService.getTopByChangeRate();
+    }
+
+    // 시가총액 Top 10
+    @GetMapping("/krx/ranking/market")
+    public List<RankingDTO> getMarketCapRanking() {
+        return rankingService.getTopByMarketCap();
+    }
+
+    // 혼합점수 Top 10
+    @GetMapping("/krx/ranking/mixed")
+    public List<RankingDTO> getMixedRanking() {
+        return rankingService.getTopByMixedScore();
     }
 
 }

@@ -1,4 +1,4 @@
-// src/pages/Stock/KrxList.jsx - sx 0개, 순수 CSS 완전 분리 최종본
+// src/pages/Stock/KrxList.jsx
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -27,21 +27,24 @@ function KrxList() {
     const [searchTerm, setSearchTerm] = useState("");
     const [page, setPage] = useState(1);
     const [recentStocks, setRecentStocks] = useState([]);
-    const [tradeRanking, setTradeRanking] = useState([]);
     const [favoriteStocks, setFavoriteStocks] = useState([]);
     const [favoriteSet, setFavoriteSet] = useState(new Set());
 
+    const [rankingData, setRankingData] = useState([]);
+    const [rankingTypeIndex, setRankingTypeIndex] = useState(0);
+
+    const rankingTypes = [
+        { label: "거래대금", api: "/api/krx/ranking/trade", field: "score" },
+        { label: "거래량", api: "/api/krx/ranking/volume", field: "volume" },
+        { label: "등락률", api: "/api/krx/ranking/change", field: "changeRate" },
+        { label: "시가총액", api: "/api/krx/ranking/market", field: "marketCap" },
+        { label: "혼합점수", api: "/api/krx/ranking/mixed", field: "mixedScore" },
+    ];
+
     const formatKoreanTime = (dateStr) => {
         if (!dateStr) return "-";
-
-        // 1. dateStr을 Date 객체로 변환
         const date = new Date(dateStr);
-
-        // 2. 9시간을 빼기 (9 * 60 * 60 * 1000 밀리초)
-        // 이 처리가 서버에서 받은 시간이 9시간 빠를 경우 보정해줍니다.
         const adjustedTime = new Date(date.getTime() - 9 * 60 * 60 * 1000);
-
-        // 3. 조정된 시간을 한국어 형식으로 변환하여 반환
         return adjustedTime.toLocaleString("ko-KR", { timeZone: "Asia/Seoul" }).slice(0, -3);
     };
 
@@ -49,6 +52,7 @@ function KrxList() {
     const formatPrice = (p) => p != null ? p.toLocaleString() + "원" : "-";
     const calculateTradeAmount = (s) => Math.round((s.current_price || 0) * (s.volume || 0) / 1e8);
 
+    // KRX 리스트 조회
     const fetchData = async () => {
         try {
             setLoading(true);
@@ -65,6 +69,7 @@ function KrxList() {
         }
     };
 
+    // 최근 본 종목
     const loadRecentStocks = () => {
         axios.get("/api/krx/recent")
             .then(res => {
@@ -74,12 +79,7 @@ function KrxList() {
             .catch(() => {});
     };
 
-    const loadTradeRanking = useCallback(() => {
-        axios.get("/api/krx/ranking/trade")
-            .then(res => setTradeRanking(res.data || []))
-            .catch(() => {});
-    }, []);
-
+    // 즐겨찾기
     const loadFavorites = async () => {
         if (!isLoggedIn) {
             setFavoriteStocks([]);
@@ -110,6 +110,7 @@ function KrxList() {
         }
     };
 
+    // 최근 본 종목 저장
     const goToDetail = async (stock) => {
         try {
             await axios.post("/api/krx/recent/add", { code: stock.code, name: stock.name });
@@ -121,14 +122,33 @@ function KrxList() {
         navigate(`/krx/${stock.code}`);
     };
 
+    // 랭킹 로드
+    const loadRankingData = useCallback(async () => {
+        const type = rankingTypes[rankingTypeIndex];
+        try {
+            const res = await axios.get(type.api);
+            setRankingData(res.data || []);
+        } catch (err) {
+            console.error(`${type.label} 랭킹 로드 실패`, err);
+            setRankingData([]);
+        }
+    }, [rankingTypeIndex]);
+
+    // 초기 로드
     useEffect(() => { fetchData(); }, []);
     useEffect(() => {
         loadRecentStocks();
-        loadTradeRanking();
         loadFavorites();
-        const interval = setInterval(loadTradeRanking, 30000);
-        return () => clearInterval(interval);
-    }, [loadTradeRanking, isLoggedIn]);
+        loadRankingData();
+
+        const rankingInterval = setInterval(() => {
+            setRankingTypeIndex(prev => (prev + 1) % rankingTypes.length);
+        }, 10000);
+
+        return () => clearInterval(rankingInterval);
+    }, [loadRankingData, isLoggedIn]);
+
+    useEffect(() => { loadRankingData(); }, [rankingTypeIndex, loadRankingData]);
 
     const handleTabChange = (_, v) => { setTab(v); setPage(1); setSearchTerm(""); };
     const handleSearchChange = (e) => { setSearchTerm(e.target.value); setPage(1); };
@@ -153,6 +173,34 @@ function KrxList() {
         );
     }
 
+    const formatRankingValue = (item, field) => {
+        const value = item[field];
+        if (value == null) return "-";
+
+        // 억 단위로 변환이 필요한 경우
+        if (["score", "mixedScore"].includes(field)) {
+            const val = Number(value) / 1e8;
+            return val > 0 ? Math.floor(val).toLocaleString() + "억" : val.toLocaleString() + "억";
+        }
+
+        if (["marketCap"].includes(field)) {
+            const val = Number(value);
+            return val > 0 ? Math.floor(val).toLocaleString() + "억" : val.toLocaleString() + "억";
+        }
+
+        if (field === "volume") {
+            return Number(value).toLocaleString();
+        }
+
+        if (field === "changeRate") {
+            return value.toString();
+        }
+
+        const val = Number(value);
+        return val > 0 ? Math.floor(val).toLocaleString() : val.toLocaleString();
+    };
+
+
     return (
         <Box className="krx-page-wrapper">
             <Box className="krx-main-content">
@@ -164,7 +212,7 @@ function KrxList() {
                     </Typography>
                 )}
 
-                {/* 나의 즐겨찾기 */}
+                {/* 즐겨찾기 */}
                 {favoriteStocks.length > 0 && (
                     <Box className="krx-favorite-section">
                         <Typography className="krx-section-title">나의 즐겨찾기 ({favoriteStocks.length})</Typography>
@@ -195,7 +243,7 @@ function KrxList() {
                     </Box>
                 )}
 
-                {/* 검색창 */}
+                {/* 검색 */}
                 <Box className="krx-search-wrapper">
                     <TextField
                         fullWidth
@@ -212,6 +260,7 @@ function KrxList() {
                     )}
                 </Box>
 
+                {/* 탭 */}
                 <Tabs value={tab} onChange={handleTabChange} centered className="krx-tabs">
                     <Tab label={`KOSPI (${kospi.length}종목)`} />
                     <Tab label={`KOSDAQ (${kosdaq.length}종목)`} />
@@ -221,13 +270,14 @@ function KrxList() {
                     페이지 {page} / {totalPages} • 총 {filteredData.length}종목
                 </Typography>
 
+                {/* 시세표 */}
                 <TableContainer component={Paper} className="krx-table-container">
                     <Table stickyHeader size="small">
                         <TableHead>
                             <TableRow className="krx-table-head">
-                                <TableCell align="center" className="krx-head-cell">즐겨찾기</TableCell>
-                                {["순위", "종목명", "현재가", "전일비", "등락률", "거래량", "거래대금(억)", "시총(억)", "외인", "PER", "ROE"].map(h => (
-                                    <TableCell key={h} align="center" className="krx-head-cell">{h}</TableCell>
+                                <TableCell align="center">즐겨찾기</TableCell>
+                                {["순위","종목명","현재가","전일비","등락률","거래량","거래대금(억)","시총(억)","외인","PER","ROE"].map(h => (
+                                    <TableCell key={h} align="center">{h}</TableCell>
                                 ))}
                             </TableRow>
                         </TableHead>
@@ -239,7 +289,7 @@ function KrxList() {
                                 const isDown = stock.change_rate?.includes("-");
 
                                 return (
-                                    <TableRow key={stock.code} className="krx-table-row" hover>
+                                    <TableRow key={stock.code} hover>
                                         <TableCell align="center">
                                             <Tooltip title={isFav ? "즐겨찾기 제거" : "즐겨찾기 추가"}>
                                                 <IconButton size="small" onClick={() => toggleFavorite(stock)}>
@@ -257,21 +307,15 @@ function KrxList() {
                                             <div className="krx-stock-code">{stock.code}</div>
                                         </TableCell>
 
-                                        <TableCell align="right" className="krx-price-cell">{formatPrice(stock.current_price)}</TableCell>
-                                        <TableCell align="center" className={`krx-change-cell ${isUp ? "krx-up" : isDown ? "krx-down" : ""}`}>
-                                            {stock.change || "-"}
-                                        </TableCell>
-                                        <TableCell align="center" className={`krx-change-cell ${isUp ? "krx-up" : isDown ? "krx-down" : ""}`}>
-                                            {stock.change_rate || "-"}
-                                        </TableCell>
-                                        <TableCell align="center" className="krx-number-cell">{formatNumber(stock.volume)}</TableCell>
-                                        <TableCell align="center" className="krx-number-cell">{formatNumber(calculateTradeAmount(stock))}</TableCell>
-                                        <TableCell align="center" className="krx-number-cell">{formatNumber(stock.market_cap)}</TableCell>
-                                        <TableCell align="center" className="krx-number-cell">
-                                            {stock.foreign_ratio ? `${stock.foreign_ratio.toFixed(1)}%` : "-"}
-                                        </TableCell>
-                                        <TableCell align="center" className="krx-number-cell">{stock.per?.toFixed(2) || "-"}</TableCell>
-                                        <TableCell align="center" className="krx-number-cell">{stock.roe ? `${stock.roe.toFixed(2)}%` : "-"}</TableCell>
+                                        <TableCell align="right">{formatPrice(stock.current_price)}</TableCell>
+                                        <TableCell align="center" className={isUp ? "krx-up" : isDown ? "krx-down" : ""}>{stock.change || "-"}</TableCell>
+                                        <TableCell align="center" className={isUp ? "krx-up" : isDown ? "krx-down" : ""}>{stock.change_rate || "-"}</TableCell>
+                                        <TableCell align="center">{formatNumber(stock.volume)}</TableCell>
+                                        <TableCell align="center">{formatNumber(calculateTradeAmount(stock))}</TableCell>
+                                        <TableCell align="center">{formatNumber(stock.market_cap)}</TableCell>
+                                        <TableCell align="center">{stock.foreign_ratio != null ? stock.foreign_ratio.toFixed(1)+"%" : "-"}</TableCell>
+                                        <TableCell align="center">{stock.per?.toFixed(2) || "-"}</TableCell>
+                                        <TableCell align="center">{stock.roe != null ? stock.roe.toFixed(2)+"%" : "-"}</TableCell>
                                     </TableRow>
                                 );
                             })}
@@ -279,6 +323,7 @@ function KrxList() {
                     </Table>
                 </TableContainer>
 
+                {/* 페이지네이션 */}
                 {totalPages > 1 && (
                     <Box className="krx-pagination-wrapper">
                         <Pagination count={totalPages} page={page} onChange={handlePageChange} color="primary" size="large" />
@@ -286,20 +331,22 @@ function KrxList() {
                 )}
             </Box>
 
-            {/* 거래대금 Top 5 사이드바 */}
+            {/* 랭킹 사이드바 */}
             <Paper className="krx-ranking-sidebar">
-                <Typography className="krx-ranking-title">거래대금 Top 5</Typography>
-                {tradeRanking.slice(0, 5).map((item, i) => (
-                    <Box key={item.code} onClick={() => goToDetail({ code: item.code, name: item.name })} className="krx-ranking-item">
+                <Typography className="krx-ranking-title">{rankingTypes[rankingTypeIndex].label} Top 10</Typography>
+                {rankingData.slice(0,10).map((item,i) => (
+                    <Box key={item.code} onClick={() => goToDetail({ code:item.code, name:item.name })} className="krx-ranking-item">
                         <Box className="krx-ranking-item-inner">
                             <Box className="krx-ranking-left">
-                                <Typography className="krx-ranking-rank">{i + 1}</Typography>
+                                <Typography className="krx-ranking-rank">{i+1}</Typography>
                                 <Box>
                                     <Typography className="krx-ranking-name">{item.name}</Typography>
                                     <Typography className="krx-ranking-code">{item.code}</Typography>
                                 </Box>
                             </Box>
-                            <Typography className="krx-ranking-amount">{item.score?.toLocaleString()}억</Typography>
+                            <Typography className="krx-ranking-amount">
+                                {formatRankingValue(item, rankingTypes[rankingTypeIndex].field)}
+                            </Typography>
                         </Box>
                     </Box>
                 ))}
