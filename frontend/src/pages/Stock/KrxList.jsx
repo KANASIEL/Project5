@@ -166,6 +166,22 @@ function KrxList() {
                         </Typography>
                     )}
                 </Box>
+                {/* 최근 본 종목 칩 리스트 */}
+                {recentStocks.length > 0 && (
+                    <Box className="krx-recent-container">
+                        <Typography className="krx-recent-title">최근 본 종목</Typography>
+                        <Box className="krx-recent-chips">
+                            {recentStocks.map((stock) => (
+                                <Chip
+                                    key={stock.code}
+                                    label={`${stock.name} (${stock.code})`}
+                                    onClick={() => goToDetail(stock)}
+                                    className="krx-recent-chip"
+                                />
+                            ))}
+                        </Box>
+                    </Box>
+                )}
 
                 {/* 탭 */}
                 <Tabs

@@ -29,6 +29,7 @@
     margin-bottom: 1.6rem;
 }
 
+
 /* 테이블 */
 .krx-table-container {
     background: white;
@@ -102,7 +103,6 @@
     background: white;
     border-radius: 12px;           /* 더 작게 */
     padding: 12px 14px;            /* 패딩 줄임 */
-    box-shadow: 0 4px 16px rgba(0,0, 0.08); /* 그림자 더 은은하게 */
     border: 1px solid #e2e8f0;
     margin-bottom: 1.4rem;
 }
