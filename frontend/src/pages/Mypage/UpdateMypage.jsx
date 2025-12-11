@@ -3,8 +3,10 @@ import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import "./UpdateMypage.css";
+import { useTranslation } from "react-i18next";
 
 const ModifyUserInfo = () => {
+  const { t } = useTranslation();
   const { user, loginSuccess } = useAuth();
   const navigate = useNavigate();
 
@@ -39,7 +41,7 @@ const ModifyUserInfo = () => {
   const handleSubmit = async () => {
     setErrorMsg("");
     if (password && !passwordValidation(password)) {
-      setErrorMsg("비밀번호는 8자 이상이고 특수문자를 포함해야 합니다.");
+      setErrorMsg(t("errorPassword"));
       return;
     }
 
@@ -61,55 +63,55 @@ const ModifyUserInfo = () => {
 	  }
 
       if (res.data.result === 1) {
-        alert("회원 정보가 수정되었습니다!");
+        alert(t("success"));
         navigate("/mypage");
       } else {
-        alert("수정 실패");
+        alert(t("failed"));
       }
     } catch (err) {
       console.error("회원 정보 수정 에러", err);
-      alert("서버 오류!");
+      alert(t("serverError"));
     }
   };
 
-  if (!user) return <p>로그인이 필요합니다.</p>;
+  if (!user) return <p>{t("needLogin")}</p>;
 
   return (
     <div className="modify-container">
       <div className="modify-card">
-        <h2 className="modify-title">회원정보 수정</h2>
+        <h2 className="modify-title">{t("editUserInfo")}</h2>
         <div className="profile-area">
           <img src={preview || "/Default-Profile.png"} alt="프로필 미리보기" className="profile-preview" />
           <label className="upload-btn">
-            사진 변경
+            {t("changePhoto")}
             <input type="file" accept="image/*" onChange={handleImageChange} style={{ display: "none" }} />
           </label>
         </div>
 
         {user.loginType === "LOCAL" && (
           <div className="modify-item">
-            <label>아이디</label>
+            <label>{t("id")}</label>
             <p className="readonly-box">{user.user_id}</p>
           </div>
         )}
 
         <div className="modify-item">
-          <label>이메일</label>
+          <label>{t("email")}</label>
           <input type="text" value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
 
         <div className="modify-item">
-          <label>닉네임</label>
+          <label>{t("nickname")}</label>
           <input type="text" value={nickname} onChange={(e) => setNickname(e.target.value)} />
         </div>
 
         <div className="modify-item">
-          <label>비밀번호 변경 (선택)</label>
-          <input type="password" placeholder="새 비밀번호 입력" value={password} onChange={(e) => setPassword(e.target.value)} />
+          <label>{t("password")}</label>
+          <input type="password" placeholder={t("passwordPlaceholder")}  value={password} onChange={(e) => setPassword(e.target.value)} />
         </div>
 
         {errorMsg && <p className="error-msg">{errorMsg}</p>}
-        <button className="modify-btn" onClick={handleSubmit}>저장하기</button>
+        <button className="modify-btn" onClick={handleSubmit}>{t("submit")}</button>
       </div>
     </div>
   );

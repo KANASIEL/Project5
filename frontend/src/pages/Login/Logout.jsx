@@ -1,7 +1,9 @@
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 function Logout({ onLogout }) {
+	const { t } = useTranslation();
     const navigate = useNavigate();
 
     const handleLogout = () => {
@@ -20,7 +22,7 @@ function Logout({ onLogout }) {
 
     return (
         <button className="stock-header__login-btn" onClick={handleLogout}>
-            로그아웃
+            {t("logout")}
         </button>
     );
 }

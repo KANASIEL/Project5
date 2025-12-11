@@ -1,7 +1,9 @@
 import React from "react";
 import "./CustomNaverButton.css";
+import { useTranslation } from "react-i18next";
 
 const CustomNaverButton = () => {
+  const { t } = useTranslation();
   const handleClick = () => {
     if (window.naverLogin) {
       window.naverLogin.getLoginStatus(() => {
@@ -15,7 +17,7 @@ const CustomNaverButton = () => {
 
   return (
     <button onClick={handleClick} className="custom-naver-btn">
-      네이버로 로그인하기
+      {t("loginNaver")}
     </button>
   );
 };

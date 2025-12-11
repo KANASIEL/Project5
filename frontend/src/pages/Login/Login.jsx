@@ -8,8 +8,10 @@ import GoogleLogin from "./GoogleLogin";
 import CustomNaverButton from "../../pages/Login/CustomNaverButton.jsx";
 import CustomGoogleButton from "../../pages/Login/CustomGoogleButton";
 import "./Login.css";
+import { useTranslation } from "react-i18next";
 
 const Login = () => {
+	const { t } = useTranslation();
     const navigate = useNavigate();
     const { loginSuccess } = useAuth();  // 로그인 상태 업데이트 함수
 
@@ -79,11 +81,11 @@ const Login = () => {
             </div>
 
             <div className="login-container">
-                <h2 className="login-title">로그인</h2>
+                <h2 className="login-title">{t("login")}</h2>
 
                 <form onSubmit={handleLogin} className="login-form">
                     <div>
-                        <p className="login-label">아이디</p>
+                        <p className="login-label">{t("id")}</p>
                         <input
                             type="text"
                             value={userId}
@@ -94,7 +96,7 @@ const Login = () => {
                     </div>
 
                     <div>
-                        <p className="login-label">비밀번호</p>
+                        <p className="login-label">{t("pw")}</p>
                         <input
                             type="password"
                             value={userPassword}
@@ -107,7 +109,7 @@ const Login = () => {
                     {errorMsg && <p className="login-error">{errorMsg}</p>}
 
                     <button type="submit" className="login-btn">
-                        로그인
+                        {t("login")}
                     </button>
 					
 					<div class="hr-with-text">
@@ -128,7 +130,7 @@ const Login = () => {
                         onClick={() => navigate("/register")}
                         className="login-register-btn"
                     >
-                        회원가입
+                        {t("register")}
                     </button>
                 </form>
             </div>

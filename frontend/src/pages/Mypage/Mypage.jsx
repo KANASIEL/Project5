@@ -3,15 +3,17 @@ import { useAuth } from "../../context/AuthContext";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./Mypage.css";
+import { useTranslation } from "react-i18next";
 
 const Mypage = () => {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  if (!user) return <p>로그인이 필요합니다.</p>;
+  if (!user) return <p>{t("needLogin")}</p>;
 
   const handleDeleteAccount = async () => {
-    if (!window.confirm("정말로 회원 탈퇴하시겠습니까?")) return;
+    if (!window.confirm(t("confirmDelete"))) return;
 
     try {
       const res = await axios.post(
@@ -21,22 +23,22 @@ const Mypage = () => {
       );
 	  console.log("백엔드 응답:", res.data);
       if (res.data === 1) {
-        alert("회원 탈퇴 완료");
+        alert(t("deleteSuccess"));
         logout();
         navigate("/");
       } else {
-        alert("회원 탈퇴 실패");
+        alert(t("deleteFail"));
       }
     } catch (err) {
       console.error(err);
-      alert("서버 오류 발생");
+      alert(t("serverError"));
     }
   };
 
   return (
     <div className="mypage-wrap">
       <div className="mypage-container">
-        <h2 className="mypage-title">마이페이지</h2>
+        <h2 className="mypage-title">{t("mypage")}</h2>
         <img
           src={
             user.profileImage
@@ -49,29 +51,29 @@ const Mypage = () => {
           className="user-profileImage"
         />
         <div className="user-info-box">
-          {user.loginType === "LOCAL" && <p><strong>아이디:</strong> {user.user_id}</p>}
-          <p><strong>닉네임:</strong> {user.nickname}</p>
-          <p><strong>이메일:</strong> {user.email}</p>
-          <p><strong>가입일:</strong> {new Date(user.createdAt).toLocaleDateString()}</p>
+          {user.loginType === "LOCAL" && <p><strong>{t("id")}:</strong> {user.user_id}</p>}
+          <p><strong>{t("nickname")}:</strong> {user.nickname}</p>
+          <p><strong>{t("email")}:</strong> {user.email}</p>
+          <p><strong>{t("createdAt")}:</strong> {new Date(user.createdAt).toLocaleDateString()}</p>
           <p>
-            <strong>로그인 방식:</strong>{" "}
+            <strong>{t("loginType")}:</strong>{" "}
             {user.loginType === "KAKAO"
-              ? "카카오 로그인"
+              ? t("loginKakao")
               : user.loginType === "NAVER"
-              ? "네이버 로그인"
+              ? t("loginNaver")
 			  : user.loginType === "GOOGLE"
-			  ? "구글 로그인"
-              : "일반 로그인"}
+			  ? t("loginGoogle")
+              : t("loginLocal")}
           </p>
         </div>
 
         {user.loginType === "LOCAL" && (
           <button className="modify_link" onClick={() => navigate("/updateMypage")}>
-            회원정보 수정
+            {t("editUserInfo")}
           </button>
         )}
         <button className="delete-btn" onClick={handleDeleteAccount}>
-          회원 탈퇴
+          {t("deleteAccount")}
         </button>
       </div>
     </div>

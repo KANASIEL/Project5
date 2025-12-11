@@ -3,8 +3,10 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import "./KakaoLogin.css";
+import { useTranslation } from "react-i18next";
 
 const KakaoLogin = () => {
+	const { t } = useTranslation();
     const navigate = useNavigate();
     const { loginSuccess } = useAuth();
 
@@ -71,7 +73,7 @@ const KakaoLogin = () => {
 
     return (
         <button className="kakao-btn" onClick={handleKakaoLogin}>
-            카카오로 로그인하기
+            {t("loginKakao")}
         </button>
     );
 };
