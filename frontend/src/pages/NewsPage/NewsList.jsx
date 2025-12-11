@@ -27,7 +27,11 @@ function NewsList() {
 	const [tradeRanking, setTradeRanking] = useState([]);
 	//드롭다운
 	const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
-
+	// 인기 검색어
+	const [trendingKeywords, setTrendingKeywords] = useState([]);
+	// 검색 드롭다운
+	const [showDropdown, setShowDropdown] = useState(false);
+	
 	const pageSize = 5;
 
 	// 🔵 라우팅
@@ -90,7 +94,16 @@ function NewsList() {
 		return () => clearInterval(id);
 	}, []);
 
-
+	// 인기검색어
+	  const fetchTrendingKeywords = async () => {
+	    try {
+	      const res = await fetch(`${springBaseUrl}/api/news/trending?hours=24`);
+	      const data = await res.json();
+	      setTrendingKeywords(data || []);
+	    } catch (err) {
+	      console.error("❌ 인기검색어 로드 실패:", err);
+	    }
+	  };
 
 	// 🔵 AI 요약 (chat_summary_lib 완벽 연동)
 	const fetchAiSummary = async (query) => {
@@ -226,83 +239,86 @@ function NewsList() {
 			setLoading(false);
 		}
 	};
-
 	// 🔵 초기 로드
-	useEffect(() => {
-	  if (initialKeyword) {
-	    setKeyword(initialKeyword);
-	    setIsSearching(true);
-	    setAiSummary(null);
-	    setCorrection(null);
-	    
-	    fetchNews(initialCategory || activeCategory, 0, initialKeyword, order);
-	    
-	    // ✅ 초기 로드일 때만 AI/교정 실행
-	    if (isInitialLoad) {
-	      setTimeout(() => fetchAiSummary(initialKeyword), 500);
-	      fetchCorrection(initialKeyword);
-	    }
-	  } else {
-	    // 검색어 없을 때 기본 카테고리 뉴스
-	    fetchNews(initialCategory || activeCategory, 0, "", order);
-	    setAiSummary(null);
-	    setCorrection(null);
-	  }
-	  
-	  if (initialCategory) {
-	    setActiveCategory(initialCategory);
-	  }
-	  
-	  // 🔵 초기 로드 완료 후 false로 변경 (중복 방지)
-	  setIsInitialLoad(false);
-	}, [initialKeyword, initialCategory, isInitialLoad]); // ✅ isInitialLoad 의존성 추가
+		useEffect(() => {
+		  if (initialKeyword) {
+		    setKeyword(initialKeyword);
+		    setIsSearching(true);
+		    setAiSummary(null);
+		    setCorrection(null);
+		    
+		    fetchNews(initialCategory || activeCategory, 0, initialKeyword, order);
+		    
+		    // ✅ 초기 로드일 때만 AI/교정 실행
+		    if (isInitialLoad) {
+		      setTimeout(() => fetchAiSummary(initialKeyword), 500);
+		      fetchCorrection(initialKeyword);
+		    }
+		  } else {
+		    // 검색어 없을 때 기본 카테고리 뉴스
+		    fetchNews(initialCategory || activeCategory, 0, "", order);
+		    setAiSummary(null);
+		    setCorrection(null);
+		  }
+		  
+		  if (initialCategory) {
+		    setActiveCategory(initialCategory);
+		  }
+		  
+		  // 🔵 초기 로드 완료 후 false로 변경 (중복 방지)
+		  setIsInitialLoad(false);
+		}, [initialKeyword, initialCategory, isInitialLoad]); // ✅ isInitialLoad 의존성 추가
 
-	useEffect(() => {
-		// 검색 상태면 AI/교정 필요없음 → 스킵
-		if (isSearching && keyword.trim()) {
+		useEffect(() => {
+			// 검색 상태면 AI/교정 필요없음 → 스킵
+			if (isSearching && keyword.trim()) {
+				fetchNews(activeCategory, 0, keyword, order);
+				return;
+			}
+
 			fetchNews(activeCategory, 0, keyword, order);
-			return;
-		}
-
-		fetchNews(activeCategory, 0, keyword, order);
-	}, [activeCategory, order, isSearching, keyword]);
-
+		}, [activeCategory, order, isSearching, keyword]);
+		
+		// 🔵 인기 검색어 초기 로드
+		useEffect(() => {
+		  fetchTrendingKeywords();
+		}, []);
 	// 🔵 선택적 재검색
 	const handleReSearch = (term) => {
-		const t = (term || "").trim();
-		if (!t) return;
-		setKeyword(t);
-		setPage(0);
-		setIsSearching(true);
-		fetchNews(activeCategory, 0, t, order);
-		fetchAiSummary(t);
-		fetchCorrection(t);
+			const t = (term || "").trim();
+			if (!t) return;
+			setKeyword(t);
+			setPage(0);
+			setIsSearching(true);
+			fetchNews(activeCategory, 0, t, order);
+			fetchAiSummary(t);
+			fetchCorrection(t);
 
-		const qs = new URLSearchParams();
-		qs.append("category", activeCategory);
-		qs.append("q", t);
-		navigate(`/news?${qs.toString()}`, { replace: true });
-	};
+			const qs = new URLSearchParams();
+			qs.append("category", activeCategory);
+			qs.append("q", t);
+			navigate(`/news?${qs.toString()}`, { replace: true });
+		};
 
 	// 🔵 검색 실행
 	const handleSearch = () => {
-		setPage(0);
-		if (keyword.trim() === "") {
-			setIsSearching(false);
-			fetchNews(activeCategory, 0, "", order);
-			setAiSummary(null);
-			setCorrection(null);
-		} else {
-			setIsSearching(true);
-			fetchNews(activeCategory, 0, keyword, order);
-			setTimeout(() => fetchAiSummary(keyword), 500);
-			fetchCorrection(keyword);
-		}
-		const qs = new URLSearchParams();
-		qs.append("category", activeCategory);
-		if (keyword.trim()) qs.append("q", keyword.trim());
-		navigate(`/news?${qs.toString()}`, { replace: true });
-	};
+			setPage(0);
+			if (keyword.trim() === "") {
+				setIsSearching(false);
+				fetchNews(activeCategory, 0, "", order);
+				setAiSummary(null);
+				setCorrection(null);
+			} else {
+				setIsSearching(true);
+				fetchNews(activeCategory, 0, keyword, order);
+				setTimeout(() => fetchAiSummary(keyword), 500);
+				fetchCorrection(keyword);
+			}
+			const qs = new URLSearchParams();
+			qs.append("category", activeCategory);
+			if (keyword.trim()) qs.append("q", keyword.trim());
+			navigate(`/news?${qs.toString()}`, { replace: true });
+		};
 
 	const handleEnter = (e) => e.key === "Enter" && handleSearch();
 
@@ -401,13 +417,35 @@ function NewsList() {
 
 					{/* 검색창 */}
 					<div className="search-box">
-						<input
-							type="text"
-							placeholder="삼성전자, 애플, 엔비디아..."
-							value={keyword}
-							onChange={(e) => setKeyword(e.target.value)}
-							onKeyDown={handleEnter}
-						/>
+					<input
+					  type="text"
+					  placeholder="삼성전자, 애플, 엔비디아..."
+					  value={keyword}
+					  onChange={(e) => {
+					    setKeyword(e.target.value);
+					    setShowDropdown(true);   // ★ 검색 입력하면 열기
+					  }}
+					  onFocus={() => setShowDropdown(true)}  // ★ 포커스 시 열기
+					  onBlur={() => setTimeout(() => setShowDropdown(false), 200)} // ★ 포커스 벗어나면 닫기
+					  onKeyDown={handleEnter}
+					/>
+						{showDropdown && trendingKeywords.length > 0 && (
+							<div className="keyword-dropdown">
+							{/* 🔥 인기 검색어 TOP5 */}
+								        {trendingKeywords.slice(0, 5).map((k, idx) => (
+								          <div
+								            key={`trend-${idx}`}
+								            className="dropdown-item"
+								            onMouseDown={() => {
+								              setKeyword(k.keyword);
+								              handleSearch();
+								            }}
+								          >
+								            📈 {k.keyword}
+								          </div>
+								        ))}
+								      </div>
+								    )}
 						<button className="icon-btn" onClick={handleSearch}>
 							<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
 								<path d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z" stroke="#1e40af" strokeWidth="2" />
@@ -415,7 +453,29 @@ function NewsList() {
 							</svg>
 						</button>
 					</div>
+					
+					{/* 🔥 인기검색어 표시 */}
+					      {trendingKeywords.length > 0 && (
+					        <div className="trending-box">
+					          <span className="trending-title">📈 지금 많이 찾는 검색어</span>
 
+					          <div className="trending-list">
+					            {trendingKeywords.map((k, idx) => (
+					              <button
+					                key={idx}
+					                className="trending-item"
+					                onClick={() => {
+					                  setKeyword(k.keyword);
+					                  handleSearch();
+					                }}
+					              >
+					                #{k.keyword}
+					              </button>
+					            ))}
+					          </div>
+					        </div>
+					      )}
+					
 					{/* 🔵 ✅ 완전 수정: AI 요약 UI */}
 					{keyword.trim() && (
 						<div className="ai-summary-section">
@@ -641,4 +701,3 @@ function NewsList() {
 }
 
 export default NewsList;
-
