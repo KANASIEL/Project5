@@ -1,4 +1,4 @@
-// src/main/java/com/boot/controller/StockApiController.java
+// src/main/java/com/boot/controller/StockKrxController.java
 package com.boot.controller;
 
 import com.boot.dto.*;
@@ -8,6 +8,9 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -23,10 +26,50 @@ public class StockKrxController {
     private final StockKosdaqService kosdaqService;
     private final RecentStockService recentStockService;
     private final RankingService rankingService;
+    private final FavoriteStockService favoriteStockService;
     private final StockCacheService stockCacheService;
 
+// ==================== 즐겨찾기 API ====================
 
-    // StockKrxController.java  두 메서드만 이렇게 바꿔!
+    // 즐겨찾기 목록 조회
+    @GetMapping("/krx/favorites")
+    public List<StockSimpleDTO> getFavorites() {
+        String userId = getCurrentUserId();  // 아래에 있는 메서드 사용
+        return favoriteStockService.getFavorites(userId);
+    }
+
+    // 즐겨찾기 추가
+    @PostMapping("/krx/favorites/add")
+    public ResponseEntity<Void> addFavorite(@RequestBody Map<String, String> body) {
+        String code = body.get("code");
+        String name = body.get("name");
+        if (code == null || name == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        favoriteStockService.addFavorite(getCurrentUserId(), code, name);
+        return ResponseEntity.ok().build();
+    }
+
+    // 즐겨찾기 삭제
+    @DeleteMapping("/krx/favorites/remove")
+    public ResponseEntity<Void> removeFavorite(@RequestBody Map<String, String> body) {
+        String code = body.get("code");
+        if (code == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        favoriteStockService.removeFavorite(getCurrentUserId(), code);
+        return ResponseEntity.ok().build();
+    }
+
+    // 현재 로그인한 사용자 ID 가져오기 (JWT 기반)
+    private String getCurrentUserId() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName())
+                ? auth.getName()
+                : "guest";  // 로그인 안 된 경우 (테스트용)
+    }
+
+    // ---------- 기존 메서드 (캐시 적용) ----------
     @GetMapping("/krx/kospi/list")
     public List<Map<String, Object>> getKospiList() {
         return stockCacheService.getKospiList();
@@ -37,7 +80,7 @@ public class StockKrxController {
         return stockCacheService.getKosdaqList();
     }
 
-    // 3. 종목 상세 정보 (KOSPI + KOSDAQ 통합)
+    // ---------- 종목 상세 ----------
     @GetMapping("/krx/detail/{code}")
     public Object getStockDetail(@PathVariable String code) {
         StockKospiDTO kospi = kospiService.findByCode(code);
@@ -45,12 +88,12 @@ public class StockKrxController {
         return kosdaqService.findByCode(code);
     }
 
-    // 4. 뉴스 크롤링
+    // ---------- 뉴스 크롤링 ----------
     @GetMapping("/krx/news/{code}")
     public List<DetailNewsDTO> getNews(@PathVariable String code) {
         try {
             Document doc = Jsoup.connect("https://finance.naver.com/item/main.naver?code=" + code)
-                    .userAgent("Mozilla/5.0")
+                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
                     .timeout(10000)
                     .get();
 
@@ -65,11 +108,9 @@ public class StockKrxController {
                 n.setTitle(titleEl.text().trim());
                 n.setLink("https://finance.naver.com" + titleEl.attr("href"));
 
-                Elements emTags = item.select("em");
                 String date = "";
                 String related = null;
-
-                for (Element em : emTags) {
+                for (Element em : item.select("em")) {
                     if (em.parent() != null && em.parent().classNames().contains("link_relation")) {
                         related = em.text().trim();
                     } else {
@@ -88,25 +129,26 @@ public class StockKrxController {
         }
     }
 
-    // 5. 최근 본 종목 추가
+    // ---------- 최근 본 종목 ----------
     @PostMapping("/krx/recent/add")
-    public void addRecentStock(@RequestBody Map<String, String> body) {
+    public ResponseEntity<Void> addRecentStock(@RequestBody Map<String, String> body) {
         String code = body.get("code");
         String name = body.get("name");
         if (code != null && name != null) {
             recentStockService.addRecentStock(code, name);
         }
+        return ResponseEntity.ok().build();
     }
 
-    // 6. 최근 본 종목 조회
     @GetMapping("/krx/recent")
     public List<StockSimpleDTO> getRecentStocks() {
         return recentStockService.getRecentStocks();
     }
 
-    // 7. 실시간 거래대금 랭킹 Top5
+    // ---------- 거래대금 랭킹 ----------
     @GetMapping("/krx/ranking/trade")
     public List<RankingDTO> getTradeRanking() {
         return rankingService.getTradeRankingTop5();
     }
+
 }
