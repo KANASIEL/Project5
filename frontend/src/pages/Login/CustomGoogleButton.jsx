@@ -1,7 +1,9 @@
 import React from "react";
 import "./CustomGoogleButton.css";
+import { useTranslation } from "react-i18next";
 
 const CustomGoogleButton = () => {
+  const { t } = useTranslation();
   const handleGoogleLogin = () => {
     const googleBtn = document.querySelector("#googleLoginButton div[role='button']");
     if (googleBtn) {
@@ -13,7 +15,7 @@ const CustomGoogleButton = () => {
 
   return (
     <button className="custom-google-btn" onClick={handleGoogleLogin}>
-      구글로 로그인하기
+	{t("loginGoogle")}
     </button>
   );
 };

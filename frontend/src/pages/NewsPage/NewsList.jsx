@@ -159,6 +159,34 @@ function NewsList() {
 			setCorrection(null);
 		}
 	};
+	
+	// 거래대금/랭킹 값 포맷 (국내 주식페이지와 동일 로직)
+	const formatRankingValue = (item, field) => {
+	  const value = item[field];
+	  if (value == null) return "-";
+
+	  if (["score", "mixedScore"].includes(field)) {
+	    const val = Number(value) / 1e8; // 원 → 억
+	    return (val > 0 ? Math.floor(val) : val).toLocaleString() + "억";
+	  }
+
+	  if (["marketCap"].includes(field)) {
+	    const val = Number(value);
+	    return (val > 0 ? Math.floor(val) : val).toLocaleString() + "억";
+	  }
+
+	  if (field === "volume") {
+	    return Number(value).toLocaleString();
+	  }
+
+	  if (field === "changeRate") {
+	    return value.toString();
+	  }
+
+	  const val = Number(value);
+	  return (val > 0 ? Math.floor(val) : val).toLocaleString();
+	};
+
 
 	// 통합된 fetchNews
 	const fetchNews = async (category, pageNumber = 0, query = keyword, sortOrder = order) => {
@@ -529,7 +557,7 @@ function NewsList() {
 									<div className="stock-ranking-name">{item.name}</div>
 								</div>
 								<div className="stock-ranking-amount">
-									{item.score?.toLocaleString()}억
+								  {formatRankingValue(item, "score")}
 								</div>
 							</li>
 						))}
@@ -552,7 +580,10 @@ function NewsList() {
 							<div className="modal-meta">
 								<div className="left-meta">
 									{selectedNews.mediaLogo && <img src={selectedNews.mediaLogo} className="media-logo" alt="media" />}
-									{selectedNews.score != null && <span className="similarity-score-large">📊 {(selectedNews.score * 100).toFixed(0)}%</span>}
+									{/* ✅ 작성자 표시 */}
+									{selectedNews.author && (
+										<span className="news-author">{selectedNews.author}</span>
+									)}
 									{selectedNews.link && <a href={selectedNews.link} target="_blank" rel="noreferrer" className="modal-origin-btn">기사원문</a>}
 								</div>
 								<div className="right-meta">
@@ -588,4 +619,3 @@ function NewsList() {
 }
 
 export default NewsList;
-

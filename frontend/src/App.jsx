@@ -7,6 +7,9 @@ import {
     useLocation,
 } from "react-router-dom";
 
+// ⭐ i18n 초기화 (가장 위에서 단 1번만 실행)
+import "./i18n";
+
 import "./App.css"
 
 import Header from "./common/Header.jsx";
@@ -37,7 +40,7 @@ function Layout() {
     const isMainPage = location.pathname === "/";
     const isLogin = location.pathname === "/login";
     const isRegister = location.pathname === "/register";
-	const isMypage = location.pathname === "/mypage";
+    const isMypage = location.pathname === "/mypage";
 
     return (
         <div
@@ -45,14 +48,12 @@ function Layout() {
                 minHeight: "100vh",
                 display: "flex",
                 flexDirection: "column",
-                // 메인페이지는 그라데이션 배경
-                // 다른 페이지는 흰색 배경
                 background: (isMainPage || isLogin || isRegister)
                     ? "linear-gradient(135deg, #0f172a 0%, #1e40af 50%, #3b82f6 100%) fixed"
-					: isMypage
-					? "#f5f7fa"
+                    : isMypage
+                    ? "#f5f7fa"
                     : "#ffffff",
-					
+
                 backgroundAttachment: (isMainPage || isLogin || isRegister) ? "fixed" : "static",
                 color: (isMainPage || isLogin || isRegister) ? "white" : "#222222",
             }}
@@ -62,7 +63,6 @@ function Layout() {
             <main
                 style={{
                     flex: 1,
-                    // 메인페이지는 가운데 정렬 + 여백
                     ...(isMainPage
                         ? {
                             display: "flex",
@@ -70,8 +70,7 @@ function Layout() {
                             justifyContent: "center",
                             padding: "80px 20px",
                         }
-                        : // 다른 페이지는 위부터 꽉 차게 + 약간 여백
-                        {
+                        : {
                             padding: "100px 20px 120px",
                             minHeight: "calc(100vh - 220px)",
                         }),
@@ -102,13 +101,13 @@ function Layout() {
 
 function App() {
     return (
-			<GoogleOAuthProvider clientId="925554401773-fojodmg8ktecqu8g8usn87ifkh78fafc.apps.googleusercontent.com">
-				<AuthProvider>
-			        <Router>
-		            	<Layout />
-        			</Router>
-				</AuthProvider>
-			</GoogleOAuthProvider>
+        <GoogleOAuthProvider clientId="925554401773-fojodmg8ktecqu8g8usn87ifkh78fafc.apps.googleusercontent.com">
+            <AuthProvider>
+                <Router>
+                    <Layout />
+                </Router>
+            </AuthProvider>
+        </GoogleOAuthProvider>
     );
 }
 
