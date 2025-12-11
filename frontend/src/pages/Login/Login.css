@@ -52,8 +52,8 @@
 
 .login-input{
 	flex: 1;
-    padding: 1rem 5.6rem;
-	width: 100%;
+    padding: 1rem 1.4rem;
+	width: 410px;
     font-size: 1.15rem;
     background: rgba(255, 255, 255, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.3);
