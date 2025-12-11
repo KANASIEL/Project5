@@ -918,4 +918,103 @@
     text-align: center;
     padding: 20px;
     font-size: 14px;
+
+}
+
+
+/* 🔍 검색 힌트 (최초 검색 시 상단 표시) */
+.search-hint {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    text-align: center;
+    font-weight: 500;
+}
+
+/* 🔥 인기 검색어 드롭다운 */
+.keyword-dropdown {
+  position: absolute;
+  top: calc(100% + 6px); /* 검색창과 간격 6px */
+  left: 0;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px); /* 🔥 유리 효과 */
+  border: 1px solid rgba(200, 200, 200, 0.35);
+  border-radius: 12px;
+
+  padding: 6px 0;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08); /* 부드러운 그림자 */
+  z-index: 9999;
+
+  max-height: 240px;
+  overflow-y: auto;
+
+  animation: dropdownFade 0.18s ease-out; /* 🔥 부드러운 등장 */
+}
+
+/* 등장 애니메이션 */
+@keyframes dropdownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #333;
+  transition: 0.15s ease;
+}
+
+.dropdown-item:hover {
+  background: rgba(30, 64, 175, 0.08); /* 옅은 파랑 */
+  color: #1e40af; /* 파란 글자 */
+}
+
+/* 🔥 인기 검색어 박스 */
+.trending-box {
+  width: 60%;
+  margin: 10px auto 20px;
+  background: #f0f4ff;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid #c7d2fe;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.trending-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e3a8a;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.trending-list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.trending-item {
+  padding: 6px 12px;
+  font-size: 13px;
+  border-radius: 20px;
+  background: white;
+  border: 1px solid #93c5fd;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.trending-item:hover {
+  background: #dbeafe;
+  border-color: #60a5fa;
 }
