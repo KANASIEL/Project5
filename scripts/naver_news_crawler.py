@@ -166,7 +166,7 @@ async def fetch_news_detail(session, link):
 # -------------------------
 # 뉴스 리스트 크롤링
 # -------------------------
-async def fetch_news_list(session, url, max_items=1000):
+async def fetch_news_list(session, url, max_items=30):
     news_list = []
     try:
         async with session.get(url, headers=HEADERS, timeout=10) as resp:
@@ -285,3 +285,4 @@ async def periodic_crawl():
 
 if __name__ == "__main__":
     asyncio.run(periodic_crawl())
+
