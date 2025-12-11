@@ -31,7 +31,20 @@ function KrxList() {
     const [favoriteStocks, setFavoriteStocks] = useState([]);
     const [favoriteSet, setFavoriteSet] = useState(new Set());
 
-    const formatKoreanTime = (dateStr) => !dateStr ? "-" : new Date(dateStr).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" }).slice(0, -3);
+    const formatKoreanTime = (dateStr) => {
+        if (!dateStr) return "-";
+
+        // 1. dateStr을 Date 객체로 변환
+        const date = new Date(dateStr);
+
+        // 2. 9시간을 빼기 (9 * 60 * 60 * 1000 밀리초)
+        // 이 처리가 서버에서 받은 시간이 9시간 빠를 경우 보정해줍니다.
+        const adjustedTime = new Date(date.getTime() - 9 * 60 * 60 * 1000);
+
+        // 3. 조정된 시간을 한국어 형식으로 변환하여 반환
+        return adjustedTime.toLocaleString("ko-KR", { timeZone: "Asia/Seoul" }).slice(0, -3);
+    };
+
     const formatNumber = (n) => n != null ? n.toLocaleString() : "-";
     const formatPrice = (p) => p != null ? p.toLocaleString() + "원" : "-";
     const calculateTradeAmount = (s) => Math.round((s.current_price || 0) * (s.volume || 0) / 1e8);
