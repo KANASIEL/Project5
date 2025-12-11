@@ -9,7 +9,7 @@ import {
     Box, Paper, Table, TableBody, TableCell, TableContainer,
     TableHead, TableRow, Typography, Chip, Tabs, Tab,
     TextField, InputAdornment, Pagination, CircularProgress,
-    IconButton, Tooltip,
+    IconButton, Tooltip, Checkbox, FormControlLabel
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import "./KrxList.css";
@@ -33,6 +33,12 @@ function KrxList() {
     const [rankingData, setRankingData] = useState([]);
     const [rankingTypeIndex, setRankingTypeIndex] = useState(0);
 
+    // ---------------- 필터 & 정렬 상태 ----------------
+    const [sortField, setSortField] = useState(null);
+    const [sortOrder, setSortOrder] = useState("asc");
+    const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+    const [filters, setFilters] = useState({ volumeMin: null, marketCapMin: null });
+
     const rankingTypes = [
         { label: "거래대금", api: "/api/krx/ranking/trade", field: "score" },
         { label: "거래량", api: "/api/krx/ranking/volume", field: "volume" },
@@ -52,7 +58,7 @@ function KrxList() {
     const formatPrice = (p) => p != null ? p.toLocaleString() + "원" : "-";
     const calculateTradeAmount = (s) => Math.round((s.current_price || 0) * (s.volume || 0) / 1e8);
 
-    // KRX 리스트 조회
+    // ---------------- KRX 리스트 조회 ----------------
     const fetchData = async () => {
         try {
             setLoading(true);
@@ -69,17 +75,14 @@ function KrxList() {
         }
     };
 
-    // 최근 본 종목
+    // ---------------- 최근/즐겨찾기 ----------------
     const loadRecentStocks = () => {
         axios.get("/api/krx/recent")
             .then(res => {
                 const unique = Array.from(new Map((res.data || []).map(s => [s.code, s])).values()).slice(0, 5);
                 setRecentStocks(unique);
-            })
-            .catch(() => {});
+            }).catch(() => {});
     };
-
-    // 즐겨찾기
     const loadFavorites = async () => {
         if (!isLoggedIn) {
             setFavoriteStocks([]);
@@ -90,27 +93,17 @@ function KrxList() {
             const res = await axios.get("/api/krx/favorites");
             setFavoriteStocks(res.data);
             setFavoriteSet(new Set(res.data.map(s => s.code)));
-        } catch (err) {
-            console.error("즐겨찾기 로드 실패:", err);
-        }
+        } catch (err) { console.error("즐겨찾기 로드 실패:", err); }
     };
-
     const toggleFavorite = async (stock) => {
         if (!isLoggedIn) return alert("로그인 후 이용 가능합니다!");
         const isFav = favoriteSet.has(stock.code);
         try {
-            if (isFav) {
-                await axios.delete("/api/krx/favorites/remove", { data: { code: stock.code } });
-            } else {
-                await axios.post("/api/krx/favorites/add", { code: stock.code, name: stock.name });
-            }
+            if (isFav) await axios.delete("/api/krx/favorites/remove", { data: { code: stock.code } });
+            else await axios.post("/api/krx/favorites/add", { code: stock.code, name: stock.name });
             loadFavorites();
-        } catch (err) {
-            alert(isFav ? "삭제 실패" : "추가 실패");
-        }
+        } catch { alert(isFav ? "삭제 실패" : "추가 실패"); }
     };
-
-    // 최근 본 종목 저장
     const goToDetail = async (stock) => {
         try {
             await axios.post("/api/krx/recent/add", { code: stock.code, name: stock.name });
@@ -122,7 +115,7 @@ function KrxList() {
         navigate(`/krx/${stock.code}`);
     };
 
-    // 랭킹 로드
+    // ---------------- 랭킹 ----------------
     const loadRankingData = useCallback(async () => {
         const type = rankingTypes[rankingTypeIndex];
         try {
@@ -134,20 +127,15 @@ function KrxList() {
         }
     }, [rankingTypeIndex]);
 
-    // 초기 로드
+    // ---------------- 초기 로드 ----------------
     useEffect(() => { fetchData(); }, []);
     useEffect(() => {
         loadRecentStocks();
         loadFavorites();
         loadRankingData();
-
-        const rankingInterval = setInterval(() => {
-            setRankingTypeIndex(prev => (prev + 1) % rankingTypes.length);
-        }, 10000);
-
+        const rankingInterval = setInterval(() => setRankingTypeIndex(prev => (prev+1)%rankingTypes.length), 10000);
         return () => clearInterval(rankingInterval);
     }, [loadRankingData, isLoggedIn]);
-
     useEffect(() => { loadRankingData(); }, [rankingTypeIndex, loadRankingData]);
 
     const handleTabChange = (_, v) => { setTab(v); setPage(1); setSearchTerm(""); };
@@ -155,74 +143,103 @@ function KrxList() {
     const handlePageChange = (_, v) => { setPage(v); window.scrollTo({ top: 0, behavior: "smooth" }); };
 
     const currentData = tab === 0 ? kospi : kosdaq;
+
+    // ---------------- tradeAmount 추가 ----------------
+    const processedData = useMemo(() => currentData.map(stock => ({
+        ...stock,
+        tradeAmount: calculateTradeAmount(stock)
+    })), [currentData]);
+
     const filteredData = useMemo(() => {
-        if (!searchTerm.trim()) return currentData;
-        const term = searchTerm.trim().toLowerCase();
-        return currentData.filter(s => s.name?.toLowerCase().includes(term) || s.code?.includes(term));
-    }, [currentData, searchTerm]);
+        let data = processedData;
+        if (searchTerm.trim()) {
+            const term = searchTerm.trim().toLowerCase();
+            data = data.filter(s => s.name?.toLowerCase().includes(term) || s.code?.includes(term));
+        }
+        return data;
+    }, [processedData, searchTerm]);
 
-    const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
-    const displayData = filteredData.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+    // ---------------- 정렬 & 필터 적용 ----------------
+    const sortedData = useMemo(() => {
+        let data = [...filteredData];
 
-    if (loading) {
-        return (
-            <Box className="krx-loading-wrapper">
-                <CircularProgress size={60} thickness={4} />
-                <Typography className="krx-loading-text">실시간 시세 로딩 중...</Typography>
-            </Box>
-        );
-    }
+        if (showFavoritesOnly) data = data.filter(s => favoriteSet.has(s.code));
+        if (filters.volumeMin) data = data.filter(s => (s.volume || 0) >= filters.volumeMin);
+        if (filters.marketCapMin) data = data.filter(s => (s.market_cap || 0) >= filters.marketCapMin);
 
-    const formatRankingValue = (item, field) => {
-        const value = item[field];
-        if (value == null) return "-";
+        if (sortField) {
+            data = data.map((item, index) => ({ item, index }));
+            data.sort((a, b) => {
+                let aVal = a.item[sortField] ?? 0;
+                let bVal = b.item[sortField] ?? 0;
 
-        // 억 단위로 변환이 필요한 경우
-        if (["score", "mixedScore"].includes(field)) {
-            const val = Number(value) / 1e8;
-            return val > 0 ? Math.floor(val).toLocaleString() + "억" : val.toLocaleString() + "억";
+                // 등락률 숫자로 변환
+                if (sortField === "change_rate") {
+                    aVal = parseFloat(aVal?.replace("%","")) || 0;
+                    bVal = parseFloat(bVal?.replace("%","")) || 0;
+                }
+
+                // 종목명 가나다순
+                if (sortField === "name") {
+                    return sortOrder==="asc"
+                        ? aVal.localeCompare(bVal)
+                        : bVal.localeCompare(aVal);
+                }
+
+                if (aVal === bVal) return a.index - b.index;
+                return sortOrder === "asc" ? aVal - bVal : bVal - aVal;
+            });
+            data = data.map(d => d.item);
         }
 
-        if (["marketCap"].includes(field)) {
-            const val = Number(value);
-            return val > 0 ? Math.floor(val).toLocaleString() + "억" : val.toLocaleString() + "억";
-        }
+        return data;
+    }, [filteredData, sortField, sortOrder, filters, showFavoritesOnly]);
 
-        if (field === "volume") {
-            return Number(value).toLocaleString();
-        }
+    const totalPages = Math.ceil(sortedData.length / ITEMS_PER_PAGE);
+    const displayData = sortedData.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
-        if (field === "changeRate") {
-            return value.toString();
-        }
-
-        const val = Number(value);
-        return val > 0 ? Math.floor(val).toLocaleString() : val.toLocaleString();
+    const handleSort = (field) => {
+        if (sortField === field) setSortOrder(prev => prev==="asc"?"desc":"asc");
+        else { setSortField(field); setSortOrder("asc"); }
     };
 
+    const formatRankingValue = (item, field) => {
+        const value = item[field]; if (value==null) return "-";
+        if (["score","mixedScore"].includes(field)) return (Math.floor(Number(value)/1e8)).toLocaleString()+"억";
+        if (["marketCap"].includes(field)) return (Math.floor(Number(value))).toLocaleString()+"억";
+        if (field==="volume" || field==="tradeAmount") return Number(value).toLocaleString();
+        if (field==="changeRate") return value.toString();
+        return Number(value).toLocaleString();
+    };
+
+    if (loading) return (
+        <Box className="krx-loading-wrapper">
+            <CircularProgress size={60} thickness={4} />
+            <Typography className="krx-loading-text">실시간 시세 로딩 중...</Typography>
+        </Box>
+    );
 
     return (
         <Box className="krx-page-wrapper">
             <Box className="krx-main-content">
                 <Typography className="krx-page-title">KRX 실시간 시세표</Typography>
-
                 {currentData.length > 0 && (
                     <Typography className="krx-crawled-time">
                         기준 시간: {formatKoreanTime(currentData[0].crawled_at)}
                     </Typography>
                 )}
 
-                {/* 즐겨찾기 */}
-                {favoriteStocks.length > 0 && (
+                {/* 즐겨찾기/최근 */}
+                {favoriteStocks.length>0 && (
                     <Box className="krx-favorite-section">
                         <Typography className="krx-section-title">나의 즐겨찾기 ({favoriteStocks.length})</Typography>
                         <Box className="krx-chips-wrapper">
-                            {favoriteStocks.map(stock => (
+                            {favoriteStocks.map(stock=>(
                                 <Chip
                                     key={stock.code}
                                     label={`${stock.name} (${stock.code})`}
-                                    onClick={() => goToDetail(stock)}
-                                    onDelete={() => toggleFavorite(stock)}
+                                    onClick={()=>goToDetail(stock)}
+                                    onDelete={()=>toggleFavorite(stock)}
                                     deleteIcon={<StarIcon className="krx-star-icon" />}
                                     className="krx-favorite-chip"
                                 />
@@ -230,15 +247,11 @@ function KrxList() {
                         </Box>
                     </Box>
                 )}
-
-                {/* 최근 본 종목 */}
-                {recentStocks.length > 0 && (
+                {recentStocks.length>0 && (
                     <Box className="krx-recent-section">
                         <Typography className="krx-section-title">최근 본 종목</Typography>
                         <Box className="krx-chips-wrapper">
-                            {recentStocks.map(s => (
-                                <Chip key={s.code} label={`${s.name} (${s.code})`} onClick={() => goToDetail(s)} className="krx-recent-chip" />
-                            ))}
+                            {recentStocks.map(s=>(<Chip key={s.code} label={`${s.name} (${s.code})`} onClick={()=>goToDetail(s)} className="krx-recent-chip" />))}
                         </Box>
                     </Box>
                 )}
@@ -246,18 +259,27 @@ function KrxList() {
                 {/* 검색 */}
                 <Box className="krx-search-wrapper">
                     <TextField
-                        fullWidth
-                        placeholder="종목명 또는 코드 검색"
-                        value={searchTerm}
-                        onChange={handleSearchChange}
-                        InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon /></InputAdornment> }}
+                        fullWidth placeholder="종목명 또는 코드 검색" value={searchTerm} onChange={handleSearchChange}
+                        InputProps={{ startAdornment:<InputAdornment position="start"><SearchIcon /></InputAdornment> }}
                         className="krx-search-input"
                     />
-                    {searchTerm && (
-                        <Typography className="krx-search-result">
-                            검색 결과: <strong>{filteredData.length}</strong>개
-                        </Typography>
-                    )}
+                    {searchTerm && <Typography className="krx-search-result">검색 결과: <strong>{filteredData.length}</strong>개</Typography>}
+                </Box>
+
+                {/* 필터 & 즐겨찾기 */}
+                <Box display="flex" gap={2} mb={2} alignItems="center" flexWrap="wrap">
+                    <TextField
+                        label="거래량 최소" type="number" size="small"
+                        onChange={e=>setFilters(prev=>({...prev, volumeMin:e.target.value?Number(e.target.value):null}))}
+                    />
+                    <TextField
+                        label="시총 최소(억)" type="number" size="small"
+                        onChange={e=>setFilters(prev=>({...prev, marketCapMin:e.target.value?Number(e.target.value):null}))}
+                    />
+                    <FormControlLabel
+                        control={<Checkbox checked={showFavoritesOnly} onChange={()=>setShowFavoritesOnly(prev=>!prev)} />}
+                        label="즐겨찾기만 보기"
+                    />
                 </Box>
 
                 {/* 탭 */}
@@ -267,7 +289,7 @@ function KrxList() {
                 </Tabs>
 
                 <Typography className="krx-page-info">
-                    페이지 {page} / {totalPages} • 총 {filteredData.length}종목
+                    페이지 {page} / {totalPages} • 총 {sortedData.length}종목
                 </Typography>
 
                 {/* 시세표 */}
@@ -276,55 +298,97 @@ function KrxList() {
                         <TableHead>
                             <TableRow className="krx-table-head">
                                 <TableCell align="center">즐겨찾기</TableCell>
-                                {["순위","종목명","현재가","전일비","등락률","거래량","거래대금(억)","시총(억)","외인","PER","ROE"].map(h => (
-                                    <TableCell key={h} align="center">{h}</TableCell>
+                                {["순위","종목명","현재가","전일비","등락률","거래량","거래대금(억)","시총(억)","외인","PER","ROE"].map(h=>(
+                                    <TableCell
+                                        key={h} align="center"
+                                        onClick={()=>{
+                                            const fieldMap = {
+                                                "현재가":"current_price",
+                                                "거래량":"volume",
+                                                "거래대금(억)":"tradeAmount",
+                                                "시총(억)":"market_cap",
+                                                "외인":"foreign_ratio",
+                                                "PER":"per",
+                                                "ROE":"roe",
+                                                "등락률":"change_rate",
+                                                "전일비":"change",
+                                                "종목명":"name"
+                                            };
+                                            if(fieldMap[h]) handleSort(fieldMap[h]);
+                                        }}
+                                        style={{cursor:h==="순위"?"default":"pointer"}}
+                                    >
+                                        {h}
+                                        {sortField === (() => {
+                                            const fieldMap = {
+                                                "현재가":"current_price",
+                                                "거래량":"volume",
+                                                "거래대금(억)":"tradeAmount",
+                                                "시총(억)":"market_cap",
+                                                "외인":"foreign_ratio",
+                                                "PER":"per",
+                                                "ROE":"roe",
+                                                "등락률":"change_rate",
+                                                "종목명":"name"
+                                            };
+                                            return fieldMap[h];
+                                        })() ? (sortOrder==="asc"?"↑":"↓") : ""}
+                                    </TableCell>
                                 ))}
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {displayData.map((stock, idx) => {
+                            {displayData.map((stock, idx)=>{
                                 const isFav = favoriteSet.has(stock.code);
-                                const rank = (page - 1) * ITEMS_PER_PAGE + idx + 1;
-                                const isUp = stock.change_rate?.includes("+");
-                                const isDown = stock.change_rate?.includes("-");
+                                const rank = (page-1)*ITEMS_PER_PAGE + idx +1;
+
+                                const isUpRate = stock.change_rate?.includes("+");
+                                const isDownRate = stock.change_rate?.includes("-");
 
                                 return (
                                     <TableRow key={stock.code} hover>
                                         <TableCell align="center">
-                                            <Tooltip title={isFav ? "즐겨찾기 제거" : "즐겨찾기 추가"}>
-                                                <IconButton size="small" onClick={() => toggleFavorite(stock)}>
-                                                    {isFav ? <StarIcon className="krx-star-filled" /> : <StarBorderIcon className="krx-star-empty" />}
+                                            <Tooltip title={isFav?"즐겨찾기 제거":"즐겨찾기 추가"}>
+                                                <IconButton size="small" onClick={()=>toggleFavorite(stock)}>
+                                                    {isFav?<StarIcon className="krx-star-filled"/>:<StarBorderIcon className="krx-star-empty"/>}
                                                 </IconButton>
                                             </Tooltip>
                                         </TableCell>
-
                                         <TableCell align="center">
-                                            <Chip label={rank} size="small" className={rank <= 3 ? "krx-rank-top" : "krx-rank-normal"} />
+                                            <Chip label={rank} size="small" className={rank<=3?"krx-rank-top":"krx-rank-normal"} />
                                         </TableCell>
-
-                                        <TableCell onClick={() => goToDetail(stock)} className="krx-name-cell">
+                                        <TableCell onClick={()=>goToDetail(stock)} className="krx-name-cell">
                                             <div className="krx-stock-name">{stock.name}</div>
                                             <div className="krx-stock-code">{stock.code}</div>
                                         </TableCell>
-
                                         <TableCell align="right">{formatPrice(stock.current_price)}</TableCell>
-                                        <TableCell align="center" className={isUp ? "krx-up" : isDown ? "krx-down" : ""}>{stock.change || "-"}</TableCell>
-                                        <TableCell align="center" className={isUp ? "krx-up" : isDown ? "krx-down" : ""}>{stock.change_rate || "-"}</TableCell>
+                                        <TableCell
+                                            align="center"
+                                            className={
+                                                /상승/.test(stock.change) ? "krx-up" :
+                                                    /상한가/.test(stock.change) ? "krx-up-limit" :
+                                                        /하락/.test(stock.change) ? "krx-down" :
+                                                            /하한가/.test(stock.change) ? "krx-down-limit" :
+                                                                ""
+                                            }
+                                        >
+                                            {stock.change || "-"}
+                                        </TableCell>
+                                        <TableCell align="center" className={isUpRate?"krx-up":isDownRate?"krx-down":""}>{stock.change_rate||"-"}</TableCell>
                                         <TableCell align="center">{formatNumber(stock.volume)}</TableCell>
-                                        <TableCell align="center">{formatNumber(calculateTradeAmount(stock))}</TableCell>
+                                        <TableCell align="center">{formatNumber(stock.tradeAmount)}</TableCell>
                                         <TableCell align="center">{formatNumber(stock.market_cap)}</TableCell>
-                                        <TableCell align="center">{stock.foreign_ratio != null ? stock.foreign_ratio.toFixed(1)+"%" : "-"}</TableCell>
-                                        <TableCell align="center">{stock.per?.toFixed(2) || "-"}</TableCell>
-                                        <TableCell align="center">{stock.roe != null ? stock.roe.toFixed(2)+"%" : "-"}</TableCell>
+                                        <TableCell align="center">{stock.foreign_ratio!=null?stock.foreign_ratio.toFixed(1)+"%":"-"}</TableCell>
+                                        <TableCell align="center">{stock.per?.toFixed(2)||"-"}</TableCell>
+                                        <TableCell align="center">{stock.roe!=null?stock.roe.toFixed(2)+"%":"-"}</TableCell>
                                     </TableRow>
-                                );
+                                )
                             })}
                         </TableBody>
                     </Table>
                 </TableContainer>
 
-                {/* 페이지네이션 */}
-                {totalPages > 1 && (
+                {totalPages>1 && (
                     <Box className="krx-pagination-wrapper">
                         <Pagination count={totalPages} page={page} onChange={handlePageChange} color="primary" size="large" />
                     </Box>
@@ -334,8 +398,8 @@ function KrxList() {
             {/* 랭킹 사이드바 */}
             <Paper className="krx-ranking-sidebar">
                 <Typography className="krx-ranking-title">{rankingTypes[rankingTypeIndex].label} Top 10</Typography>
-                {rankingData.slice(0,10).map((item,i) => (
-                    <Box key={item.code} onClick={() => goToDetail({ code:item.code, name:item.name })} className="krx-ranking-item">
+                {rankingData.slice(0,10).map((item,i)=>(
+                    <Box key={item.code} onClick={()=>goToDetail({code:item.code,name:item.name})} className="krx-ranking-item">
                         <Box className="krx-ranking-item-inner">
                             <Box className="krx-ranking-left">
                                 <Typography className="krx-ranking-rank">{i+1}</Typography>

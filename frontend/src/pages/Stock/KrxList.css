@@ -1,219 +1,3 @@
-/* src/pages/Stock/KrxList.css - 진짜 최종 완성본 (sx 없이 순수 CSS) */
-
-.krx-page-wrapper {
-    min-height: 100vh;
-    background: #ffffff;
-    padding: 16px 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-}
-
-.krx-main-content {
-    max-width: 100%;
-    padding: 0 20px;
-    margin: 0 300px 0 auto;
-}
-
-@media (max-width: 1200px) {
-    .krx-main-content { margin-right: 0; }
-}
-
-.krx-page-title {
-    text-align: center;
-    font-size: 1.85rem;
-    font-weight: 800;
-    color: #1e40af;
-    margin-bottom: 1.5rem;
-    letter-spacing: -0.8px;
-}
-
-.krx-crawled-time {
-    text-align: center;
-    color: #64748b;
-    font-size: 0.92rem;
-    margin-bottom: 1.5rem;
-    font-weight: 500;
-}
-
-/* 섹션 */
-.krx-favorite-section,
-.krx-recent-section {
-    background: white;
-    border-radius: 18px;
-    padding: 18px 20px;
-    border: 1.8px solid #e2e8f0;
-    margin-bottom: 1.8rem;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.07);
-}
-
-.krx-section-title {
-    font-size: 0.95rem;
-    font-weight: 800;
-    color: #1e40af;
-    margin-bottom: 14px;
-    letter-spacing: -0.5px;
-}
-
-.krx-chips-wrapper {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.krx-favorite-chip {
-    background: #fffbeb !important;
-    border: 2px solid #f59e0b !important;
-    color: #92400e !important;
-    font-weight: 700 !important;
-}
-
-.krx-favorite-chip .krx-star-icon {
-    color: #f59e0b !important;
-}
-
-.krx-recent-chip {
-    background: #f8fafc;
-    border: 1.5px solid #cbd5e1;
-    border-radius: 14px;
-    padding: 8px 14px;
-    font-size: 0.78rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.25s ease;
-}
-
-.krx-recent-chip:hover {
-    background: #e2e8f0;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0,0,0,0.12);
-}
-
-/* 검색창 */
-.krx-search-wrapper {
-    max-width: 580px;
-    margin: 0 auto 2.2rem;
-}
-
-.krx-search-input .MuiOutlinedInput-root {
-    border-radius: 16px;
-    height: 52px;
-    font-size: 1rem;
-    background: white;
-}
-
-.krx-search-result {
-    text-align: center;
-    margin-top: 12px;
-    color: #475569;
-    font-size: 0.88rem;
-    font-weight: 500;
-}
-
-/* 탭 */
-.krx-tabs .MuiTabs-indicator {
-    background-color: #1e40af;
-    height: 4px;
-    border-radius: 2px;
-}
-
-.krx-page-info {
-    text-align: center;
-    color: #64748b;
-    font-size: 0.92rem;
-    margin: 2rem 0 1.5rem;
-    font-weight: 600;
-}
-
-/* 테이블 */
-.krx-table-container {
-    border-radius: 18px;
-    overflow: hidden;
-    box-shadow: 0 12px 40px rgba(0,0,0,0.1);
-    border: 1.8px solid #e2e8f0;
-}
-
-.krx-table-head {
-    background: linear-gradient(135deg, #1e40af, #2563eb);
-}
-
-.krx-head-cell {
-    color: black !important;
-    font-weight: 700 !important;
-    font-size: 0.82rem !important;
-    padding: 14px 8px !important;
-}
-
-.krx-table-row:hover {
-    background: #f8fafc !important;
-}
-
-.krx-table-container .MuiTableCell-root {
-    padding: 12px 8px !important;
-    font-size: 0.88rem;
-    border-bottom: 1px solid #f1f5f9;
-}
-
-.krx-name-cell {
-    cursor: pointer;
-}
-
-.krx-stock-name {
-    font-weight: 700;
-    font-size: 0.94rem;
-    color: #0f172a;
-}
-
-.krx-stock-code {
-    font-size: 0.76rem;
-    color: #64748b;
-    margin-top: 3px;
-}
-
-.krx-price-cell {
-    font-weight: 700;
-    font-size: 0.88rem;
-    color: #0f172a;
-}
-
-.krx-number-cell {
-    color: #475569;
-    font-weight: 600;
-}
-
-.krx-rank-top {
-    background: linear-gradient(45deg, #f59e0b, #f97316) !important;
-    color: white !important;
-    font-weight: bold !important;
-    font-size: 0.7rem !important;
-    height: 26px;
-    min-width: 30px;
-}
-
-.krx-rank-normal {
-    background: #f8fafc !important;
-    color: #1e293b !important;
-    border: 1px solid #cbd5e1;
-    font-weight: bold !important;
-    font-size: 0.7rem !important;
-    height: 26px;
-}
-
-.krx-change-cell {
-    font-weight: 700;
-    font-size: 0.86rem;
-}
-
-.krx-up { color: #dc2626 !important; }
-.krx-down { color: #2563eb !important; }
-
-.krx-star-filled { color: #f59e0b !important; }
-.krx-star-empty { color: #94a3b8 !important; }
-
-.krx-pagination-wrapper {
-    display: flex;
-    justify-content: center;
-    margin: 3rem 0 1rem;
-}
-
 /* src/pages/Stock/KrxList.css - 최종 완성본 (순수 CSS, sx 없음) */
 
 .krx-page-wrapper {
@@ -224,15 +8,15 @@
 }
 
 .krx-main-content {
-    max-width: calc(100% - 256px - 2px); /* 256px은 사이드바 폭, 20px은 간격 */
+    max-width: calc(100% - 256px - 2px);
     padding: 0 20px;
-    margin: 0 auto 0 0; /* 오른쪽 마진 제거 */
+    margin: 0 auto 0 0;
 }
 
 @media (max-width: 1400px) {
     .krx-main-content {
         max-width: 100%;
-        margin: 0; /* 모바일에서는 전체 폭 사용 */
+        margin: 0;
         padding: 0 16px;
     }
 }
@@ -357,7 +141,7 @@
 
 .krx-head-cell {
     color: black !important;
-    font-size: 0.72rem !important; /* 기존 0.82rem → 0.72rem */
+    font-size: 0.72rem !important;
     font-weight: 700 !important;
     padding: 12px 6px !important;
 }
@@ -366,20 +150,22 @@
     background: #f8fafc !important;
 }
 
-.krx-table-row .MuiTableCell-root {
-    font-size: 0.68rem !important; /* 기존 0.78rem → 0.68rem */
+.krx-table-container .MuiTableCell-root {
+    font-size: 0.8rem !important;
     padding: 10px 6px !important;
     border-bottom: 1px solid #f1f5f9;
 }
 
-.krx-name-cell {
-    cursor: pointer;
-}
+.krx-name-cell { cursor: pointer; }
 
 .krx-stock-name {
     font-weight: 700;
     font-size: 0.94rem;
     color: #0f172a;
+    white-space: nowrap;      /* 한 줄로 제한 */
+    overflow: hidden;         /* 넘치는 글자 숨김 */
+    text-overflow: ellipsis;  /* ... 표시 */
+    max-width: 120px;         /* 필요에 따라 조정 */
 }
 
 .krx-stock-code {
@@ -422,8 +208,11 @@
     font-size: 0.86rem;
 }
 
-.krx-up { color: #dc2626 !important; }
-.krx-down { color: #2563eb !important; }
+/* 상승/하락/상한가/하한가 */
+.krx-up { color: #dc2626 !important; font-weight: 600; }
+.krx-down { color: #2563eb !important; font-weight: 600; }
+.krx-up-limit { color: #b91c1c !important; font-weight: 700; }
+.krx-down-limit { color: #1e3a8a !important; font-weight: 700; }
 
 .krx-star-filled { color: #f59e0b !important; }
 .krx-star-empty { color: #94a3b8 !important; }
@@ -434,7 +223,7 @@
     margin: 3rem 0 1rem;
 }
 
-/* -------------------- 랭킹 사이드바 80% 축소 -------------------- */
+/* 랭킹 사이드바 */
 .krx-ranking-sidebar {
     position: fixed;
     top: 90px;
@@ -448,7 +237,6 @@
     border: 1.6px solid #e2e8f0;
     z-index: 1300;
     padding: 8px 12.8px;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 .krx-ranking-title {
