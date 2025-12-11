@@ -29,5 +29,20 @@ pip install pymongo
 2. npm run dev
 
 
+
 - 주식데이터 뜨게하기(build.gradle) : 
 스프링부트 window -> preferences -> java compiler 에서 Store information about method paremeter 체크 후 Apply
+
+
+
+형태소분석/랭킹/챗봇
+- pip install openai python-dotenv
+- pip install fastapi uvicorn pydantic
+cd C:\dev\work_springboot\Project5\scripts
+python fastapi_server.py
+
+-C:\dev\work_springboot\Project5\scripts 경로에 '.env' 파일 생성
+  
+  내용 : PERPLEXITY_API_KEY=자신의키입력
+
+키가 자꾸 유출이 돼서 따로 관리하고있습니다.

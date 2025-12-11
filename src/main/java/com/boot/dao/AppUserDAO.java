@@ -12,5 +12,7 @@ public interface AppUserDAO {
 	
 	AppUserDTO findByNaverId(@Param("naverId") String naverId);
 	
+	AppUserDTO findByGoogleId(@Param("googleId") String googleId);
+	
     void insert(AppUserDTO user);
 }

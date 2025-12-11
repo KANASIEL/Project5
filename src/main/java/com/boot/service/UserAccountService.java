@@ -20,4 +20,6 @@ public interface UserAccountService {
     int deleteUser(String userId, String loginType);
     
     String saveProfileImage(MultipartFile file);
+    
+    String getLoginType(String userId);
 }

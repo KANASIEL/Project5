@@ -1,39 +1,55 @@
-// NaverCallback.jsx
 import React, { useEffect } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { useAuth } from "../../context/AuthContext";
 
-export default function NaverCallback() {
-    const navigate = useNavigate();
+const NaverCallback = () => {
+  const navigate = useNavigate();
+  const { loginSuccess } = useAuth();
 
-    useEffect(() => {
-        const url = new URL(window.location.href);
-        const code = url.searchParams.get("code");
-        const state = url.searchParams.get("state");
+  useEffect(() => {
+    const fetchNaverLogin = async () => {
+      const hash = window.location.hash;
+      const params = new URLSearchParams(hash.replace("#", ""));
+      const access_token = params.get("access_token");
 
-        console.log("🔍 네이버 콜백 code:", code);
-        console.log("🔍 네이버 콜백 state:", state);
+      if (!access_token) {
+        console.error("No access token from Naver");
+        return;
+      }
 
-        if (code) {
-            axios
-                .get("http://localhost:8585/auth/naver/callback", {
-                    params: { code, state }
-                })
-                .then((res) => {
-                    console.log("✅ 백엔드 응답:", res.data);
+      try {
+        const res = await axios.post(
+          "http://localhost:8585/api/auth/naver/callback",
+          { access_token }
+        );
 
-                    if (res.data.token) {
-                        localStorage.setItem("token", res.data.token);
-                        navigate("/");
-                    } else {
-                        console.error("❌ token이 응답에 없음:", res.data);
-                    }
-                })
-                .catch((err) => {
-                    console.error("🚨 네이버 로그인 콜백 오류:", err);
-                });
+        const token = res.data.token?.trim();
+        const nickname = res.data.user?.nickname; // ★ 여기!
+
+        if (!token) {
+          console.error("No JWT token returned");
+          return;
         }
-    }, []);
 
-    return <div>로그인 처리중...</div>;
-}
+        if (!nickname) {
+          console.error("No nickname found in backend response");
+          return;
+        }
+
+        // AuthContext에 저장 → Header 즉시 반영됨
+        loginSuccess(token);
+		alert(`로그인 성공!`);
+        navigate("/");
+      } catch (err) {
+        console.error("네이버 로그인 실패:", err);
+      }
+    };
+
+    fetchNaverLogin();
+  }, [navigate, loginSuccess]);
+
+  return;
+};
+
+export default NaverCallback;

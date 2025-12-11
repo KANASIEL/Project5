@@ -21,7 +21,11 @@ import KakaoLogin from "./pages/Login/KakaoLogin.jsx";
 import Login from "./pages/Login/Login.jsx";
 import NaverLogin from "./pages/Login/NaverLogin.jsx";
 import NaverCallback from "./pages/Login/NaverCallback.jsx";
+import GoogleLogin from "./pages/Login/GoogleLogin.jsx";
+import CustomGoogleButton from "./pages/Login/CustomGoogleButton.jsx";
+import CustomNaverButton from "./pages/Login/CustomNaverButton.jsx";
 import Register from "./pages/Register/Register.jsx";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 
 import Mypage from "./pages/Mypage/Mypage.jsx";
 import UpdateMypage from "./pages/Mypage/UpdateMypage.jsx";
@@ -31,6 +35,8 @@ import { AuthProvider } from "./context/AuthContext";
 function Layout() {
     const location = useLocation();
     const isMainPage = location.pathname === "/";
+    const isLogin = location.pathname === "/login";
+    const isRegister = location.pathname === "/register";
 
     return (
         <div
@@ -40,11 +46,11 @@ function Layout() {
                 flexDirection: "column",
                 // 메인페이지는 그라데이션 배경
                 // 다른 페이지는 흰색 배경
-                background: isMainPage
+                background: (isMainPage || isLogin || isRegister)
                     ? "linear-gradient(135deg, #0f172a 0%, #1e40af 50%, #3b82f6 100%) fixed"
                     : "#ffffff",
-                backgroundAttachment: isMainPage ? "fixed" : "static",
-                color: isMainPage ? "white" : "#222222",
+                backgroundAttachment: (isMainPage || isLogin || isRegister) ? "fixed" : "static",
+                color: (isMainPage || isLogin || isRegister) ? "white" : "#222222",
             }}
         >
             <Header />
@@ -74,7 +80,10 @@ function Layout() {
                     <Route path="/news" element={<NewsList />} />
                     <Route path="/kakaoLogin" element={<KakaoLogin />} />
                     <Route path="/naverLogin" element={<NaverLogin />} />
+                    <Route path="/googleLogin" element={<GoogleLogin />} />
+                    <Route path="/customGoogleButton" element={<CustomGoogleButton />} />
                     <Route path="/login/naver/callback" element={<NaverCallback />} />
+                    <Route path="/customNaverButton" element={<CustomNaverButton />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/mypage" element={<Mypage />} />
@@ -89,11 +98,13 @@ function Layout() {
 
 function App() {
     return (
-        <Router>
-		<AuthProvider>
-            <Layout />
-		</AuthProvider>
-        </Router>
+			<GoogleOAuthProvider clientId="925554401773-fojodmg8ktecqu8g8usn87ifkh78fafc.apps.googleusercontent.com">
+				<AuthProvider>
+			        <Router>
+		            	<Layout />
+        			</Router>
+				</AuthProvider>
+			</GoogleOAuthProvider>
     );
 }
 

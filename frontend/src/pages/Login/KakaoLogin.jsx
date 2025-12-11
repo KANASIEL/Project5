@@ -44,13 +44,13 @@ const KakaoLogin = () => {
                             .then(result => {
                                 console.log("서버 응답:", result.data);
 
-                                const { user, token } = result.data;
+                                const { token } = result.data;
 
                                 // ⭐ JWT 저장
                                 localStorage.setItem("token", token);
 
                                 // ⭐ 전역 로그인 상태 변경
-                                loginSuccess(user.nickname);
+                                loginSuccess(token);
 								localStorage.setItem("jwtToken", result.data.token);
 								localStorage.setItem("nickname", result.data.user.nickname);
 
@@ -71,7 +71,7 @@ const KakaoLogin = () => {
 
     return (
         <button className="kakao-btn" onClick={handleKakaoLogin}>
-            카카오 로그인
+            카카오로 로그인
         </button>
     );
 };

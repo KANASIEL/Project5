@@ -1,13 +1,8 @@
 .login-wrapper {
-    min-height: 100vh;
-    width: 100vw;
-    margin: 0 !important;
-    padding: 2rem 1rem;
-    background: linear-gradient(135deg, #0f172a 0%, #1e40af 50%, #3b82f6 100%) fixed;
+	padding: 100px;
     display: flex;
     align-items: center;
     justify-content: center;
-    position: fixed;
     top: 0;
     left: 0;
     overflow: hidden;
@@ -19,6 +14,7 @@
 	color: #ffffff;
     letter-spacing: -1.5px;
     text-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+	margin-bottom: 50px;
 }
 
 .site-title-login h1 {
@@ -50,13 +46,14 @@
 	color: white;
 	font-size: 17px;
 	font-weight: 600;
-    margin-bottom: 10px;
+	margin-top: 15px;
+	margin-bottom: 10px;
 }
 
 .login-input{
 	flex: 1;
     padding: 1rem 0.8rem;
-	width: 350px;
+	width: 100%;
     font-size: 1.15rem;
     background: rgba(255, 255, 255, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.3);
@@ -74,10 +71,10 @@
 	background-color: #3b82f6;
     color: white;
     border: none;
-    padding: 16px 25px;
+    padding: 16px 1px;
     border-radius: 20px;
-	font-size: 16px;
-	font-weight: 600;
+	font-size: 18px;
+	font-weight: bold;
     cursor: pointer;
     transition: background-color 0.3s ease;
     width: 100%;
@@ -91,7 +88,7 @@
 .login-register-btn{
 	position: relative;
 	top: 20px;
-	left: 300px;
+	left: 305px;
 	background: transparent;   
 	border: none;             
 	font: inherit;        
@@ -102,8 +99,41 @@
 	text-decoration: none;
 }
 
+.login-hr{
+	margin: 15px auto 20px auto;
+	margin-bottom: 20px;
+	height: 2px;
+	border: none;
+	background-color: #ffffff;
+	width: 100%;
+}
 
+.hr-with-text {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 20px 0;
+}
 
+.hr-with-text::before,
+.hr-with-text::after {
+  content: "";
+  flex: 1;
+  border-bottom: 2px solid #ffffff; /* 선 색상 */
+}
+
+.hr-with-text:not(:empty)::before {
+  margin-right: 10px; /* 글자 왼쪽 공간 */
+}
+
+.hr-with-text:not(:empty)::after {
+  margin-left: 10px; /* 글자 오른쪽 공간 */
+}
+
+.hr-with-text span {
+  color: #ffffff; /* 글자 색상 */
+  font-weight: bold;
+}
 
 
 
