@@ -50,7 +50,8 @@ python fastapi_server.py
 키가 자꾸 유출이 돼서 따로 관리하고있습니다.  
 
 주식 종목 형태소분석/초성검색/ai 오타검색  
-C:\Dev\TeamProject\Project5\scripts  
+pip install fastapi uvicorn pydantic pymongo kiwipiepy openai python-levenshtein  
+C:\Dev\TeamProject\Project5\scripts  or cd scripts  
 uvicorn StockSearch:app --reload  
 
 StockSearch.py 내부 API키도 마찬가지로 보안으로인해 따로 보관중입니다.  
