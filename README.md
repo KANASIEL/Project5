@@ -48,3 +48,9 @@ python fastapi_server.py
   MONGO_URI="mongodb+srv://kh:1234@cluster0.fbav0ho.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
 키가 자꾸 유출이 돼서 따로 관리하고있습니다.
+
+주식 종목 형태소분석/초성검색/ai 오타검색
+C:\Dev\TeamProject\Project5\scripts
+uvicorn StockSearch:app --reload 
+
+StockSearch.py 내부 API키도 마찬가지로 보안으로인해 따로 보관중입니다.
