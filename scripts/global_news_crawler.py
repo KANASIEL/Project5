@@ -267,6 +267,19 @@ async def crawl_yahoo(session):
 
         save_news(title, link, content, img, "Yahoo Finance", auth)
 
+async def get_article_detail(session, url, source):
+    try:
+        async with session.get(
+            url,
+            headers=HEADERS,
+            timeout=aiohttp.ClientTimeout(total=8)
+        ) as res:
+            print(f"[DETAIL] {source} {res.status} {url}")  # ★추가
+
+            if res.status != 200:
+                print(f"[DETAIL SKIP] {source} {res.status}")
+                return "", "", None
+
 # =========================
 # 메인 태스크
 # =========================
