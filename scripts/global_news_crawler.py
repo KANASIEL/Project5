@@ -83,10 +83,10 @@ async def get_article_detail(session, url, source):
             og = soup.select_one("meta[property='og:image']")
             if og:
                 image_url = og.get("content", "")
+            
+            if not image_url or not image_url.startswith("http"):
+                image_url = None
                 
-			if not image_url or not image_url.startswith("http"):
-    			image_url = None
-    			
             author = extract_author(soup, source)
             return content, image_url, author
 
