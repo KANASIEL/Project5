@@ -168,8 +168,13 @@ def search_global_news():
 
 def run_global_crawler():
     while True:
-        asyncio.run(task_global_crawling())
-        time.sleep(900)  # 1시간마다
+        try:
+            asyncio.run(task_global_crawling())
+        except Exception as e:
+            print(f"[GLOBAL CRAWLER ERROR] {e}")
+
+        time.sleep(900)  # 15분
+
 
 # ==========================
 # 서버 실행 (Render 필수)
