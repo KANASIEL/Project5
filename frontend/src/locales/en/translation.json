@@ -53,5 +53,44 @@
   "duplicateId": "This user ID is already in use.",
   "duplicateEmail": "This email address is already in use.",
   "registerSuccess": "Registration completed successfully.",
-  "registerFail": "Registration failed."
+  "registerFail": "Registration failed.",
+  
+    "news_2": {
+      "recentViewed": "⭐ Recently Viewed Articles",
+      "noRecent": "You haven't viewed any articles yet.",
+      "showingResultFor": "Showing search results for",
+      "searchedInstead": "Showing results for the original search",
+      "searchPlaceholder": "Samsung, Apple, NVIDIA...",
+      "trendingTitle": "📈 Trending Searches",
+      "analysis": "Analysis",
+      "model": "Model",
+      "explainType": "Type",
+      "sortLatest": "🕒 Latest",
+      "sortOldest": "📅 Oldest",
+      "noResult": "❌ No results for {{keyword}}",
+      "noNews": "No news available yet",
+      "noImage": "No Image"
+    },
+	
+	"category": {
+	    "금융": "Finance",
+	    "증권": "Stocks",
+	    "산업/재계": "Industry",
+	    "중기/벤처": "SME / Startup",
+	    "글로벌 경제": "Global Economy",
+	    "생활경제": "Living Economy",
+	    "경제 일반": "General Economy"
+	  },
+	  
+    "common": {
+      "loading": "Generating...",
+      "loadingNews": "Loading news..."
+    },
+	
+	"prev" : "Prev",
+	"next" : "Next",
+	
+	"topValueTitle": "📊 Top 5 Trading Value",
+	"rank": "Rank {{num}}",
+	"hundredMillion": "\u00A0\u00A0100M KRW"
 }

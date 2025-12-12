@@ -53,12 +53,49 @@
   "duplicateId": "이미 사용 중인 아이디입니다.",
   "duplicateEmail": "이미 사용 중인 이메일입니다.",
   "registerSuccess": "회원가입 완료되었습니다.",
-  "registerFail": "회원가입에 실패했습니다."
+  "registerFail": "회원가입에 실패했습니다.",
   
+    "news_2": {
+      "recentViewed": "⭐ 최근 본 기사",
+      "noRecent": "아직 본 기사가 없습니다.",
+      "showingResultFor": "다음에 대한 검색 결과 표시 중",
+      "searchedInstead": "처음에 검색한 결과",
+      "searchPlaceholder": "삼성전자, 애플, 엔비디아...",
+      "trendingTitle": "📈 지금 많이 찾는 검색어",
+      "analysis": "분석",
+      "model": "모델",
+      "explainType": "타입",
+      "sortLatest": "🕒 최신순",
+      "sortOldest": "📅 오래된순",
+      "noResult": "❌ {{keyword}} 검색 결과 없음",
+      "noNews": "아직 뉴스가 없어요",
+      "noImage": "이미지 없음"
+    },
+    
+	
+	"category": {
+	    "금융": "금융",
+	    "증권": "증권",
+	    "산업/재계": "산업/재계",
+	    "중기/벤처": "중기/벤처",
+	    "글로벌 경제": "글로벌 경제",
+	    "생활경제": "생활경제",
+	    "경제 일반": "경제 일반"
+	  },
+   
+  
+    "common": {
+      "loading": "생성중...",
+      "loadingNews": "뉴스 로딩중..."
+    },
+	
+  "prev" : "이전",
+  "next" : "다음",
+  
+  "topValueTitle": "📊 거래대금 Top 5",
+  "rank": "{{num}}위",
+  "hundredMillion": "억"
 }
-
-
-
 
 
 
