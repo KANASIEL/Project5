@@ -36,6 +36,13 @@ HEADERS = {
     "Connection": "keep-alive"
 }
 
+CNN_RSS_URLS = [
+    "http://rss.cnn.com/rss/money_latest.rss",
+    "http://rss.cnn.com/rss/world.rss",
+    "http://rss.cnn.com/rss/edition_business.rss",
+    "http://rss.cnn.com/rss/edition_technology.rss",
+]
+
 DEFAULT_IMAGE = "https://via.placeholder.com/400x220?text=No+Image"
 # =========================
 # RSS Fetch
@@ -254,42 +261,52 @@ async def crawl_bbc(session):
 # CNN
 # =========================
 async def crawl_cnn(session):
-    print("▶ CNN RSS 시작")
-    # 최신 비즈니스 RSS
-    rss_url = "http://rss.cnn.com/rss/edition_business.rss"
-    
-    try:
+    print("▶ CNN RSS 병합 시작")
+
+    seen_links = set()
+    total_saved = 0
+
+    for rss_url in CNN_RSS_URLS:
+        print(f"   ▶ RSS: {rss_url}")
         soup = await fetch_rss(session, rss_url)
-        items = soup.find_all("item")[:15]
+        items = soup.find_all("item")
 
-        for i, item in enumerate(items):
-            title = clean_title(item.title.text.strip())
+        for item in items:
+            raw_title = item.title.text.strip()
+            title = clean_title(raw_title)
+
             link = item.link.text.strip()
-            
-            # 동영상/라이브 뉴스 제외
-            if "/videos/" in link or "/live-news/" in link:
+            if not link or "video" in link.lower():
                 continue
 
-            # 1. 본문 크롤링 시도
-            content, img, auth = await get_article_detail(session, link, "CNN")
+            # 🔥 RSS 간 중복 제거
+            if link in seen_links:
+                continue
+            seen_links.add(link)
 
-            # 2. [비상 대책] 크롤링 실패 시 RSS 설명글(description) 사용
-            if len(content) < 50:
-                print(f"   ⚠ [CNN] 본문 크롤링 실패 -> RSS 요약글 사용 시도")
-                if item.description:
-                    desc_soup = BeautifulSoup(item.description.text, "html.parser")
-                    content = desc_soup.get_text(strip=True)
+            # 🔹 RSS description
+            rss_desc = ""
+            if item.description:
+                rss_desc = BeautifulSoup(
+                    item.description.text, "html.parser"
+                ).get_text(strip=True)
 
-            # 3. 그래도 내용이 없으면 저장 안 함
-            if len(content) < 20: 
-                print(f"   [SKIP] CNN 내용 없음 ({title[:15]}...)")
+            # 🔹 상세 페이지 시도 (대부분 실패 → fallback)
+            content, img, auth = await get_article_detail(
+                session, link, "CNN"
+            )
+
+            final_content = content if len(content) > 100 else rss_desc
+
+            if not final_content:
                 continue
 
-            print(f"   ✔ [CNN {i+1}] 저장 시도: {title[:20]}")
-            save_news(title, link, content, img, "CNN", auth)
+            total_saved += 1
+            print(f"   ✔ [CNN {total_saved}] 저장 시도: {title[:40]}")
 
-    except Exception as e:
-        print(f"⚠ CNN 크롤링 에러: {e}")
+            save_news(title, link, final_content, img, "CNN", auth)
+
+    print(f"▶ CNN 병합 완료: {total_saved}개 저장 시도")
         
 # =========================
 # Yahoo (requests + executor)
