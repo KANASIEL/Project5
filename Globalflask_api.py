@@ -121,14 +121,14 @@ def get_global_with_cache(prefix, source, page, size, order, query):
 # ==========================
 @app.route("/news/global")
 def get_global_news():
-    # React에서 category=Reuters/CNBC... 로 보냄, "전체"면 필터 없음
-    source = unquote(request.args.get("category", ""))
+    source = unquote(request.args.get("category", "")).strip()
     page = int(request.args.get("page", 0))
     size = int(request.args.get("size", 5))
     order = request.args.get("sort", "desc")
 
+    # 🔥 대소문자/공백 안전 처리
     if source and source != "전체":
-        query = {"source": source}
+        query = {"source": {"$regex": f"^{source}$", "$options": "i"}}
     else:
         query = {}
 
