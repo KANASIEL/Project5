@@ -215,10 +215,11 @@ function StockDetail() {
                 ) : (
                     news.map((item, i) => (
                         <Box key={i} className="stock-detail__news-item">
-                            <Typography className="stock-detail__news-link">
+                            <Typography component="div" className="stock-detail__news-link">
                                 <a href={item.link} target="_blank" rel="noopener noreferrer">
                                     {item.title}
                                 </a>
+                                {/* The Chip component (which renders a <div>) is now legally nested */}
                                 {item.related && <Chip label={item.related} size="small" />}
                             </Typography>
                             <Typography className="stock-detail__news-date">{item.date}</Typography>
