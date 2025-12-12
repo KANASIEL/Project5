@@ -43,6 +43,8 @@ python fastapi_server.py
 
 -C:\dev\work_springboot\Project5\scripts 경로에 '.env' 파일 생성
   
-  내용 : PERPLEXITY_API_KEY=자신의키입력
+  내용 : 
+  PERPLEXITY_API_KEY=자신의키입력
+  MONGO_URI="mongodb+srv://kh:1234@cluster0.fbav0ho.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
 키가 자꾸 유출이 돼서 따로 관리하고있습니다.
