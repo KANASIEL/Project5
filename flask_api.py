@@ -7,11 +7,10 @@ import threading, time, os, asyncio
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 
-import scripts.naver_news_crawler as crawler
 
 from apscheduler.schedulers.background import BackgroundScheduler
-from scripts.korea_news import task_korea_crawling
-from scripts.global_news import task_global_crawling
+from scripts.naver_news_crawler import task_korea_crawling
+from scripts.global_news_crawler import task_global_crawling
 
 # 🔹 Redis 추가
 import redis
