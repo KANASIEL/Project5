@@ -161,3 +161,11 @@ def search_global_news():
 
     content, total_pages = _sort_and_page_global(query, page, size, order)
     return jsonify({"content": content, "number": page, "totalPages": total_pages})
+
+# ==========================
+# 서버 실행 (Render 필수)
+# ==========================
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
+    print(f"🚀 Global Flask API running on port {port}")
+    app.run(host="0.0.0.0", port=port, debug=False)
