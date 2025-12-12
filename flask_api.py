@@ -7,10 +7,7 @@ import threading, time, os, asyncio
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 
-
-from apscheduler.schedulers.background import BackgroundScheduler
-from scripts.naver_news_crawler import task_korea_crawling
-from scripts.global_news_crawler import task_global_crawling
+import scripts.naver_news_crawler as crawler
 
 # 🔹 Redis 추가
 import redis
@@ -19,6 +16,9 @@ import json
 app = Flask(__name__)
 CORS(app)
 
+# ==========================
+# MongoDB & Redis 설정
+# ==========================
 MONGO_URI = os.environ.get("MONGO_URI")
 if not MONGO_URI:
     raise RuntimeError("MONGO_URI not set in Flask")
@@ -27,12 +27,14 @@ client = MongoClient(MONGO_URI, server_api=ServerApi("1"))
 db = client["stock"]
 collection = db["news_crawling"]
 
-# 🔹 로컬 테스트 기준 Redis (포트 6380)
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6380/0")
 redis_client = redis.from_url(REDIS_URL, decode_responses=True)
 CACHE_TTL = 60  # 초, 1분 캐시
 
 
+# ==========================
+# pubDate 파싱 유틸
+# ==========================
 def _parse_pub_date(value):
     """
     pubDate를 datetime으로 변환.
@@ -48,11 +50,13 @@ def _parse_pub_date(value):
         if not v:
             return None
 
+        # ISO8601
         try:
             return datetime.fromisoformat(v.replace("Z", "+00:00"))
         except Exception:
             pass
 
+        # 기타 포맷 시도
         for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
             try:
                 return datetime.strptime(v, fmt)
@@ -60,6 +64,7 @@ def _parse_pub_date(value):
                 continue
 
     return None
+
 
 # ==========================
 # 한 달 지난 기사 삭제
@@ -77,7 +82,9 @@ def delete_old_news(days: int = 30):
         print(f"[CLEANUP ERROR] 오래된 뉴스 삭제 실패: {e}")
 
 
-# 🔹 Mongo 쿼리에서 바로 정렬 + 페이지네이션
+# ==========================
+# Mongo 정렬 + 페이지네이션
+# ==========================
 def _sort_and_page(query, page, size, order):
     sort_dir = -1 if order != "asc" else 1
 
@@ -102,7 +109,9 @@ def _sort_and_page(query, page, size, order):
     return content, total_pages
 
 
-# 🔹 Redis 캐시 유틸
+# ==========================
+# Redis 캐시 유틸
+# ==========================
 def _cache_key(prefix, category, page, size, order):
     cat = category or ""
     return f"{prefix}:cat={cat}:page={page}:size={size}:order={order}"
@@ -117,9 +126,9 @@ def get_news_with_cache(prefix, category, page, size, order, query):
         if cached:
             return json.loads(cached)
     except Exception:
-        cached = None  # Redis 죽어 있어도 앱은 계속 돌아가게
+        cached = None  # Redis 죽어도 앱은 계속 동작
 
-    # 2) 캐시 미스 → Mongo에서 조회
+    # 2) Mongo 조회
     content, total_pages = _sort_and_page(query, page, size, order)
     result = {"content": content, "number": page, "totalPages": total_pages}
 
@@ -132,6 +141,9 @@ def get_news_with_cache(prefix, category, page, size, order, query):
     return result
 
 
+# ==========================
+# Flask 라우트
+# ==========================
 @app.route("/")
 def index():
     return "Flask API is running"
@@ -146,7 +158,6 @@ def get_news():
 
     query = {"category": category} if category else {}
 
-    # 🔹 Redis 캐시 사용
     result = get_news_with_cache("news", category, page, size, order, query)
     return jsonify(result)
 
@@ -178,47 +189,25 @@ def search_news():
     else:
         query = or_query
 
-    # 검색은 일단 캐시 없이 바로 Mongo 조회
     content, total_pages = _sort_and_page(query, page, size, order)
     return jsonify({"content": content, "number": page, "totalPages": total_pages})
 
 
+# ==========================
+# 크롤러 실행 스레드
+# ==========================
 def run_crawler():
     while True:
         asyncio.run(crawler.main())
         # 크롤링 한 번 끝날 때마다 30일 지난 기사 삭제
         delete_old_news(30)
         time.sleep(3600)
-        
-@app.route("/health")
-def health():
-    return "OK"
 
+
+# ==========================
+# 엔트리 포인트
+# ==========================
 if __name__ == "__main__":
-    
-    # 🔹 스케줄러 설정 (전역)
-    scheduler = BackgroundScheduler(daemon=True)
-    
-    scheduler.add_job(
-        lambda: asyncio.run(task_korea_crawling()),
-        'interval',
-        minutes=5,
-        next_run_time=datetime.now()
-    )
-    
-    scheduler.add_job(
-        lambda: asyncio.run(task_global_crawling()),
-        'interval',
-        minutes=15,
-        next_run_time=datetime.now()
-    )
-    
-    scheduler.start()
-    print("🚀 [Scheduler] 국내/해외 뉴스 크롤러 스케줄러 가동됨")
-
-    # [중요] 기존에 돌던 크롤러 스레드는 충돌 방지를 위해 주석 처리(#) 합니다.
-    # threading.Thread(target=run_crawler, daemon=True).start() 
-    
-    port = int(os.environ.get("PORT", 10000)) # 렌더 포트 10000 (팀원이 8585 썼어도 렌더는 10000 권장)
+    threading.Thread(target=run_crawler, daemon=True).start()
+    port = int(os.environ.get("PORT", 8585))
     app.run(host="0.0.0.0", port=port, debug=False)
-
