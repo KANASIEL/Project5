@@ -1,4 +1,4 @@
-/* src/pages/Stock/KrxList.css - 최종 수정 버전 (화면 확장, 랭킹 스크롤, 색상 규칙 적용) */
+/* src/pages/Stock/KrxList.css - 최종 수정 버전 (AI 추천 스타일 통합) */
 
 .krx-page-wrapper {
     max-width: 1400px;
@@ -56,11 +56,11 @@
 }
 
 /* --------------------------------------------------- */
-/* 🌟 시세 로딩 화면 중앙 정렬 스타일 (추가됨) 🌟 */
+/* 🌟 시세 로딩 화면 중앙 정렬 스타일 */
 /* --------------------------------------------------- */
 
 .krx-loading-wrapper {
-    position: fixed; /* 전체 화면을 덮도록 fixed 사용 */
+    position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
@@ -69,15 +69,15 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background-color: rgba(255, 255, 255, 0.9); /* 배경 흐림 효과 */
-    z-index: 9999; /* 다른 요소 위에 표시 */
+    background-color: rgba(255, 255, 255, 0.9);
+    z-index: 9999;
 }
 
 .krx-loading-text {
     margin-top: 16px;
     font-size: 1.1rem;
     font-weight: 600;
-    color: #1e40af; /* 페이지 제목 색상과 통일 */
+    color: #1e40af;
 }
 
 /* --- 기존 스타일 유지 --- */
@@ -119,6 +119,103 @@
     font-size: 0.88rem;
     font-weight: 500;
 }
+
+/* --------------------------------------------------- */
+/* 🌟 AI 제안 메시지 및 리스트 UI (추가/수정됨) 🌟 */
+/* --------------------------------------------------- */
+
+.krx-ai-suggestion-wrapper {
+    padding: 16px;
+    margin: 16px auto;
+    border-radius: 12px;
+    background-color: #f8faff; /* 매우 밝은 파랑 배경 */
+    border: 1.5px solid #dbeafe; /* 연한 파랑 경계선 */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    max-width: 1000px;
+}
+
+.krx-ai-suggestion-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.krx-ai-suggestion-header .MuiSvgIcon-root {
+    color: #1e40af; /* 아이콘 색상을 테마 색상으로 통일 */
+    margin-right: 8px;
+}
+
+.krx-ai-suggestion-message {
+    font-weight: 600;
+    color: #1e40af; /* 메시지 텍스트를 테마 색상으로 강조 */
+    font-size: 0.95rem;
+}
+
+/* 추론 단어 Chip 스타일 */
+.krx-inferred-word-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.krx-inferred-word-label {
+    color: #475569;
+    font-size: 0.85rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.krx-inferred-word-chip {
+    /* 추론된 단어는 가장 확실한 제안이므로 강조된 스타일 적용 */
+    background-color: #fef3c7 !important; /* 연한 노랑/경고색 */
+    color: #b45309 !important; /* 진한 주황색 텍스트 */
+    border: 1px solid #fcd34d !important;
+    font-weight: 700 !important;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.krx-inferred-word-chip:hover {
+    background-color: #fde68a !important;
+}
+
+/* 유사 종목 리스트 Chip 스타일 */
+.krx-suggestion-list-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 10px;
+    border-top: 1px dashed #bfdbfe; /* 연한 파랑 점선으로 구분 */
+}
+
+.krx-suggestion-list-label {
+    color: #475569;
+    font-size: 0.85rem;
+    font-weight: 500;
+    min-width: 40px;
+    white-space: nowrap;
+}
+
+.krx-suggestion-chip {
+    /* 유사 종목은 아웃라인 스타일로 구분 */
+    background-color: transparent !important;
+    color: #2563eb !important; /* 테마 파랑색 */
+    border: 1px solid #93c5fd !important;
+    font-weight: 600 !important;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.krx-suggestion-chip:hover {
+    background-color: #eff6ff !important;
+    border-color: #2563eb !important;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.1);
+}
+
+/* --------------------------------------------------- */
+
 
 /* 탭 */
 .krx-tabs .MuiTabs-indicator {
@@ -201,7 +298,7 @@
 }
 
 /* --------------------------------------------------- */
-/* 🌟 수정: 전일비/등락률 색상 규칙 🌟 */
+/* 🌟 전일비/등락률 색상 규칙 🌟 */
 /* --------------------------------------------------- */
 
 /* 1. 상승/양수 (빨강) */

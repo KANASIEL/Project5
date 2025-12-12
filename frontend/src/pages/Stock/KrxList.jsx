@@ -24,7 +24,7 @@ function KrxList() {
     const {isLoggedIn} = useAuth();
 
     const params = new URLSearchParams(location.search);
-    const initialQuery = params.get("q") || "";
+    const initialQuery = params.get("q") || ""; // Main 페이지에서 넘어온 검색어
 
     const [tab, setTab] = useState(0);
     const [kospi, setKospi] = useState([]);
@@ -41,6 +41,8 @@ function KrxList() {
 
     const [recentStocks, setRecentStocks] = useState([]);
     const [favoriteStocks, setFavoriteStocks] = useState([]);
+
+    // 🔥 에러 해결: favoriteSet 상태를 useState 훅으로 선언합니다.
     const [favoriteSet, setFavoriteSet] = useState(new Set());
 
     const [sortField, setSortField] = useState(null);
@@ -59,6 +61,7 @@ function KrxList() {
 
     const [rankingData, setRankingData] = useState([]);
     const [rankingTypeIndex, setRankingTypeIndex] = useState(0);
+    const [rankingLoading, setRankingLoading] = useState(false);
 
     // --- 유틸리티 함수 ---
     const formatKoreanTime = (dateStr) => {
@@ -97,7 +100,13 @@ function KrxList() {
             });
 
             // 🌟 백엔드 응답에서 suggestion_list 필드를 명시적으로 받습니다.
-            const {results, suggestion_original_query, suggestion_message, suggestion_list} = res.data;
+            const {
+                results,
+                suggestion_original_query,
+                suggestion_message,
+                suggestion_list,
+                gpt_inferred_word
+            } = res.data;
 
             const mappedResults = (results || []).map(r => ({
                 code: r.code,
@@ -122,7 +131,8 @@ function KrxList() {
                 setSearchSuggestion({
                     suggestion_original_query,
                     suggestion_message,
-                    suggestion_list
+                    suggestion_list,
+                    suggestion_inferred_word: gpt_inferred_word
                 });
             } else {
                 setSearchSuggestion(null);
@@ -162,7 +172,7 @@ function KrxList() {
     // ---------------- 데이터 로드 및 기타 함수 ----------------
     const fetchData = async () => {
         try {
-            setLoading(true);
+            // setLoading(true); // initializeData에서 처리
             const [kospiRes, kosdaqRes] = await Promise.all([
                 axios.get(`/api/krx/kospi/list`),
                 axios.get(`/api/krx/kosdaq/list`),
@@ -172,16 +182,18 @@ function KrxList() {
         } catch (err) {
             console.error("KRX 리스트 로드 오류:", err);
         } finally {
-            setLoading(false);
+            // setLoading(false); // initializeData에서 처리
         }
     };
     const loadRecentStocks = () => {
         axios.get(`/api/krx/recent`).then((res) => {
             const unique = Array.from(new Map((res.data || []).map((s) => [s.code, s])).values()).slice(0, 5);
             setRecentStocks(unique);
-        }).catch(() => {});
+        }).catch(() => {
+        });
     };
-    const loadFavorites = async () => {
+    // 💡 loadFavorites 함수를 useCallback으로 감싸서 안정성 향상
+    const loadFavorites = useCallback(async () => {
         if (!isLoggedIn) {
             setFavoriteStocks([]);
             setFavoriteSet(new Set());
@@ -191,12 +203,12 @@ function KrxList() {
             const res = await axios.get(`/api/krx/favorites`);
             const favorites = res.data || [];
             setFavoriteStocks(favorites);
-            // ⭐️ setFavoriteSet을 다시 계산하도록 수정
             setFavoriteSet(new Set(favorites.map((s) => s.code)));
         } catch (err) {
             console.error("즐겨찾기 로드 실패:", err);
         }
-    };
+    }, [isLoggedIn]);
+
     const toggleFavorite = async (stock) => {
         if (!isLoggedIn) return alert("로그인 후 이용 가능합니다!");
         const isFav = favoriteSet.has(stock.code);
@@ -223,35 +235,64 @@ function KrxList() {
         navigate(`/krx/${stock.code}`);
     };
 
-    // 🟢 랭킹 데이터 로드 함수 부활
+// 🟢 랭킹 데이터 로드 함수
     const loadRankingData = useCallback(async () => {
+        setRankingLoading(true); // 🟢 로딩 시작
         const type = rankingTypes[rankingTypeIndex];
+
         try {
-            // FastAPI_BASE 추가
             const res = await axios.get(`${type.api}`);
-            setRankingData(res.data || []);
+
+            // 🟢 성공했을 경우에만 데이터 덮어쓰기
+            if (res.data) {
+                setRankingData(res.data);
+            } else {
+                // 응답은 성공했지만 데이터가 없는 경우 (기존 데이터 유지)
+                console.warn(`${type.label} 랭킹 데이터가 비어있습니다. 기존 데이터를 유지합니다.`);
+            }
         } catch (err) {
             console.error(`${type.label} 랭킹 로드 실패`, err);
+            // 🔴 실패 시에도 기존 데이터(rankingData)는 그대로 유지됩니다.
+        } finally {
+            setRankingLoading(false); // 🟢 로딩 종료
         }
     }, [rankingTypeIndex]);
 
 
+    // ----------------------------------------------------
+    // 🌟 초기 로드 및 검색 로직: initialQuery가 있을 때 runSearch 자동 실행
+    // ----------------------------------------------------
     useEffect(() => {
-        fetchData();
-    }, []);
+        const initializeData = async () => {
+            setLoading(true);
+            try {
+                if (initialQuery) {
+                    await runSearch(initialQuery);
+                } else {
+                    await fetchData();
+                    setLoading(false);
+                }
+            } catch (error) {
+                console.error("초기 데이터 로드 중 오류 발생:", error);
+                setLoading(false);
+            }
+        };
+
+        initializeData();
+    }, [initialQuery]);
 
     useEffect(() => {
         loadRecentStocks();
-        loadFavorites();
+        loadFavorites(); // useCallback으로 감쌌기 때문에 의존성 추가 필요 없음
         loadRankingData();
 
-        // 🟢 랭킹 자동 전환 인터벌 부활
+        // 🟢 랭킹 자동 전환 인터벌
         const rankingInterval = setInterval(
             () => setRankingTypeIndex((prev) => (prev + 1) % rankingTypes.length),
             5000
         );
         return () => clearInterval(rankingInterval);
-    }, [isLoggedIn, loadRankingData]);
+    }, [isLoggedIn, loadRankingData, loadFavorites]);
 
     useEffect(() => {
         loadRankingData();
@@ -301,7 +342,8 @@ function KrxList() {
 
     const sortedData = useMemo(() => {
         let data = [...processedData];
-        if (showFavoritesOnly) data = data.filter((s) => favoriteSet.has(s.code)); // 🚨 이 줄에서 favoriteSet을 사용함
+        // favoriteSet이 useState로 선언되어 이제 .has() 오류가 해결됩니다.
+        if (showFavoritesOnly) data = data.filter((s) => favoriteSet.has(s.code));
 
         if (filters.volumeMin) data = data.filter((s) => (s.volume || 0) >= filters.volumeMin);
         if (filters.marketCapMin) data = data.filter((s) => (s.market_cap || 0) >= filters.marketCapMin);
@@ -322,7 +364,6 @@ function KrxList() {
             data = data.map((d) => d.item);
         }
         return data;
-        // ⭐️ [수정] 의존성 배열에 favoriteSet을 추가합니다.
     }, [processedData, sortField, sortOrder, filters, showFavoritesOnly, favoriteSet]);
 
     const totalPages = Math.ceil(sortedData.length / ITEMS_PER_PAGE);
@@ -377,7 +418,7 @@ function KrxList() {
                         InputProps={{
                             startAdornment: (
                                 <InputAdornment position="start">
-                                    <SearchIcon sx={{cursor: "pointer"}} onClick={() => runSearch()}/>
+                                    <SearchIcon style={{cursor: "pointer"}} onClick={() => runSearch()}/>
                                 </InputAdornment>
                             ),
                         }}
@@ -395,36 +436,47 @@ function KrxList() {
                 {/* 🌟 LLM AI 제안 메시지 및 리스트 UI 렌더링 🌟 */}
                 {isSearching && searchResults.length === 0 && searchSuggestion?.suggestion_message && (
                     <Box
-                        sx={{
-                            p: 2,
-                            my: 2,
-                            borderRadius: 1,
-                            bgcolor: '#fff3e0', // 연한 주황색
-                            border: '1px solid #ffcc80',
-                            flexDirection: 'column',
-                        }}
+                        className="krx-ai-suggestion-wrapper"
                     >
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                            <LightbulbIcon color="warning" sx={{ mr: 1 }} />
-                            <Typography variant="body1" sx={{ fontWeight: 'medium', color: '#e65100' }}>
+                        <Box className="krx-ai-suggestion-header">
+                            <LightbulbIcon/> {/* 색상은 CSS 클래스에서 정의 */}
+                            <Typography variant="body1" className="krx-ai-suggestion-message">
                                 {/* 메시지에서 [클릭하여 확인] 부분을 제외하고 표시 */}
                                 {searchSuggestion.suggestion_message.split('[클릭하여 확인]')[0]}
                             </Typography>
                         </Box>
 
+                        {/* 2. 추론된 단어가 있다면, 클릭 가능한 Chip을 별도로 추가하여 사용 편의성을 높입니다. */}
+                        {searchSuggestion.suggestion_inferred_word && (
+                            <Box className="krx-inferred-word-wrapper">
+                                <Typography variant="caption" className="krx-inferred-word-label">추론 단어 클릭:</Typography>
+                                <Chip
+                                    label={searchSuggestion.suggestion_inferred_word}
+                                    onClick={() => handleSuggestionClick(searchSuggestion.suggestion_inferred_word)}
+                                    // 🟢 클래스 적용
+                                    className="krx-inferred-word-chip"
+                                    size="small"
+                                    color="warning" // MUI color prop은 유지
+                                    variant="filled" // MUI variant prop은 유지
+                                />
+                            </Box>
+                        )}
+
                         {/* 🌟 유사 종목 제안 목록 나열 (Chip 형태) 🌟 */}
-                        {searchSuggestion.suggestion_list && (
-                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
-                                <Typography variant="caption" sx={{ color: 'gray', minWidth: '40px' }}>후보:</Typography>
+                        {searchSuggestion.suggestion_list?.length > 0 && (
+                            <Box className="krx-suggestion-list-wrapper">
+                                <Typography variant="caption" className="krx-suggestion-list-label">유사 종목
+                                    재검색:</Typography>
                                 {searchSuggestion.suggestion_list.map((suggestedQuery, index) => (
                                     <Chip
                                         key={index}
                                         label={suggestedQuery}
                                         onClick={() => handleSuggestionClick(suggestedQuery)}
-                                        color="warning"
-                                        variant="outlined" // 목록은 outlined로 구분
+                                        // 🟢 클래스 적용
+                                        className="krx-suggestion-chip"
                                         size="small"
-                                        sx={{ cursor: 'pointer', fontWeight: 'bold' }}
+                                        color="warning" // MUI color prop은 유지
+                                        variant="outlined" // MUI variant prop은 유지
                                     />
                                 ))}
                             </Box>
@@ -440,14 +492,21 @@ function KrxList() {
                 </Tabs>
 
                 {/* 즐겨찾기 필터 UI */}
-                <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', p: 1, my: 1, ml: 1 }}>
+                <Box style={{
+                    display: 'flex',
+                    justifyContent: 'flex-start',
+                    alignItems: 'center',
+                    padding: '8px 4px',
+                    margin: '8px 0',
+                    marginLeft: '4px'
+                }}>
                     <Chip
-                        icon={showFavoritesOnly ? <StarIcon /> : <StarBorderIcon />}
+                        icon={showFavoritesOnly ? <StarIcon/> : <StarBorderIcon/>}
                         label={`즐겨찾기 ${showFavoritesOnly ? '만 보기 (해제)' : '필터 켜기'}`}
                         onClick={handleToggleFavorites}
                         color={showFavoritesOnly ? "primary" : "default"}
                         variant={showFavoritesOnly ? "filled" : "outlined"}
-                        sx={{ cursor: 'pointer', mr: 2 }}
+                        style={{cursor: 'pointer', marginRight: '16px'}} // 간단한 레이아웃 스타일은 style로 유지
                     />
                 </Box>
 
@@ -548,24 +607,33 @@ function KrxList() {
                 {/* 🟢 1. 랭킹 사이드바 부활 */}
                 <Paper className="krx-ranking-sidebar">
                     <Typography className="krx-ranking-title">{rankingTypes[rankingTypeIndex].label} Top 10</Typography>
-                    {rankingData.slice(0,10).map((item,i)=>(
-                        <Box
-                            key={item.code}
-                            onClick={()=>goToDetail({code:item.code, name:item.name})}
-                            className="krx-ranking-item"
-                        >
-                            <Box className="krx-ranking-item-inner">
-                                <Box className="krx-ranking-left">
-                                    <Typography className="krx-ranking-rank">{i+1}</Typography>
-                                    <Box>
-                                        <Typography className="krx-ranking-name">{item.name}</Typography>
-                                        <Typography className="krx-ranking-code">{item.code}</Typography>
-                                    </Box>
-                                </Box>
-                                <Typography className="krx-ranking-amount">{formatRankingValue(item, rankingTypes[rankingTypeIndex].field)}</Typography>
-                            </Box>
+
+                    {rankingLoading && rankingData.length === 0 ? (
+                        // 랭킹 데이터가 없고 로딩 중일 때만 표시 (최소한의 스타일로 중앙 정렬)
+                        <Box className="krx-ranking-loading-box">
+                            <CircularProgress size={24} color="secondary" />
                         </Box>
-                    ))}
+                    ) : (
+                        rankingData.slice(0,10).map((item,i)=>(
+                            <Box
+                                key={item.code}
+                                onClick={()=>goToDetail({code:item.code, name:item.name})}
+                                className="krx-ranking-item"
+                            >
+                                <Box className="krx-ranking-item-inner">
+                                    <Box className="krx-ranking-left">
+                                        <Typography className="krx-ranking-rank">{i + 1}</Typography>
+                                        <Box>
+                                            <Typography className="krx-ranking-name">{item.name}</Typography>
+                                            <Typography className="krx-ranking-code">{item.code}</Typography>
+                                        </Box>
+                                    </Box>
+                                    <Typography
+                                        className="krx-ranking-amount">{formatRankingValue(item, rankingTypes[rankingTypeIndex].field)}</Typography>
+                                </Box>
+                            </Box>
+                        ))
+                    )}
                 </Paper>
 
                 {/* 2. 최근 본 종목 */}
@@ -589,11 +657,13 @@ function KrxList() {
 
                 {/* 3. 즐겨찾기 목록 */}
                 <Paper className="krx-sidebar-section">
-                    <Typography variant="h6" className="krx-sidebar-title">즐겨찾기 목록 ({favoriteStocks.length}개)</Typography>
+                    <Typography variant="h6" className="krx-sidebar-title">즐겨찾기 목록
+                        ({favoriteStocks.length}개)</Typography>
                     {!isLoggedIn ? (
                         <Typography variant="body2" color="error">로그인이 필요합니다. (즐겨찾기 추가/확인)</Typography>
                     ) : favoriteStocks.length === 0 ? (
-                        <Typography variant="body2" color="textSecondary">즐겨찾기한 종목이 없습니다. 테이블에서 별표를 눌러 추가해 보세요.</Typography>
+                        <Typography variant="body2" color="textSecondary">즐겨찾기한 종목이 없습니다. 테이블에서 별표를 눌러 추가해
+                            보세요.</Typography>
                     ) : (
                         favoriteStocks.map((stock) => (
                             <Box
@@ -604,11 +674,11 @@ function KrxList() {
                                     onClick={() => goToDetail(stock)}
                                     className="krx-favorite-link"
                                 >
-                                    <Typography variant="body1" sx={{ fontWeight: 'medium' }}>{stock.name}</Typography>
+                                    <Typography variant="body1" style={{fontWeight: 'medium'}}>{stock.name}</Typography>
                                 </Box>
                                 <Tooltip title="즐겨찾기 제거">
                                     <IconButton size="small" onClick={() => toggleFavorite(stock)}>
-                                        <StarIcon sx={{ color: 'gold', fontSize: '1rem' }} />
+                                        <StarIcon style={{color: 'gold', fontSize: '1rem'}}/>
                                     </IconButton>
                                 </Tooltip>
                             </Box>
