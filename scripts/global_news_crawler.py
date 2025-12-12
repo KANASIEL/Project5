@@ -48,29 +48,41 @@ async def fetch_rss(session, url):
 # ------------------------------------------------
 async def get_article_detail(session, url, source):
     try:
-        async with session.get(url, headers=HEADERS, timeout=10) as res:
+        async with session.get(
+            url,
+            headers=HEADERS,
+            timeout=aiohttp.ClientTimeout(total=8)
+        ) as res:
+            if res.status != 200:
+                print(f"[DETAIL SKIP] {source} {res.status} {url}")
+                return "", "", None
+
             text = await res.text()
             soup = BeautifulSoup(text, "html.parser")
 
-            # 본문
             paragraphs = soup.select("p")
-            content = "\n".join([p.get_text(strip=True) for p in paragraphs if len(p.get_text(strip=True)) > 20])
+            content = "\n".join(
+                p.get_text(strip=True)
+                for p in paragraphs
+                if len(p.get_text(strip=True)) > 20
+            )
 
-            # 이미지
             image_url = ""
             meta_img = soup.select_one("meta[property='og:image']")
             if meta_img:
-                temp = meta_img["content"]
-                if ".svg" not in temp and "logo" not in temp.lower():
-                    image_url = temp
+                image_url = meta_img.get("content", "")
 
-            # 작성자 (기존 로직 재사용)
             author = extract_author(soup, source)
-            
             return content, image_url, author
-    except Exception as e:
-        print(f"[DETAIL ERROR] {url} → {e}")
+
+    except asyncio.TimeoutError:
+        print(f"[DETAIL TIMEOUT] {source} {url}")
         return "", "", None
+
+    except Exception as e:
+        print(f"[DETAIL ERROR] {source} {url} → {e}")
+        return "", "", None
+
 
 def extract_author(soup, source):
     # (기존과 동일한 로직, 너무 길어서 생략하지 않고 핵심만 유지)
