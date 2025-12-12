@@ -18,6 +18,9 @@
   
   "needLogin": "로그인이 필요합니다.",
   "profile": "프로필",
+  "profileImg": "프로필 이미지",
+  "noFile" : "파일이 선택되지 않았습니다",
+  "select" : "선택",
   "id": "아이디",
   "pw": "비밀번호",
   "nickname": "닉네임",
@@ -34,6 +37,7 @@
   "deleteSuccess": "회원 탈퇴 완료",
   "deleteFail": "회원 탈퇴 실패",
   "serverError": "서버 오류 발생",
+  "loginFail" : "아이디나 비밀번호가 일치하지 않습니다.",
   
   "profilePreviewAlt": "프로필 미리보기",
   "changePhoto": "사진 변경",
@@ -42,5 +46,26 @@
   "errorPassword": "비밀번호는 8자 이상이고 특수문자를 포함해야 합니다.",
   "submit": "저장하기",
   "success": "회원 정보가 수정되었습니다!",
-  "failed": "수정 실패"
+  "failed": "수정 실패",
+  
+  "errorEmail": "유효한 이메일 주소를 입력해주세요.",
+  "errorUserId": "아이디는 필수 입력 사항입니다.",
+  "duplicateId": "이미 사용 중인 아이디입니다.",
+  "duplicateEmail": "이미 사용 중인 이메일입니다.",
+  "registerSuccess": "회원가입 완료되었습니다.",
+  "registerFail": "회원가입에 실패했습니다."
+  
 }
+
+
+
+
+
+
+
+
+
+
+
+
+

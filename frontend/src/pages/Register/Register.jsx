@@ -2,8 +2,11 @@ import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import './Register.css';
+import { useTranslation } from "react-i18next";
 
 const SignUpForm = () => {
+	
+	const { t } = useTranslation();
 	
 	const navigate = useNavigate();
 	
@@ -41,15 +44,15 @@ const SignUpForm = () => {
 	    const validationErrors = [];
 
 	    if (userPassword && !passwordValidation(userPassword)) {
-	        setPasswordError("비밀번호는 최소 8자 이상, 특수문자를 포함해야 합니다.");
+	        setPasswordError(t("errorPassword"));
 	        validationErrors.push("비밀번호 유효성 검사 실패");
 	    }
 	    if (email && !emailValidation(email)) {
-	        setEmailError("유효한 이메일 주소를 입력해주세요.");
+	        setEmailError(t("errorEmail"));
 	        validationErrors.push("이메일 유효성 검사 실패");
 	    }
 	    if (userId.trim() === "") {
-	        validationErrors.push("아이디는 필수 입력 사항입니다.");
+	        validationErrors.push(t("errorUserId"));
 	    }
 	    if (validationErrors.length > 0) return;
 
@@ -76,26 +79,40 @@ const SignUpForm = () => {
 	        formData.append("profileImage", profileImage);
 	    }
 
-	    try {
-	        const response = await axios.post("/api/register", formData, {
-	            headers: {
-	                "Content-Type": "multipart/form-data",
-	            },
-	        });
+		try {
+		    const response = await axios.post("/api/register", formData, {
+		        headers: { "Content-Type": "multipart/form-data" }
+		    });
 
-	        if (response.data === "이미 사용 중인 아이디입니다.") {
-	            setUserIdError(response.data);
-	        } else if (response.data === "이미 사용 중인 이메일입니다.") {
-	            setEmailError(response.data);
-	        } else {
-	            alert("회원가입 완료되었습니다.");
-	            navigate("/");
-	        }
+		    const msg = response.data; // 백엔드에서 넘어온 key
 
-	    } catch (error) {
-	        setMessage("회원가입에 실패했습니다.");
-	        console.error(error);
-	    }
+		    if (msg === "error.userIdExists") {
+		        setUserIdError(t("duplicateId"));
+		        return;
+		    }
+		    if (msg === "error.emailExists") {
+		        setEmailError(t("duplicateEmail"));
+		        return;
+		    }
+
+		    alert(t("registerSuccess"));
+		    navigate("/");
+
+		} 		catch (error) {
+
+		    if (error.response) {
+		        // 서버가 400, 500 응답을 보낸 경우
+		        console.error("서버 응답 오류:", error.response.data);
+		    } else if (error.request) {
+		        // 요청은 갔지만 응답이 없는 경우
+		        console.error("응답 없음:", error.request);
+		    } else {
+		        // 요청 만들기도 전에 오류
+		        console.error("요청 오류:", error.message);
+		    }
+
+		    setMessage(t("registerFail"));
+			}
 	};
 
 
@@ -107,10 +124,10 @@ const SignUpForm = () => {
 		    </div>
 		
 			<div className="register-container">
-	            <h2 className="register-title">회원가입</h2>
+	            <h2 className="register-title">{t("register")}</h2>
 	            <form onSubmit={handleSubmit}>
 	                <div>
-	                    <p className="register-p">아이디&nbsp;&nbsp;&nbsp;&nbsp;
+	                    <p className="register-p">{t("id")}&nbsp;&nbsp;&nbsp;&nbsp;
 						{userIdError && <label style={{ color: "#FF0000" }}>{userIdError}</label>}  {/* 아이디 중복 오류 메시지 */}</p>
 	                    <input
 	                        type="text"
@@ -121,7 +138,7 @@ const SignUpForm = () => {
 	                    />
 	                </div>
 	                <div>
-	                    <p className="register-p">비밀번호&nbsp;&nbsp;&nbsp;&nbsp;
+	                    <p className="register-p">{t("pw")}&nbsp;&nbsp;&nbsp;&nbsp;
 						{passwordError && <label style={{ color: "#FF0000" }}>{passwordError}</label>}</p>
 	                    <input
 	                        type="password"
@@ -132,7 +149,7 @@ const SignUpForm = () => {
 	                    />
 	                </div>
 	                <div>
-	                    <p className="register-p">이메일&nbsp;&nbsp;&nbsp;&nbsp;
+	                    <p className="register-p">{t("email")}&nbsp;&nbsp;&nbsp;&nbsp;
 						{emailError && <label style={{ color: "#FF0000" }}>{emailError}</label>}</p>
 	                    <input
 	                        type="email"
@@ -143,7 +160,7 @@ const SignUpForm = () => {
 	                    />
 	                </div>
 	                <div>
-	                    <p className="register-p">닉네임</p>
+	                    <p className="register-p">{t("nickname")}</p>
 	                    <input
 	                        type="text"
 	                        value={nickname}
@@ -152,7 +169,7 @@ const SignUpForm = () => {
 	                    />
 	                </div>
 					<div>
-					    <p className="register-p">프로필 이미지</p>
+					    <p className="register-p">{t("profileImg")}</p>
 					    <div className="custom-file-upload">
 					        <input
 					            type="file"
@@ -161,15 +178,15 @@ const SignUpForm = () => {
 					            className="register-input-file"
 					        />
 					        <label htmlFor="file-input" className="custom-file-label">
-					            선택
+					            {t("select")}
 					        </label>
 					        <span className="file-name">
-					            {profileImage ? profileImage.name : "파일 선택되지 않음"}
+					            {profileImage ? profileImage.name : t("noFile")}
 					        </span>
 					    </div>
 					</div>
-	                <button type="submit" className="register-btn">회원가입</button>
-	                <button type="button" onClick={() => window.location.href = "/login"} className="register-login">로그인</button>
+	                <button type="submit" className="register-btn">{t("register")}</button>
+	                <button type="button" onClick={() => window.location.href = "/login"} className="register-login">{t("login")}</button>
 	            </form>
 				
 				{message && <p>{message}</p>}

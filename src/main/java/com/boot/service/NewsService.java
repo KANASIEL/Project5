@@ -18,4 +18,6 @@ public interface NewsService {
     //오타 교정
     Map<String, Object> getSearchCorrection(String query);
 
+    // 인기검색어 집계 함수
+    List<Map<String, Object>> getTrendingKeywords(int hours);
 }

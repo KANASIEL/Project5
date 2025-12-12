@@ -12,16 +12,20 @@ function MainPage() {
 
     const handleSearch = (e) => {
         e.preventDefault();
-        if (!searchTerm.trim()) return;
+		const q = searchTerm.trim();
+		if (!q) return;
         
-        console.log(`${activeTab === 'stock' ? '주식' : '뉴스'} 검색:`, searchTerm);
+        console.log(`${activeTab === 'stock' ? '주식' : '뉴스'} 검색:`, q);
         
         if (activeTab === 'news') {
-            navigate(`/news?category=금융&q=${encodeURIComponent(searchTerm)}`);
+            navigate(`/news?category=금융&q=${encodeURIComponent(q)}`);
             return;
         }
         
-        console.log('📈 주식 검색 기능 준비중...');
+		if (activeTab === 'stock') {
+		    navigate(`/krx/list?q=${encodeURIComponent(q)}`);
+		    return;
+		  }
     };
 
     return (

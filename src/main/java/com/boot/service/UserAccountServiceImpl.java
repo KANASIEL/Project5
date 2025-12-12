@@ -32,13 +32,14 @@ public class UserAccountServiceImpl implements UserAccountService{
     public String register(UserAccountDTO userAccountDTO, MultipartFile profileImage) {
 
         // 1) 아이디, 이메일 중복 체크
-        if (dao.findByUserId(userAccountDTO.getUser_id()) != null) {
-            return "이미 사용 중인 아이디입니다.";
-        }
+		if (dao.findByUserId(userAccountDTO.getUser_id()) != null) {
+		    return "error.userIdExists";
+		}
 
-        if (dao.findByEmail(userAccountDTO.getEmail()) != null) {
-            return "이미 사용 중인 이메일입니다.";
-        }
+		if (dao.findByEmail(userAccountDTO.getEmail()) != null) {
+		    return "error.emailExists";
+		}
+
 
         // 2) 비밀번호 암호화
         String encodedPassword = passwordEncoder.encode(userAccountDTO.getUser_password());
@@ -72,7 +73,7 @@ public class UserAccountServiceImpl implements UserAccountService{
         // 4) DB 저장 (MyBatis Mapper → insertUserAccount 사용)
         dao.insertUserAccount(userAccountDTO);
 
-        return "회원가입이 성공적으로 완료되었습니다.";
+        return "register.success";
     }
 
 

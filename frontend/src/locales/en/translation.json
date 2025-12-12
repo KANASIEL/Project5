@@ -15,8 +15,12 @@
   "placeholderNews": "Shinhan Financial, Samsung, AI, Interest Rate Hike... (Morphological Analysis + TF-IDF Ranking applied)",
   "searchHint": "💡 Searching in the News tab applies <strong>TF-IDF Ranking + Morphological Analysis + Similarity Score</strong>!",
   "bottomText": "All real-time stock info and latest financial news in one place (TF-IDF search engine complete!)",
+  
   "needLogin": "Login is required.",
   "profile": "Profile",
+  "profileImg": "profile image",
+  "noFile" : "No file selected",
+  "select" : "select",
   "id": "ID",
   "pw": "Password",
   "nickname": "Nickname",
@@ -33,6 +37,7 @@
   "deleteSuccess": "Account successfully deleted",
   "deleteFail": "Failed to delete account",
   "serverError": "Server error occurred",
+  "loginFail" : "The ID or password does not match.",
   
   "profilePreviewAlt": "Profile Preview",
   "changePhoto": "Change Photo",
@@ -41,5 +46,12 @@
   "errorPassword": "Password must be at least 8 characters and include a special character.",
   "submit": "Save",
   "success": "Your information has been updated!",
-  "failed": "Update failed."
+  "failed": "Update failed.",
+  
+  "errorEmail": "Please enter a valid email address.",
+  "errorUserId": "User ID is required.",
+  "duplicateId": "This user ID is already in use.",
+  "duplicateEmail": "This email address is already in use.",
+  "registerSuccess": "Registration completed successfully.",
+  "registerFail": "Registration failed."
 }

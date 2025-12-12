@@ -46,7 +46,6 @@ const Login = () => {
             // -------------------------------------------
 			const token = response.data.token;
 			const nickname = response.data.user.nickname;
-			const socialType = response.data.user.socialType;
 
             if (!token) {
                 setErrorMsg("서버에서 토큰을 받지 못했습니다.");
@@ -69,7 +68,7 @@ const Login = () => {
 
         } catch (error) {
             console.error("로그인 오류:", error);
-            setErrorMsg("아이디나 비밀번호가 일치하지 않습니다.");
+            setErrorMsg(t("loginFail"));
         }
     };
 
