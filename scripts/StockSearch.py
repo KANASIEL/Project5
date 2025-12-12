@@ -14,7 +14,7 @@ from typing import List, Optional
 # ⚠️ 주의: 실제 운영 환경에서는 반드시 환경 변수를 사용해야 합니다!
 MONGO_URI = "mongodb+srv://kh:1234@cluster0.fbav0ho.mongodb.net/"
 # ⭐️ [수정] 직접 명시된 키만 사용하고 변수명 변경
-OPENAI_API_KEY = "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"
+OPENAI_API_KEY = ""
 # ----------------------------------------------------------------------
 
 app = FastAPI()
