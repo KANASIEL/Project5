@@ -185,14 +185,14 @@ if __name__ == "__main__":
     scheduler.add_job(
         lambda: asyncio.run(task_korea_crawling()),
         'interval',
-        minutes=10,
+        minutes=5,
         next_run_time=datetime.now()
     )
     
     scheduler.add_job(
         lambda: asyncio.run(task_global_crawling()),
         'interval',
-        minutes=30,
+        minutes=15,
         next_run_time=datetime.now()
     )
     
