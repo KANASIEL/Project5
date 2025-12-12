@@ -257,16 +257,33 @@ def get_article_detail_yahoo(url):
 
         soup = BeautifulSoup(res.text, "html.parser")
 
+        # -----------------
+        # 본문
+        # -----------------
         paragraphs = soup.select("p")
         content = "\n".join(
             [p.get_text(strip=True) for p in paragraphs if len(p.get_text(strip=True)) > 20]
         )
 
+        # -----------------
+        # 이미지 (Yahoo 대응)
+        # -----------------
         image_url = ""
-        meta_img = soup.select_one("meta[property='og:image']")
-        if meta_img:
-            image_url = meta_img.get("content", "")
 
+        # 1️⃣ og:image
+        meta_img = soup.select_one("meta[property='og:image']")
+        if meta_img and meta_img.get("content"):
+            image_url = meta_img["content"]
+
+        # 2️⃣ twitter:image fallback
+        if not image_url:
+            meta_tw = soup.select_one("meta[name='twitter:image']")
+            if meta_tw and meta_tw.get("content"):
+                image_url = meta_tw["content"]
+
+        # -----------------
+        # 작성자
+        # -----------------
         author = extract_author(soup, "Yahoo Finance")
 
         return content, image_url, author
@@ -275,19 +292,30 @@ def get_article_detail_yahoo(url):
         print(f"[DETAIL ERROR][YAHOO] {url} → {e}")
         return "", "", None
 
+
 # ------------------------------------------------
 # ★ 메인 실행 함수 (Async)
 # ------------------------------------------------
-async def task_global_crawling():
-    print(f"\n[{datetime.datetime.now()}] 🌍 글로벌 뉴스 크롤링 시작 (Async)")
-    async with aiohttp.ClientSession() as session:
-        # 5개 사이트를 '동시에' 실행 (병렬 처리)
-        await asyncio.gather(
-            crawl_reuters(session),
-            crawl_cnbc(session),
-            crawl_bbc(session),
-            crawl_cnn(session),
-            crawl_yahoo(session)
-        )
-    print("🎉 글로벌 크롤링 완료!")
+# 파일 상단
+is_global_crawling = False
 
+async def task_global_crawling():
+    global is_global_crawling
+    if is_global_crawling:
+        print("⏭ 이미 글로벌 크롤링 중, 스킵")
+        return
+
+    is_global_crawling = True
+    try:
+        print(f"\n[{datetime.datetime.now()}] 🌍 글로벌 뉴스 크롤링 시작")
+        async with aiohttp.ClientSession() as session:
+            await asyncio.gather(
+                crawl_reuters(session),
+                crawl_cnbc(session),
+                crawl_bbc(session),
+                crawl_cnn(session),
+                crawl_yahoo(session)
+            )
+        print("🎉 글로벌 크롤링 완료!")
+    finally:
+        is_global_crawling = False
