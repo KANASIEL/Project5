@@ -1,13 +1,16 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from urllib.parse import unquote
-from datetime import datetime
+from datetime import datetime, timedelta
 import threading, time, os, asyncio
 
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 
-import scripts.naver_news_crawler as crawler
+
+from apscheduler.schedulers.background import BackgroundScheduler
+from scripts.naver_news_crawler import task_korea_crawling
+from scripts.global_news_crawler import task_global_crawling
 
 # 🔹 Redis 추가
 import redis
@@ -57,6 +60,21 @@ def _parse_pub_date(value):
                 continue
 
     return None
+
+# ==========================
+# 한 달 지난 기사 삭제
+# ==========================
+def delete_old_news(days: int = 30):
+    """
+    pubDate 기준으로 days일 지난 기사 삭제.
+    pubDate는 MongoDB에 datetime 타입으로 저장되어 있다고 가정.
+    """
+    threshold = datetime.now() - timedelta(days=days)
+    try:
+        result = collection.delete_many({"pubDate": {"$lt": threshold}})
+        print(f"[CLEANUP] {result.deleted_count}개 삭제 (기준일: {threshold})")
+    except Exception as e:
+        print(f"[CLEANUP ERROR] 오래된 뉴스 삭제 실패: {e}")
 
 
 # 🔹 Mongo 쿼리에서 바로 정렬 + 페이지네이션
@@ -168,10 +186,39 @@ def search_news():
 def run_crawler():
     while True:
         asyncio.run(crawler.main())
+        # 크롤링 한 번 끝날 때마다 30일 지난 기사 삭제
+        delete_old_news(30)
         time.sleep(3600)
-
+        
+@app.route("/health")
+def health():
+    return "OK"
 
 if __name__ == "__main__":
-    threading.Thread(target=run_crawler, daemon=True).start()
-    port = int(os.environ.get("PORT", 8585))
+    
+    # 🔹 스케줄러 설정 (전역)
+    scheduler = BackgroundScheduler(daemon=True)
+    
+    scheduler.add_job(
+        lambda: asyncio.run(task_korea_crawling()),
+        'interval',
+        minutes=5,
+        next_run_time=datetime.now()
+    )
+    
+    scheduler.add_job(
+        lambda: asyncio.run(task_global_crawling()),
+        'interval',
+        minutes=15,
+        next_run_time=datetime.now()
+    )
+    
+    scheduler.start()
+    print("🚀 [Scheduler] 국내/해외 뉴스 크롤러 스케줄러 가동됨")
+
+    # [중요] 기존에 돌던 크롤러 스레드는 충돌 방지를 위해 주석 처리(#) 합니다.
+    # threading.Thread(target=run_crawler, daemon=True).start() 
+    
+    port = int(os.environ.get("PORT", 10000)) # 렌더 포트 10000 (팀원이 8585 썼어도 렌더는 10000 권장)
     app.run(host="0.0.0.0", port=port, debug=False)
+

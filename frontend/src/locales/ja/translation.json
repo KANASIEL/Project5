@@ -53,6 +53,44 @@
   "duplicateId": "既に使用されているユーザーIDです。",
   "duplicateEmail": "既に使用されているメールアドレスです。",
   "registerSuccess": "会員登録が完了しました。",
-  "registerFail": "会員登録に失敗しました。"
+  "registerFail": "会員登録に失敗しました。",
   
+	"news_2": {
+	  "recentViewed": "⭐ 最近見た記事",
+	  "noRecent": "まだ閲覧した記事がありません。",
+	  "showingResultFor": "検索結果を表示中：",
+	  "searchedInstead": "最初の検索結果を表示します",
+	  "searchPlaceholder": "サムスン、アップル、エヌビディア…",
+	  "trendingTitle": "📈 人気の検索ワード",
+	  "analysis": "分析",
+	  "model": "モデル",
+	  "explainType": "タイプ",
+	  "sortLatest": "🕒 新しい順",
+	  "sortOldest": "📅 古い順",
+	  "noResult": "❌ {{keyword}} の検索結果はありません",
+	  "noNews": "まだニュースがありません",
+	  "noImage": "画像なし"
+	},
+
+	"category": {
+	    "금융": "金融",
+	    "증권": "証券",
+	    "산업/재계": "産業/財界",
+	    "중기/벤처": "中小企業/ベンチャー",
+	    "글로벌 경제": "グローバル経済",
+	    "생활경제": "生活経済",
+	    "경제 일반": "経済一般"
+	  },
+	  
+	"common": {
+	  "loading": "生成中...",
+	  "loadingNews": "ニュース読み込み中..."
+	},
+	
+	"prev" : "前へ",
+	"next" : "次へ",
+	
+	"topValueTitle": "📊 取引代金 Top 5",
+	"rank": "{{num}}位",
+	"hundredMillion": "億KRW"
 }

@@ -1,5 +1,7 @@
 package com.boot.service;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -7,8 +9,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.boot.dao.StockNewsRepository;
+import com.boot.dto.StockGlobalNews;
 import com.boot.dto.StockNews;
-
+import com.boot.dao.StockGlobalNewsRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -16,9 +19,9 @@ import lombok.RequiredArgsConstructor;
 public class StockNewsService {
 
     private final StockNewsRepository stockNewsRepository;
-
+    private final StockGlobalNewsRepository stockGlobalNewsRepository;
     public Page<StockNews> search(String keyword, String category, int page, int size, String sort) {
-    	 Sort s = "old".equals(sort)
+        Sort s = "old".equals(sort)
                  ? Sort.by(Sort.Direction.ASC, "pubDate")
                  : Sort.by(Sort.Direction.DESC, "pubDate");
 
@@ -39,4 +42,50 @@ public class StockNewsService {
         // 4. 아무 조건 없는 경우 전체
         return stockNewsRepository.findAll(pageable);
     }
+    
+    public Page<StockGlobalNews> getGlobalNews(
+            String category,
+            int page,
+            int size,
+            String sort
+    ) {
+        Sort s = "asc".equalsIgnoreCase(sort)
+                ? Sort.by(Sort.Direction.ASC, "pubDate")
+                : Sort.by(Sort.Direction.DESC, "pubDate");
+
+        Pageable pageable = PageRequest.of(page, size, s);
+
+        if (category == null || category.equals("전체") || category.isBlank()) {
+            return stockGlobalNewsRepository.findAll(pageable);
+        }
+
+        return stockGlobalNewsRepository.findBySource(category, pageable);
+    }
+
+    
+    public Page<StockGlobalNews> searchGlobalNews(
+            String category,
+            String keyword,
+            int page,
+            int size,
+            String sort
+    ) {
+        Sort s = "asc".equalsIgnoreCase(sort)
+                ? Sort.by(Sort.Direction.ASC, "pubDate")
+                : Sort.by(Sort.Direction.DESC, "pubDate");
+
+        Pageable pageable = PageRequest.of(page, size, s);
+
+        if (category == null || category.equals("전체")) {
+            return stockGlobalNewsRepository
+                    .findByRegionAndTitleContainingIgnoreCase("global", keyword, pageable);
+        }
+
+        return stockGlobalNewsRepository
+                .findByRegionAndSourceAndTitleContainingIgnoreCase(
+                        "global", category, keyword, pageable
+                );
+    }
+
+
 }

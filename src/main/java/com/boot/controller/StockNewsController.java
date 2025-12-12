@@ -3,6 +3,7 @@ package com.boot.controller;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.boot.dto.StockGlobalNews;
 import com.boot.dto.StockNews;
 import com.boot.service.StockNewsService;
 
@@ -56,4 +58,27 @@ public class StockNewsController {
 
         return result;
     }
+    
+    @GetMapping("/global")
+    public Page<StockGlobalNews> getGlobalNews(
+            @RequestParam(required = false) String category,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(defaultValue = "desc") String sort
+    ) {
+        return stockNewsService.getGlobalNews(category, page, size, sort);
+    }
+
+    @GetMapping("/global/search")
+    public Page<StockGlobalNews> searchGlobal(
+            @RequestParam String q,
+            @RequestParam(required = false) String category,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(defaultValue = "desc") String sort
+    ) {
+        return stockNewsService.searchGlobalNews(category, q, page, size, sort);
+    }
+
+
 }

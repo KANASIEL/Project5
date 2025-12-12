@@ -29,7 +29,20 @@ export default function Header() {
                 <nav className="stock-header__nav">
                     <Link to="/" className="stock-header__nav-item">{t("home")}</Link>
                     <Link to="/krx/list" className="stock-header__nav-item">{t("domesticStock")}</Link>
-                    <a href="/news" className="stock-header__nav-item">{t("news")}</a>
+                    <div className="stock-header__dropdown">
+                        <span className="stock-header__nav-item dropdown-trigger">
+                            뉴스 ▾
+                        </span>
+
+                        <div className="dropdown-menu">
+                            <Link to="/news?region=korea" className="dropdown-item">
+                                국내 뉴스
+                            </Link>
+                            <Link to="/news?region=global" className="dropdown-item">
+                                해외 뉴스
+                            </Link>
+                        </div>
+                    </div>
                     <Link to="#" className="stock-header__nav-item">{t("about")}</Link>
                 </nav>
 

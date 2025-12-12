@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./NewsList.css";
+import { useTranslation } from "react-i18next";
 
 function NewsList() {
+	const { t } = useTranslation();
+	
 	const [items, setItems] = useState([]);
 	const [loading, setLoading] = useState(false);
 
@@ -181,12 +184,12 @@ function NewsList() {
 
 	  if (["score", "mixedScore"].includes(field)) {
 	    const val = Number(value) / 1e8; // 원 → 억
-	    return (val > 0 ? Math.floor(val) : val).toLocaleString() + "억";
+	    return (val > 0 ? Math.floor(val) : val).toLocaleString() + t("hundredMillion");
 	  }
 
 	  if (["marketCap"].includes(field)) {
 	    const val = Number(value);
-	    return (val > 0 ? Math.floor(val) : val).toLocaleString() + "억";
+	    return (val > 0 ? Math.floor(val) : val).toLocaleString() + t("hundredMillion");
 	  }
 
 	  if (field === "volume") {
@@ -375,7 +378,7 @@ function NewsList() {
 			{/* ⭐ 1. 왼쪽 사이드바: 최근 본 기사 (친구 코드) */}
 			<div className="sidebar-left">
 				<div className="sidebar-section">
-					<h3 className="sidebar-title">⭐ 최근 본 기사</h3>
+					<h3 className="sidebar-title">{t("news_2.recentViewed")}</h3>
 					<ul className="recent-list">
 						{recentlyViewed.length > 0 ? (
 							recentlyViewed.map((news, index) => (
@@ -390,7 +393,7 @@ function NewsList() {
 							))
 						) : (
 							<li className="recent-item" style={{ cursor: 'default', padding: '8px' }}>
-								<p className="recent-title" style={{ color: '#888' }}>아직 본 기사가 없습니다.</p>
+								<p className="recent-title" style={{ color: '#888' }}>{t("news_2.noRecent")}</p>
 							</li>
 						)}
 					</ul>
@@ -404,11 +407,11 @@ function NewsList() {
 					{/* 🔵 오타 교정 바 */}
 					{correction && (
 						<div className="correction-bar">
-							<span>다음에 대한 검색 결과 표시 중 </span>
+							<span>{t("news_2.showingResultFor")}</span>
 							<button type="button" className="correction-link" onClick={() => handleReSearch(correction.corrected)}>
 								[{correction.corrected}]
 							</button>
-							<span> 처음에 검색한 결과 </span>
+							<span> {t("news_2.searchedInstead")} </span>
 							<button type="button" className="original-link" onClick={() => handleReSearch(correction.original)}>
 								[{correction.original}]
 							</button>
@@ -419,7 +422,7 @@ function NewsList() {
 					<div className="search-box">
 					<input
 					  type="text"
-					  placeholder="삼성전자, 애플, 엔비디아..."
+					  placeholder={t("news_2.searchPlaceholder")}
 					  value={keyword}
 					  onChange={(e) => {
 					    setKeyword(e.target.value);
@@ -457,7 +460,7 @@ function NewsList() {
 					{/* 🔥 인기검색어 표시 */}
 					      {trendingKeywords.length > 0 && (
 					        <div className="trending-box">
-					          <span className="trending-title">📈 지금 많이 찾는 검색어</span>
+					          <span className="trending-title">{t("news_2.trendingTitle")}</span>
 
 					          <div className="trending-list">
 					            {trendingKeywords.map((k, idx) => (
@@ -481,8 +484,8 @@ function NewsList() {
 						<div className="ai-summary-section">
 							<div className="ai-summary-header">
 								<span className="ai-icon">🤖</span>
-								<span>AI 분석</span>
-								{summaryLoading && <span className="summary-loading">생성중...</span>}
+								<span>AI {t("news_2.analysis")}</span>
+								{summaryLoading && <span className="summary-loading">{t("common.loading")}</span>}
 							</div>
 
 							{summaryLoading ? (
@@ -499,7 +502,7 @@ function NewsList() {
 									{/* ✅ 메타 정보 */}
 									<div className="ai-meta">
 										<small>
-											모델: {aiSummary.model_used} | 타입: {aiSummary.explanation_type}
+											{t("news_2.model")}: {aiSummary.model_used} | {t("news_2.explainType")}: {aiSummary.explanation_type}
 										</small>
 									</div>
 								</div>
@@ -514,13 +517,13 @@ function NewsList() {
 					{/* 카테고리 탭 */}
 					<div className="category-tabs">
 						{CATEGORY_LIST.map((cat) => (
-							<button
-								key={cat}
-								className={cat === activeCategory ? "active" : ""}
-								onClick={() => handleCategoryChange(cat)}
-							>
-								{cat}
-							</button>
+						    <button
+						        key={cat}
+						        className={cat === activeCategory ? "active" : ""}
+						        onClick={() => handleCategoryChange(cat)}
+						    >
+						        {t(`category.${cat}`)}
+						    </button>
 						))}
 					</div>
 
@@ -536,7 +539,7 @@ function NewsList() {
 							className="sort-dropdown-trigger"
 							onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
 						>
-							{order === 'desc' ? '🕒 최신순' : '📅 오래된순'}
+							{order === 'desc' ? t("news_2.sortLatest") : t("news_2.sortOldest")}
 							<span className="dropdown-arrow">{isSortDropdownOpen ? '▲' : '▼'}</span>
 						</button>
 
@@ -553,7 +556,7 @@ function NewsList() {
 										setIsSortDropdownOpen(false); // 닫기
 									}}
 								>
-									🕒 최신순
+									{t("news_2.sortLatest")}
 								</li>
 								{/* 📅 오래된순 */}
 								<li
@@ -565,7 +568,7 @@ function NewsList() {
 										setIsSortDropdownOpen(false); // 닫기
 									}}
 								>
-									📅 오래된순
+									{t("news_2.sortOldest")}
 								</li>
 							</ul>
 						)}
@@ -573,10 +576,13 @@ function NewsList() {
 
 					{/* 뉴스 리스트 + 모달 + 페이지네이션 + 언론사 (변경없음) */}
 					{loading ? (
-						<p className="loading-message">뉴스 로딩중...</p>
+						<p className="loading-message">{t("common.loadingNews")}</p>
 					) : listToShow.length === 0 ? (
 						<p className="empty-message">
-							{isSearching ? `❌ "${keyword}" 검색 결과 없음` : "아직 뉴스가 없어요"}
+						{isSearching
+						  ? t("news_2.noResult", { keyword })
+						  : t("news_2.noNews")
+						}
 						</p>
 					) : (
 						<ul className="news-list">
@@ -588,7 +594,7 @@ function NewsList() {
 												<img src={n.image_url} alt={n.title} className="news-image" />
 											</div>
 										) : (
-											<div className="news-image-wrapper placeholder">이미지 없음</div>
+											<div className="news-image-wrapper placeholder">{t("news_2.noImage")}</div>
 										)}
 										<div className="news-text">
 											<h3 dangerouslySetInnerHTML={{ __html: highlightText(n.title || "") }} />
@@ -614,9 +620,9 @@ function NewsList() {
 
 					{!isSearching && totalPages > 1 && (
 						<div className="pagination">
-							<button onClick={() => goToPage(page - 1)} disabled={page === 0}>이전</button>
+							<button onClick={() => goToPage(page - 1)} disabled={page === 0}>{t("prev")}</button>
 							<span>{page + 1} / {totalPages}</span>
-							<button onClick={() => goToPage(page + 1)} disabled={page + 1 === totalPages}>다음</button>
+							<button onClick={() => goToPage(page + 1)} disabled={page + 1 === totalPages}>{t("next")}</button>
 						</div>
 					)}
 				</div>
@@ -625,7 +631,7 @@ function NewsList() {
 			{/* ⭐ 3. 오른쪽 사이드바: 거래대금 Top 5 */}
 			<div className="sidebar-right">
 				<div className="sidebar-section stock-ranking-section">
-					<h3 className="sidebar-title">📊 거래대금 Top 5</h3>
+					<h3 className="sidebar-title">	{t("topValueTitle")}</h3>
 					<ul className="stock-ranking-list">
 						{tradeRanking.slice(0, 5).map((item, i) => (
 							<li
@@ -635,7 +641,7 @@ function NewsList() {
 								onClick={() => navigate(`/krx/${item.code}`)}
 							>
 								<div className="stock-ranking-left">
-									<span className="stock-ranking-rank">{i + 1}위</span>
+									<span className="stock-ranking-rank">{t("rank", { num: i + 1 })}</span>
 									<div className="stock-ranking-name">{item.name}</div>
 								</div>
 								<div className="stock-ranking-amount">
