@@ -7,3 +7,4 @@ dnspython==2.6.1
 Flask-CORS==5.0.0
 redis==5.0.7          # Redis 파이썬 클라이언트
 Flask-Caching==2.3.0  # (지금 코드에 안 쓰면 생략 가능)
+requests
