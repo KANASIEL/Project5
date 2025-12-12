@@ -5,6 +5,7 @@ from pymongo import MongoClient
 from pymongo.server_api import ServerApi
 import datetime
 import os
+import requests
 
 # 1. MongoDB 연결 (기존과 동일)
 MONGO_URI = os.environ.get("MONGO_URI") 
@@ -289,3 +290,4 @@ async def task_global_crawling():
             crawl_yahoo(session)
         )
     print("🎉 글로벌 크롤링 완료!")
+
