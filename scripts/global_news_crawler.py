@@ -310,12 +310,13 @@ async def task_global_crawling():
         print(f"\n[{datetime.datetime.now()}] 🌍 글로벌 뉴스 크롤링 시작")
         async with aiohttp.ClientSession() as session:
             await asyncio.gather(
-                crawl_reuters(session),
-                crawl_cnbc(session),
-                crawl_bbc(session),
-                crawl_cnn(session),
-                crawl_yahoo(session)
-            )
+			    crawl_reuters(session),
+			    crawl_cnbc(session),
+			    crawl_bbc(session),
+			    crawl_cnn(session),
+			    crawl_yahoo(session),
+			    return_exceptions=True
+			)
         print("🎉 글로벌 크롤링 완료!")
     finally:
         is_global_crawling = False
