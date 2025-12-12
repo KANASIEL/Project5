@@ -173,32 +173,35 @@ def run_crawler():
     while True:
         asyncio.run(crawler.main())
         time.sleep(3600)
-
+        
+@app.route("/health")
+def health():
+    return "OK"
 
 if __name__ == "__main__":
-
-    # 1️⃣ 스케줄러 생성
+    
+    # 🔹 스케줄러 설정 (전역)
     scheduler = BackgroundScheduler(daemon=True)
-
-    # 국내 뉴스: 10분마다
+    
     scheduler.add_job(
         lambda: asyncio.run(task_korea_crawling()),
-        trigger="interval",
+        'interval',
         minutes=10,
         next_run_time=datetime.now()
     )
-
-    # 해외 뉴스: 30분마다
+    
     scheduler.add_job(
         lambda: asyncio.run(task_global_crawling()),
-        trigger="interval",
+        'interval',
         minutes=30,
         next_run_time=datetime.now()
     )
-
+    
     scheduler.start()
     print("🚀 [Scheduler] 국내/해외 뉴스 크롤러 스케줄러 가동됨")
 
-    # 2️⃣ Flask 서버 실행 (Render 포트 사용)
-    port = int(os.environ.get("PORT", 10000))
+    # [중요] 기존에 돌던 크롤러 스레드는 충돌 방지를 위해 주석 처리(#) 합니다.
+    # threading.Thread(target=run_crawler, daemon=True).start() 
+    
+    port = int(os.environ.get("PORT", 10000)) # 렌더 포트 10000 (팀원이 8585 썼어도 렌더는 10000 권장)
     app.run(host="0.0.0.0", port=port, debug=False)
