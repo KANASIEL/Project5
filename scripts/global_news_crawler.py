@@ -28,9 +28,12 @@ MEDIA_LOGOS = {
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.9",
-    "Referer": "https://www.google.com/"
+    "Referer": "https://edition.cnn.com/",
+    "Upgrade-Insecure-Requests": "1",
+    "Cache-Control": "max-age=0",
+    "Connection": "keep-alive"
 }
 
 DEFAULT_IMAGE = "https://via.placeholder.com/400x220?text=No+Image"
@@ -252,7 +255,7 @@ async def crawl_bbc(session):
 # =========================
 async def crawl_cnn(session):
     print("▶ CNN RSS 시작")
-    # 🔥 [중요] 죽은 링크(money_latest) 대신 최신 Business RSS 사용
+    # 최신 비즈니스 RSS
     rss_url = "http://rss.cnn.com/rss/edition_business.rss"
     
     try:
@@ -260,31 +263,34 @@ async def crawl_cnn(session):
         items = soup.find_all("item")[:15]
 
         for i, item in enumerate(items):
-            raw_title = item.title.text.strip()
-            title = clean_title(raw_title)
+            title = clean_title(item.title.text.strip())
             link = item.link.text.strip()
             
-            # 동영상 뉴스, 라이브 뉴스 제외 (본문 파싱이 안됨)
+            # 동영상/라이브 뉴스 제외
             if "/videos/" in link or "/live-news/" in link:
                 continue
 
-            print(f"   [CNN {i+1}] {title[:30]}")
-
+            # 1. 본문 크롤링 시도
             content, img, auth = await get_article_detail(session, link, "CNN")
 
-            # 본문이 너무 짧으면 RSS의 description이라도 사용
-            if len(content) < 50 and item.description:
-                desc_soup = BeautifulSoup(item.description.text, "html.parser")
-                content = desc_soup.get_text(strip=True)
+            # 2. [비상 대책] 크롤링 실패 시 RSS 설명글(description) 사용
+            if len(content) < 50:
+                print(f"   ⚠ [CNN] 본문 크롤링 실패 -> RSS 요약글 사용 시도")
+                if item.description:
+                    desc_soup = BeautifulSoup(item.description.text, "html.parser")
+                    content = desc_soup.get_text(strip=True)
 
-            if len(content) < 30: 
-                print(f"   [SKIP] CNN 내용 없음")
+            # 3. 그래도 내용이 없으면 저장 안 함
+            if len(content) < 20: 
+                print(f"   [SKIP] CNN 내용 없음 ({title[:15]}...)")
                 continue
 
+            print(f"   ✔ [CNN {i+1}] 저장 시도: {title[:20]}")
             save_news(title, link, content, img, "CNN", auth)
 
     except Exception as e:
-        print(f"⚠ CNN 크롤링 실패: {e}")
+        print(f"⚠ CNN 크롤링 에러: {e}")
+        
 # =========================
 # Yahoo (requests + executor)
 # =========================
