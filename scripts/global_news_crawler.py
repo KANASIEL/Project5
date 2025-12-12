@@ -115,7 +115,7 @@ async def crawl_reuters(session):
         url = "https://www.reuters.com/markets/"
         async with session.get(url, headers=HEADERS) as res:
             soup = BeautifulSoup(await res.text(), "html.parser")
-            articles = soup.select("a[data-testid='Heading']")[:5]
+            articles = soup.select("a[data-testid='Heading']")[:30]
             for a in articles:
                 title = a.get_text(strip=True)
                 if len(title) < 10: continue
@@ -132,7 +132,7 @@ async def crawl_cnbc(session):
         url = "https://www.cnbc.com/world/?region=world"
         async with session.get(url, headers=HEADERS) as res:
             soup = BeautifulSoup(await res.text(), "html.parser")
-            articles = soup.select("a.Card-title")[:5]
+            articles = soup.select("a.Card-title")[:30]
             for a in articles:
                 title = a.get_text(strip=True)
                 if len(title) < 10: continue
@@ -150,7 +150,7 @@ async def crawl_bbc(session):
         url = "https://www.bbc.com/business"
         async with session.get(url, headers=HEADERS) as res:
             soup = BeautifulSoup(await res.text(), "html.parser")
-            articles = soup.select('a[href*="/news/business"]')[:5]
+            articles = soup.select('a[href*="/news/business"]')[:30]
             for a in articles:
                 title = a.get_text(strip=True)
                 if len(title) < 10: continue
@@ -168,7 +168,7 @@ async def crawl_cnn(session):
         url = "https://edition.cnn.com/business"
         async with session.get(url, headers=HEADERS) as res:
             soup = BeautifulSoup(await res.text(), "html.parser")
-            articles = soup.select("a.container__link")[:5]
+            articles = soup.select("a.container__link")[:30]
             for a in articles:
                 title = a.get_text(strip=True)
                 if "Getty Images" in title: continue
