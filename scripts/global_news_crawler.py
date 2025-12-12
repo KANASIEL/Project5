@@ -7,16 +7,17 @@ import datetime
 import os
 import requests
 
-# 1. MongoDB 연결 (기존과 동일)
-MONGO_URI = os.environ.get("MONGO_URI") 
-# 로컬 테스트용 (필요시 주석 해제)
-# MONGO_URI = "mongodb+srv://..." 
-
+# =========================
+# MongoDB
+# =========================
+MONGO_URI = os.environ.get("MONGO_URI")
 client = MongoClient(MONGO_URI, server_api=ServerApi("1"))
 db = client["stock"]
 collection = db["news_global"]
 
-# 로고 정보
+# =========================
+# 미디어 로고
+# =========================
 MEDIA_LOGOS = {
     "Reuters": "https://www.reuters.com/pf/resources/images/reuters-logo.png",
     "CNBC": "https://upload.wikimedia.org/wikipedia/commons/e/e3/CNBC_logo.svg",
@@ -26,9 +27,16 @@ MEDIA_LOGOS = {
 }
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/120.0.0.0 Safari/537.36"
+    )
 }
 
+# =========================
+# RSS Fetch
+# =========================
 async def fetch_rss(session, url):
     async with session.get(
         url,
@@ -43,9 +51,9 @@ async def fetch_rss(session, url):
         text = await res.text()
         return BeautifulSoup(text, "xml")
 
-# ------------------------------------------------
-# 공통: 상세 페이지 파싱 (비동기)
-# ------------------------------------------------
+# =========================
+# 공통 상세 페이지 (async)
+# =========================
 async def get_article_detail(session, url, source):
     try:
         async with session.get(
@@ -54,11 +62,11 @@ async def get_article_detail(session, url, source):
             timeout=aiohttp.ClientTimeout(total=8)
         ) as res:
             if res.status != 200:
-                print(f"[DETAIL SKIP] {source} {res.status} {url}")
+                print(f"[DETAIL SKIP] {source} {res.status}")
                 return "", "", None
 
-            text = await res.text()
-            soup = BeautifulSoup(text, "html.parser")
+            html = await res.text()
+            soup = BeautifulSoup(html, "html.parser")
 
             paragraphs = soup.select("p")
             content = "\n".join(
@@ -68,51 +76,48 @@ async def get_article_detail(session, url, source):
             )
 
             image_url = ""
-            meta_img = soup.select_one("meta[property='og:image']")
-            if meta_img:
-                image_url = meta_img.get("content", "")
+            og = soup.select_one("meta[property='og:image']")
+            if og:
+                image_url = og.get("content", "")
 
             author = extract_author(soup, source)
             return content, image_url, author
 
     except asyncio.TimeoutError:
-        print(f"[DETAIL TIMEOUT] {source} {url}")
+        print(f"[DETAIL TIMEOUT] {source}")
         return "", "", None
-
     except Exception as e:
-        print(f"[DETAIL ERROR] {source} {url} → {e}")
+        print(f"[DETAIL ERROR] {source} → {e}")
         return "", "", None
 
-
+# =========================
+# 작성자 추출
+# =========================
 def extract_author(soup, source):
-    # (기존과 동일한 로직, 너무 길어서 생략하지 않고 핵심만 유지)
-    author = None
     try:
         if source == "Reuters":
             tag = soup.select_one("span[data-testid='author-name']")
-            author = tag.get_text(strip=True) if tag else None
         elif source == "CNBC":
             tag = soup.select_one(".ArticleHeader-author a")
-            author = tag.get_text(strip=True) if tag else None
         elif source == "CNN":
             tag = soup.select_one(".byline__names")
-            author = tag.get_text(strip=True) if tag else None
         elif source == "BBC":
             tag = soup.select_one(".ssrcss-1rv0p4l-Contributor")
-            author = tag.get_text(strip=True) if tag else None
         elif source == "Yahoo Finance":
             tag = soup.select_one("[data-testid='author-name']")
-            author = tag.get_text(strip=True) if tag else None
-    except:
-        pass
-    return author
+        else:
+            tag = None
 
-# ------------------------------------------------
-# 공통: DB 저장 (동기)
-# ------------------------------------------------
+        return tag.get_text(strip=True) if tag else None
+    except:
+        return None
+
+# =========================
+# DB 저장
+# =========================
 def save_news(title, link, content, image_url, source, author):
     if collection.find_one({"link": link}):
-        print(f"   [SKIP] {source}: {title[:15]}...")
+        print(f"   [SKIP] {source}: {title[:30]}")
         return
 
     doc = {
@@ -127,208 +132,169 @@ def save_news(title, link, content, image_url, source, author):
         "pubDate": datetime.datetime.now(),
         "createdAt": datetime.datetime.now()
     }
-    try:
-        collection.insert_one(doc)
-        print(f"   ✔ 저장됨: {title[:20]}")
-    except Exception as e:
-        print(f"   ❌ 저장 실패: {e}")
+    collection.insert_one(doc)
+    print(f"   ✔ 저장됨 [{source}] {title[:40]}")
 
-# ------------------------------------------------
-# 각 사이트별 리스트 가져오기 (비동기)
-# ------------------------------------------------
+# =========================
+# Reuters
+# =========================
 async def crawl_reuters(session):
     print("▶ Reuters RSS 시작")
-
-    soup = await fetch_rss(
-        session,
-        "https://www.reuters.com/rssFeed/worldNews"
-    )
-
+    soup = await fetch_rss(session, "https://www.reuters.com/rssFeed/worldNews")
     items = soup.find_all("item")[:30]
     print(f"   Reuters RSS items: {len(items)}")
 
-    for item in items:
+    for i, item in enumerate(items):
         title = item.title.text.strip()
         link = item.link.text.strip()
+        print(f"   [Reuters {i+1}/{len(items)}] {title[:40]}")
 
         content, img, auth = await get_article_detail(session, link, "Reuters")
         save_news(title, link, content, img, "Reuters", auth)
 
-
+# =========================
+# CNBC
+# =========================
 async def crawl_cnbc(session):
     print("▶ CNBC RSS 시작")
+    soup = await fetch_rss(
+        session,
+        "https://www.cnbc.com/id/100727362/device/rss/rss.html"
+    )
+    items = soup.find_all("item")[:30]
 
-    rss_url = "https://www.cnbc.com/id/100727362/device/rss/rss.html"
+    for i, item in enumerate(items):
+        title = item.title.text.strip()
+        link = item.link.text.strip()
+        print(f"   [CNBC {i+1}/{len(items)}] {title[:40]}")
 
-    try:
-        async with session.get(rss_url, headers=HEADERS, timeout=15) as res:
-            xml = await res.text()
-            soup = BeautifulSoup(xml, "xml")
+        content, img, auth = await get_article_detail(session, link, "CNBC")
+        save_news(title, link, content, img, "CNBC", auth)
 
-            items = soup.find_all("item")[:30]
-
-            for item in items:
-                title = item.title.text.strip()
-                link = item.link.text.strip()
-
-                if not title or not link:
-                    continue
-
-                content, img, auth = await get_article_detail(session, link, "CNBC")
-                save_news(title, link, content, img, "CNBC", auth)
-
-    except Exception as e:
-        print(f"⚠ CNBC RSS 에러: {e}")
-        
+# =========================
+# BBC
+# =========================
 async def crawl_bbc(session):
     print("▶ BBC RSS 시작")
-
     soup = await fetch_rss(
         session,
         "https://feeds.bbci.co.uk/news/business/rss.xml"
     )
-
     items = soup.find_all("item")[:30]
-    print(f"   BBC RSS items: {len(items)}")
 
-    for item in items:
+    for i, item in enumerate(items):
         title = item.title.text.strip()
         link = item.link.text.strip()
+        print(f"   [BBC {i+1}/{len(items)}] {title[:40]}")
 
         content, img, auth = await get_article_detail(session, link, "BBC")
         save_news(title, link, content, img, "BBC", auth)
 
-
-
+# =========================
+# CNN
+# =========================
 async def crawl_cnn(session):
     print("▶ CNN RSS 시작")
+    soup = await fetch_rss(
+        session,
+        "http://rss.cnn.com/rss/money_latest.rss"
+    )
+    items = soup.find_all("item")[:30]
 
-    rss_url = "http://rss.cnn.com/rss/money_latest.rss"
+    for i, item in enumerate(items):
+        title = item.title.text.strip()
+        link = item.link.text.strip()
+        if "video" in link.lower():
+            continue
 
-    try:
-        async with session.get(rss_url, headers=HEADERS, timeout=15) as res:
-            xml = await res.text()
-            soup = BeautifulSoup(xml, "xml")
+        print(f"   [CNN {i+1}/{len(items)}] {title[:40]}")
+        content, img, auth = await get_article_detail(session, link, "CNN")
+        save_news(title, link, content, img, "CNN", auth)
 
-            items = soup.find_all("item")[:30]
+# =========================
+# Yahoo (requests + executor)
+# =========================
+def get_article_detail_yahoo(url):
+    res = requests.get(
+        url,
+        headers={
+            "User-Agent": "Mozilla/5.0",
+            "Accept-Language": "en-US,en;q=0.9",
+        },
+        timeout=15
+    )
+    soup = BeautifulSoup(res.text, "html.parser")
 
-            for item in items:
-                title = item.title.text.strip()
-                link = item.link.text.strip()
+    paragraphs = soup.select("p")
+    content = "\n".join(
+        p.get_text(strip=True)
+        for p in paragraphs
+        if len(p.get_text(strip=True)) > 20
+    )
 
-                if "video" in link.lower():
-                    continue
+    image_url = ""
+    og = soup.select_one("meta[property='og:image']")
+    if og:
+        image_url = og.get("content", "")
 
-                content, img, auth = await get_article_detail(session, link, "CNN")
-                save_news(title, link, content, img, "CNN", auth)
-
-    except Exception as e:
-        print(f"⚠ CNN RSS 에러: {e}")
-
+    author = extract_author(soup, "Yahoo Finance")
+    return content, image_url, author
 
 async def crawl_yahoo(session):
     print("▶ Yahoo RSS 시작")
-
     soup = await fetch_rss(
         session,
         "https://finance.yahoo.com/rss/topstories"
     )
-
     items = soup.find_all("item")[:30]
-    print(f"   Yahoo RSS items: {len(items)}")
 
-    for item in items:
+    loop = asyncio.get_running_loop()
+
+    for i, item in enumerate(items):
         title = item.title.text.strip()
         link = item.link.text.strip()
+        print(f"   [Yahoo {i+1}/{len(items)}] {title[:40]}")
 
-        if not title or not link:
-            continue
-
-        # ✅ Yahoo는 requests 기반 전용 함수 사용
-        content, img, auth = get_article_detail_yahoo(link)
-
-        save_news(
-            title=title,
-            link=link,
-            content=content,
-            image_url=img,
-            source="Yahoo Finance",
-            author=auth
+        content, img, auth = await loop.run_in_executor(
+            None,
+            get_article_detail_yahoo,
+            link
         )
 
-def get_article_detail_yahoo(url):
-    try:
-        res = requests.get(
-            url,
-            headers={
-                "User-Agent": "Mozilla/5.0",
-                "Accept-Language": "en-US,en;q=0.9",
-            },
-            timeout=15
-        )
+        save_news(title, link, content, img, "Yahoo Finance", auth)
 
-        soup = BeautifulSoup(res.text, "html.parser")
-
-        # -----------------
-        # 본문
-        # -----------------
-        paragraphs = soup.select("p")
-        content = "\n".join(
-            [p.get_text(strip=True) for p in paragraphs if len(p.get_text(strip=True)) > 20]
-        )
-
-        # -----------------
-        # 이미지 (Yahoo 대응)
-        # -----------------
-        image_url = ""
-
-        # 1️⃣ og:image
-        meta_img = soup.select_one("meta[property='og:image']")
-        if meta_img and meta_img.get("content"):
-            image_url = meta_img["content"]
-
-        # 2️⃣ twitter:image fallback
-        if not image_url:
-            meta_tw = soup.select_one("meta[name='twitter:image']")
-            if meta_tw and meta_tw.get("content"):
-                image_url = meta_tw["content"]
-
-        # -----------------
-        # 작성자
-        # -----------------
-        author = extract_author(soup, "Yahoo Finance")
-
-        return content, image_url, author
-
-    except Exception as e:
-        print(f"[DETAIL ERROR][YAHOO] {url} → {e}")
-        return "", "", None
-
-
-# ------------------------------------------------
-# ★ 메인 실행 함수 (Async)
-# ------------------------------------------------
-# 파일 상단
+# =========================
+# 메인 태스크
+# =========================
 is_global_crawling = False
 
 async def task_global_crawling():
     global is_global_crawling
     if is_global_crawling:
-        print("⏭ 이미 글로벌 크롤링 중, 스킵")
+        print("⏭ 이미 글로벌 크롤링 중")
         return
 
     is_global_crawling = True
     try:
         print(f"\n[{datetime.datetime.now()}] 🌍 글로벌 뉴스 크롤링 시작")
-        async with aiohttp.ClientSession() as session:
+
+        timeout = aiohttp.ClientTimeout(total=10)
+        connector = aiohttp.TCPConnector(limit=10, ssl=False)
+
+        async with aiohttp.ClientSession(
+            timeout=timeout,
+            connector=connector
+        ) as session:
             await asyncio.gather(
-			    crawl_reuters(session),
-			    crawl_cnbc(session),
-			    crawl_bbc(session),
-			    crawl_cnn(session),
-			    crawl_yahoo(session),
-			    return_exceptions=True
-			)
-        print("🎉 글로벌 크롤링 완료!")
+                crawl_reuters(session),
+                crawl_cnbc(session),
+                crawl_bbc(session),
+                crawl_cnn(session),
+                crawl_yahoo(session),
+                return_exceptions=True
+            )
+
+        print("🎉 글로벌 크롤링 완료")
+
     finally:
         is_global_crawling = False
