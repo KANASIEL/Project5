@@ -6,7 +6,7 @@ from pymongo.server_api import ServerApi
 import datetime
 import os
 import requests
-
+import re
 # =========================
 # MongoDB
 # =========================
@@ -135,6 +135,12 @@ def save_news(title, link, content, image_url, source, author):
     collection.insert_one(doc)
     print(f"   ✔ 저장됨 [{source}] {title[:40]}")
 
+def clean_title(title):
+    # IMG, HTML 태그 제거
+    title = re.sub(r"<[^>]+>", "", title)
+    title = title.replace("IMG", "").strip()
+    return title
+
 # =========================
 # Reuters
 # =========================
@@ -195,19 +201,17 @@ async def crawl_bbc(session):
 # =========================
 async def crawl_cnn(session):
     print("▶ CNN RSS 시작")
-    soup = await fetch_rss(
-        session,
-        "http://rss.cnn.com/rss/money_latest.rss"
-    )
+    soup = await fetch_rss(session, "http://rss.cnn.com/rss/money_latest.rss")
     items = soup.find_all("item")[:30]
 
-    for i, item in enumerate(items):
-        title = item.title.text.strip()
+    for item in items:
+        raw_title = item.title.text.strip()
+        title = clean_title(raw_title)
+
         link = item.link.text.strip()
         if "video" in link.lower():
             continue
 
-        print(f"   [CNN {i+1}/{len(items)}] {title[:40]}")
         content, img, auth = await get_article_detail(session, link, "CNN")
         save_news(title, link, content, img, "CNN", auth)
 
