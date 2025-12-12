@@ -54,6 +54,7 @@ async def fetch_rss(session, url):
 # =========================
 # 공통 상세 페이지 (async)
 # =========================
+# 맨 위에 있는 get_article_detail만 남기고 수정
 async def get_article_detail(session, url, source):
     try:
         async with session.get(
@@ -61,6 +62,8 @@ async def get_article_detail(session, url, source):
             headers=HEADERS,
             timeout=aiohttp.ClientTimeout(total=8)
         ) as res:
+            print(f"[DETAIL] {source} {res.status} {url}")  # ★ 여기만 추가
+
             if res.status != 200:
                 print(f"[DETAIL SKIP] {source} {res.status}")
                 return "", "", None
@@ -89,6 +92,7 @@ async def get_article_detail(session, url, source):
     except Exception as e:
         print(f"[DETAIL ERROR] {source} → {e}")
         return "", "", None
+
 
 # =========================
 # 작성자 추출
@@ -267,18 +271,6 @@ async def crawl_yahoo(session):
 
         save_news(title, link, content, img, "Yahoo Finance", auth)
 
-async def get_article_detail(session, url, source):
-    try:
-        async with session.get(
-            url,
-            headers=HEADERS,
-            timeout=aiohttp.ClientTimeout(total=8)
-        ) as res:
-            print(f"[DETAIL] {source} {res.status} {url}")  # ★추가
-
-            if res.status != 200:
-                print(f"[DETAIL SKIP] {source} {res.status}")
-                return "", "", None
 
 # =========================
 # 메인 태스크
