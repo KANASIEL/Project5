@@ -161,3 +161,9 @@ def search_global_news():
 
     content, total_pages = _sort_and_page_global(query, page, size, order)
     return jsonify({"content": content, "number": page, "totalPages": total_pages})
+    
+    
+# 엔트리 포인트
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8586))  # 예시
+    app.run(host="0.0.0.0", port=port, debug=False)
