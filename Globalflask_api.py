@@ -9,6 +9,7 @@ from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 import redis, json
 
+import time
 import threading
 import asyncio
 from scripts.global_news_crawler import task_global_crawling
