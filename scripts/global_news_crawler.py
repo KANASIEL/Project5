@@ -228,10 +228,51 @@ async def crawl_yahoo(session):
         title = item.title.text.strip()
         link = item.link.text.strip()
 
-        content, img, auth = await get_article_detail(
-            session, link, "Yahoo Finance"
+        if not title or not link:
+            continue
+
+        # ✅ Yahoo는 requests 기반 전용 함수 사용
+        content, img, auth = get_article_detail_yahoo(link)
+
+        save_news(
+            title=title,
+            link=link,
+            content=content,
+            image_url=img,
+            source="Yahoo Finance",
+            author=auth
         )
-        save_news(title, link, content, img, "Yahoo Finance", auth)
+
+def get_article_detail_yahoo(url):
+    try:
+        res = requests.get(
+            url,
+            headers={
+                "User-Agent": "Mozilla/5.0",
+                "Accept-Language": "en-US,en;q=0.9",
+            },
+            timeout=15
+        )
+
+        soup = BeautifulSoup(res.text, "html.parser")
+
+        paragraphs = soup.select("p")
+        content = "\n".join(
+            [p.get_text(strip=True) for p in paragraphs if len(p.get_text(strip=True)) > 20]
+        )
+
+        image_url = ""
+        meta_img = soup.select_one("meta[property='og:image']")
+        if meta_img:
+            image_url = meta_img.get("content", "")
+
+        author = extract_author(soup, "Yahoo Finance")
+
+        return content, image_url, author
+
+    except Exception as e:
+        print(f"[DETAIL ERROR][YAHOO] {url} → {e}")
+        return "", "", None
 
 # ------------------------------------------------
 # ★ 메인 실행 함수 (Async)
