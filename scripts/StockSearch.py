@@ -8,13 +8,14 @@ import re
 import json
 from openai import OpenAI
 from typing import List, Optional
-# import os # <-- ⭐️ 환경 변수 사용을 위한 os 모듈 제거
+# Levenshtein 모듈이 필요합니다. (pip install python-levenshtein)
+import Levenshtein
 
 # ---------------- API 키 직접 명시 ----------------
 # ⚠️ 주의: 실제 운영 환경에서는 반드시 환경 변수를 사용해야 합니다!
 MONGO_URI = "mongodb+srv://kh:1234@cluster0.fbav0ho.mongodb.net/"
-# ⭐️ [수정] 직접 명시된 키만 사용하고 변수명 변경
-#  OPENAI설정
+# ⭐️ [수정] 여기에 유효한 API 키를 넣어주세요.
+# api키넣는곳 < 이거대신넣기
 # ----------------------------------------------------------------------
 
 app = FastAPI()
@@ -56,7 +57,6 @@ def startup_db_client():
         if not OPENAI_API_KEY:
             raise ValueError("OpenAI API 키가 설정되지 않았습니다.")
 
-        # ⭐️ [수정] 직접 명시된 키를 사용
         client_llm = OpenAI(api_key=OPENAI_API_KEY)
         print("OpenAI 클라이언트 준비 완료.")
 
@@ -130,6 +130,15 @@ def contains_chosung_mixed_with_korean(text: str) -> bool:
     has_korean_syllable = bool(re.search(r'[가-힣]', text))
     return has_chosung_jamo and has_korean_syllable
 
+def get_levenshtein_similarity(str1: str, str2: str) -> float:
+    """두 문자열의 Levenshtein 거리를 기반으로 유사도 (0.0~1.0)를 계산"""
+    distance = Levenshtein.distance(str1, str2)
+    max_len = max(len(str1), len(str2))
+    if max_len == 0:
+        return 0.0
+    # 유사도 = 1.0 - (거리 / 최대 길이)
+    return 1.0 - (distance / max_len)
+
 # QWERTY 영문 자판을 두벌식 한글 자모로 매핑
 KEY_MAP = {
     'q': 'ㅂ', 'w': 'ㅈ', 'e': 'ㄷ', 'r': 'ㄱ', 't': 'ㅅ', 'y': 'ㅛ', 'u': 'ㅕ', 'i': 'ㅑ', 'o': 'ㅐ', 'p': 'ㅔ',
@@ -145,39 +154,43 @@ def eng_to_kor_keyboard(text: str) -> str:
     return "".join(KEY_MAP.get(c, c) for c in text)
 
 # ---------------- GPT 기반 유사 종목 제안 함수 ----------------
-def get_gpt_suggestions(original_query: str, converted_query: str) -> List[str]:
+def get_gpt_suggestions(original_query: str, converted_query: str, best_match_names: List[str]) -> List[str]:
     """GPT-4o-mini를 호출하여 검색 의도를 보정하고 유력 종목명 리스트를 제안 받습니다."""
     global client_llm
-    if not client_llm:
+    if client_llm is None:
         print("LLM 클라이언트가 초기화되지 않았습니다. API 키를 확인하세요.")
         return []
 
+    # 유사 종목 리스트를 프롬프트에 추가합니다.
+    match_list_str = ", ".join(best_match_names) if best_match_names else "제시할 참고 종목 없음."
+
     prompt = f"""
-    당신은 한국 주식 시장 상장 종목명 검색 오류를 보정하는 **전문 보조 AI**입니다.
+당신은 한국 주식 시장 상장 종목명 검색 오류를 보정하는 전문 보조 AI입니다.
+
+사용자의 입력 쿼리는 키보드 오타로 인해 잘못 입력된 상태입니다. 아래 주어진 정보를 바탕으로 **가장 가능성이 높은 3~5개의 한국 상장 종목명**을 예측하세요. 특히 **[1차 자모 유사도 기반 참고 리스트]** 내에서 정답을 찾으려는 노력을 기울이세요.
+
+**--- 지침 및 제약 조건 ---**
     
-    사용자의 입력 쿼리는 키보드 한/영 전환 오류나 일반적인 오타로 인해 잘못 입력된 상태입니다. 당신의 임무는 아래 주어진 정보를 바탕으로 **사용자가 원래 의도했던 한국 상장 종목명**이 무엇인지 가장 가능성이 높은 **하나의 종목명**을 예측하는 것입니다.
+1.  **예측 대상:** 가장 가능성이 높은 **3~5개의 종목명**을 예측해야 합니다.
+2.  **출력 형식:** 예측된 종목명을 요소로 담는 **JSON 배열 형식**으로만 응답해야 합니다.
+3.  **출력 제약:** JSON 배열 외의 어떠한 설명이나 부가 텍스트도 절대 포함해서는 안 됩니다.
     
-    **--- 지침 및 제약 조건 ---**
+**--- 입력 정보 ---**
     
-    1.  **예측 대상:** 가장 자연스럽고 명확한 한국 주식 종목명 **1개**만을 예측해야 합니다.
-    2.  **출력 형식:** 예측된 종목명을 요소로 담는 **JSON 배열 형식**으로만 응답해야 합니다.
-    3.  **출력 제약:** JSON 배열 외의 어떠한 설명, 서론, 결론, 부가 텍스트, 마크다운 설명(예: ```json) 등도 **절대 포함해서는 안 됩니다.**
-    
-    **--- 입력 정보 ---**
-    
-    -   입력된 쿼리 (영문): '{original_query}'
-    -   변환된 쿼리 (한글 자모): '{converted_query}'
-    
-    **--- 실제 요청에 대한 예측 (JSON 배열로만 응답) ---**
-    """
+-   입력된 쿼리 (영문): '{original_query}'
+-   변환된 쿼리 (한글 자모): '{converted_query}'
+-   **[1차 자모 유사도 기반 참고 리스트]: {match_list_str}** **--- 실제 요청에 대한 예측 (JSON 배열로만 응답) ---**
+"""
     try:
         response = client_llm.chat.completions.create(
             model="gpt-4o-mini-2024-07-18",
             messages=[
-                {"role": "system", "content": "You are a specialized AI for correcting misspelled Korean stock names and must output ONLY a JSON array containing up to 1 suggested stock name."},
+                {"role": "system", "content": "You are a specialized AI for correcting misspelled Korean stock names and must output ONLY a JSON array containing up to 5 suggested stock names."},
                 {"role": "user", "content": prompt}
             ],
-            response_format={"type": "json_object"}
+            response_format={"type": "json_object"},
+            temperature=0.5,
+            max_tokens=100
         )
 
         json_string = response.choices[0].message.content.strip()
@@ -288,21 +301,47 @@ def search_stocks(
 
         suggested_names = []
 
-        # 영타 오타인 경우
+        # 1차 자모 유사도 계산 로직
+        best_match_names = []
+        # 'tkavy' -> 'ㅅㅏㅁㅍㅛ' -> 'ㅅㅁㅍ' (초성만)
+        q_search_jamo = get_chosung(q_converted_for_search)
+
+        # 🚨 [수정 완료] krx_col이 None인지 명시적으로 확인
+        if q_search_jamo and krx_col is not None:
+            # MongoDB에서 모든 종목명을 가져옵니다. (주의: 데이터가 많으면 성능에 영향)
+            all_krx_stocks = list(krx_col.find({}, {"_id": 0, "name": 1, "chosung": 1}))
+
+            similarity_scores = []
+            for stock in all_krx_stocks:
+                stock_jamo = stock.get('chosung', '')
+                if stock_jamo:
+                    # 입력된 자모와 종목 초성의 유사도 계산
+                    similarity = get_levenshtein_similarity(q_search_jamo, stock_jamo)
+                    similarity_scores.append((similarity, stock['name']))
+
+            # 유사도 점수 기준 내림차순 정렬 및 상위 5개 추출
+            similarity_scores.sort(key=lambda x: x[0], reverse=True)
+            # 유사도 0.3 이상만 필터링
+            best_match_names = [name for score, name in similarity_scores if score > 0.3][:5]
+
+            # 영타 오타인 경우
         if is_eng_converted:
             print(f"DEBUG_GPT_CALL: Attempting to call GPT for EngTypo: original='{q_original}' and converted='{q_converted_for_search}'")
-            suggested_names = get_gpt_suggestions(q_original, q_converted_for_search)
+            # 유사도 기반 리스트를 GPT 함수로 전달
+            suggested_names = get_gpt_suggestions(q_original, q_converted_for_search, best_match_names)
 
         # 한글 오타인 경우
         elif not is_eng_converted:
             print(f"DEBUG_GPT_CALL: Attempting to call GPT for KorTypo: query='{q_original}'")
-            suggested_names = get_gpt_suggestions(q_original, q_original)
+            # 유사도 기반 리스트를 GPT 함수로 전달
+            suggested_names = get_gpt_suggestions(q_original, q_original, best_match_names)
 
         if suggested_names:
             top_suggestion = suggested_names[0]
 
             suggestion_list = suggested_names
-            suggestion_message = f"혹시 **{top_suggestion}**을(를) 포함한 유사 종목을 찾으시나요? [클릭하여 확인]"
+            # 메시지에서 제안 개수를 명확히 표시
+            suggestion_message = f"혹시 **{top_suggestion}**을(를) 포함한 유사 종목 (총 {len(suggestion_list)}개)을 찾으시나요? [클릭하여 확인]"
 
             print(f"DEBUG_GPT_SUGGESTION: GPT suggested {suggested_names}")
 
