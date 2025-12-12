@@ -34,6 +34,7 @@ HEADERS = {
     )
 }
 
+DEFAULT_IMAGE = "https://via.placeholder.com/400x220?text=No+Image"
 # =========================
 # RSS Fetch
 # =========================
@@ -82,7 +83,10 @@ async def get_article_detail(session, url, source):
             og = soup.select_one("meta[property='og:image']")
             if og:
                 image_url = og.get("content", "")
-
+                
+			if not image_url or not image_url.startswith("http"):
+    			image_url = None
+    			
             author = extract_author(soup, source)
             return content, image_url, author
 
@@ -124,6 +128,9 @@ def save_news(title, link, content, image_url, source, author):
         print(f"   [SKIP] {source}: {title[:30]}")
         return
 
+    if not image_url:
+        image_url = MEDIA_LOGOS.get(source) or DEFAULT_IMAGE
+
     doc = {
         "title": title,
         "link": link,
@@ -136,6 +143,7 @@ def save_news(title, link, content, image_url, source, author):
         "pubDate": datetime.datetime.now(),
         "createdAt": datetime.datetime.now()
     }
+
     collection.insert_one(doc)
     print(f"   ✔ 저장됨 [{source}] {title[:40]}")
 
@@ -211,13 +219,22 @@ async def crawl_cnn(session):
     for item in items:
         raw_title = item.title.text.strip()
         title = clean_title(raw_title)
-
         link = item.link.text.strip()
+
         if "video" in link.lower():
             continue
 
+        # 🔥 RSS description 우선
+        desc = ""
+        if item.description:
+            desc = BeautifulSoup(item.description.text, "html.parser").get_text(strip=True)
+
         content, img, auth = await get_article_detail(session, link, "CNN")
-        save_news(title, link, content, img, "CNN", auth)
+
+        # 🔥 CNN은 본문 비면 RSS description 사용
+        final_content = content if len(content) > 100 else desc
+
+        save_news(title, link, final_content, img, "CNN", auth)
 
 # =========================
 # Yahoo (requests + executor)
