@@ -89,8 +89,73 @@
 	
 	"prev" : "Prev",
 	"next" : "Next",
+	"searchResultCount" : "results found",
 	
 	"topValueTitle": "📊 Top 5 Trading Value",
 	"rank": "Rank {{num}}",
-	"hundredMillion": "\u00A0\u00A0100M KRW"
+	"hundredMillion": "\u00A0\u00A0100M ₩",
+	"ticker": "Ticker",
+	
+	
+  "pageTitle": "KRX Real-Time Stock Quotes",
+  "baseTime": "Base Time",
+  "favorites" : "Favorites",
+  "myFavorites": "My Favorites",
+  "recentViewed": "Recently Viewed",
+  "searchPlaceholder": "Search by stock name or code",
+  "searchSuggestion": "Search for '{corrected}' instead of '{original}'?",
+  "searchResult": "Search Results",
+  "filterVolumeMin": "Min Volume",
+  "filterMarketCapMin": "Min Market Cap (100M KRW)",
+  "favoritesOnly": "Show Favorites Only",
+  "pageInfo": "Page {{page}} / {{total}} • Total {{count}} items",
+  "favoriteAdd": "Add to favorites",
+  "favoriteRemove": "Remove from favorites",
+  "rankingTrade": "Trading Value",
+  "rankingVolume": "Trading Volume",
+  "rankingChange": "Change Rate",
+  "rankingMarketCap": "Market Cap",
+  "rankingMixed": "Mixed Score",
+  "rankingTop10": "Top 10 by {type}",
+  "tableRank": "Rank",
+  "tableName": "Name",
+  "tableCurrentPrice": "Price",
+  "tableChange": "Change",
+  "tableChangeRate": "Change Rate",
+  "tableVolume": "Volume",
+  "tableTradeAmount": "Value",
+  "tableMarketCap": "Mkt Cap",
+  "tableForeign": "Foreign",
+  "loading": "Loading real-time stock data...",
+  
+  "stock": {
+    "change": {
+      "UP": "Rise",
+      "UP_LIMIT": "Limit Up",
+      "DOWN": "Fall",
+      "DOWN_LIMIT": "Limit Down",
+      "NONE": "-"
+    }
+  },
+  
+  "ui": {
+      "loginRequired": "Login required. (Add/Check Favorites)",
+      "favoritesFilter": {
+        "show": "Show Favorites Only (Off)",
+        "hide": "Enable Favorites Filter"
+      }
+    },
+
+"sidebar": {
+    "recentViewed": "Recently Viewed Stocks",
+    "recentEmpty": "No recently viewed stocks.",
+
+    "favoritesList": "Favorites",
+    "favoritesEmpty": "No favorite stocks. Click the star in the table to add.",
+    "removeFavorite": "Remove from Favorites",
+	"addFavorite": "Add to Favorites"
+  },
+  
+  "viewAll": "View All",
+  "won" : "₩"
 }
