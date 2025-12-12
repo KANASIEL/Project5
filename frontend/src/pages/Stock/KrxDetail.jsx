@@ -1,4 +1,3 @@
-// src/pages/StockDetail.jsx
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -13,17 +12,22 @@ import {
     Divider,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import "./KrxDetail.css";
 
 function StockDetail() {
     const { code } = useParams();
     const navigate = useNavigate();
+
     const [stock, setStock] = useState(null);
     const [news, setNews] = useState([]);
+    const [chartUrl, setChartUrl] = useState("");
+    const [chartMode, setChartMode] = useState("area"); // area = 선차트, candle = 봉차트
+    const [chartPeriod, setChartPeriod] = useState("day");
     const [loading, setLoading] = useState(true);
     const [newsLoading, setNewsLoading] = useState(true);
+    const [chartLoading, setChartLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // 1. 종목 기본 정보 로드
     useEffect(() => {
         const fetchStock = async () => {
             try {
@@ -32,27 +36,20 @@ function StockDetail() {
                     axios.get("/api/krx/kospi/list"),
                     axios.get("/api/krx/kosdaq/list"),
                 ]);
-
                 const all = [...(kospiRes.data || []), ...(kosdaqRes.data || [])];
                 const found = all.find((s) => s.code === code);
-
-                if (found) {
-                    setStock(found);
-                } else {
-                    setError("종목을 찾을 수 없습니다.");
-                }
+                if (found) setStock(found);
+                else setError("종목을 찾을 수 없습니다.");
             } catch (err) {
-                console.error("종목 로드 실패:", err);
+                console.error(err);
                 setError("데이터 로드 실패");
             } finally {
                 setLoading(false);
             }
         };
-
         fetchStock();
     }, [code]);
 
-    // 2. 뉴스 로드 (백엔드 API 사용)
     useEffect(() => {
         const fetchNews = async () => {
             try {
@@ -60,192 +57,176 @@ function StockDetail() {
                 const res = await axios.get(`/api/krx/news/${code}`);
                 setNews(res.data || []);
             } catch (err) {
-                console.error("뉴스 로드 실패:", err);
+                console.error(err);
                 setNews([]);
             } finally {
                 setNewsLoading(false);
             }
         };
-
         if (code) fetchNews();
     }, [code]);
 
+    useEffect(() => {
+        const fetchChart = async () => {
+            try {
+                setChartLoading(true);
+                const res = await axios.get(
+                    `/api/krx/chart/${code}?type=${chartMode}&period=${chartPeriod}`
+                );
+                setChartUrl(res.data.imgUrl);
+            } catch (err) {
+                console.error(err);
+                setChartUrl("");
+            } finally {
+                setChartLoading(false);
+            }
+        };
+        if (code) fetchChart();
+    }, [code, chartMode, chartPeriod]);
+
     if (loading) {
         return (
-            <Box sx={{ p: 4 }}>
+            <Box className="stock-detail__container">
                 <LinearProgress />
-                <Typography textAlign="center" mt={2}>종목 정보 로딩 중...</Typography>
+                <Typography className="stock-detail__loading-text">
+                    종목 정보 로딩 중...
+                </Typography>
             </Box>
         );
     }
+    if (error)
+        return <Alert severity="error" className="stock-detail__alert">{error}</Alert>;
+    if (!stock)
+        return <Alert severity="warning" className="stock-detail__alert">종목을 찾을 수 없습니다.</Alert>;
 
-    if (error) {
-        return <Alert severity="error" sx={{ m: 4 }}>{error}</Alert>;
-    }
-
-    if (!stock) {
-        return <Alert severity="warning" sx={{ m: 4 }}>종목을 찾을 수 없습니다.</Alert>;
-    }
+    const linePeriods = [
+        { label: "1일", value: "day" },
+        { label: "1주일", value: "week" },
+        { label: "3개월", value: "month3" },
+        { label: "1년", value: "year" },
+        { label: "3년", value: "year3" },
+        { label: "5년", value: "year5" },
+        { label: "10년", value: "year10" },
+    ];
+    const candlePeriods = [
+        { label: "일봉", value: "day" },
+        { label: "주봉", value: "week" },
+        { label: "월봉", value: "month" },
+    ];
 
     return (
-        <Box sx={{ p: { xs: 2, sm: 4 }, maxWidth: 900, mx: "auto" }}>
-            {/* 뒤로가기 */}
+        <Box className="stock-detail__container">
             <Button
                 startIcon={<ArrowBackIcon />}
                 onClick={() => navigate(-1)}
-                sx={{ mb: 3 }}
+                className="stock-detail__back-btn"
             >
                 뒤로가기
             </Button>
 
             {/* 종목 정보 */}
-            <Paper sx={{ p: 4, borderRadius: 3, bgcolor: "#f8fbff" }}>
-                <Typography variant="h3" fontWeight="bold" color="#0d47a1" gutterBottom>
-                    {stock.name}
-                </Typography>
-                <Typography variant="h6" color="text.secondary" gutterBottom>
-                    {stock.code} • {stock.market || "KOSPI"}
-                </Typography>
+            <Paper className="stock-detail__info">
+                <Typography className="stock-detail__name">{stock.name}</Typography>
+                <Typography className="stock-detail__code">{stock.code} • {stock.market || "KOSPI"}</Typography>
 
-                <Box
-                    sx={{
-                        mt: 4,
-                        display: "grid",
-                        gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" },
-                        gap: 3,
-                    }}
-                >
+                <Box className="stock-detail__grid">
                     <Box>
-                        <Typography variant="body2" color="text.secondary">
-                            현재가
-                        </Typography>
-                        <Typography variant="h4" fontWeight="bold" color="#0d47a1">
-                            {stock.current_price?.toLocaleString() || "-"}원
-                        </Typography>
+                        <Typography className="stock-detail__label">현재가</Typography>
+                        <Typography className="stock-detail__value">{stock.current_price?.toLocaleString() || "-"}원</Typography>
                     </Box>
                     <Box>
-                        <Typography variant="body2" color="text.secondary">
-                            전일비
-                        </Typography>
-                        <Typography
-                            variant="h5"
-                            sx={{
-                                color: stock.change?.includes("+") ? "red" : "blue",
-                                fontWeight: "bold",
-                            }}
-                        >
-                            {stock.change || "-"}
-                        </Typography>
+                        <Typography className="stock-detail__label">전일비</Typography>
+                        <Typography className={`stock-detail__value ${stock.change?.includes("+") ? "red" : "blue"}`}>{stock.change || "-"}</Typography>
                     </Box>
                     <Box>
-                        <Typography variant="body2" color="text.secondary">
-                            등락률
-                        </Typography>
-                        <Typography
-                            variant="h5"
-                            sx={{
-                                color: stock.change_rate?.includes("+") ? "red" : "blue",
-                                fontWeight: "bold",
-                            }}
-                        >
-                            {stock.change_rate || "-"}
-                        </Typography>
+                        <Typography className="stock-detail__label">등락률</Typography>
+                        <Typography className={`stock-detail__value ${stock.change_rate?.includes("+") ? "red" : "blue"}`}>{stock.change_rate || "-"}</Typography>
                     </Box>
                     <Box>
-                        <Typography variant="body2" color="text.secondary">
-                            거래량
-                        </Typography>
-                        <Typography variant="h5">
-                            {stock.volume?.toLocaleString() || "-"}
-                        </Typography>
+                        <Typography className="stock-detail__label">거래량</Typography>
+                        <Typography className="stock-detail__value">{stock.volume?.toLocaleString() || "-"}</Typography>
                     </Box>
                     <Box>
-                        <Typography variant="body2" color="text.secondary">
-                            시가총액
-                        </Typography>
-                        <Typography variant="h5">
-                            {stock.market_cap
-                                ? stock.market_cap.toLocaleString() + "억" // 👈 나눗셈 제거, 포맷팅만 적용
-                                : "-"}
-                        </Typography>
+                        <Typography className="stock-detail__label">시가총액</Typography>
+                        <Typography className="stock-detail__value">{stock.market_cap ? stock.market_cap.toLocaleString() + "억" : "-"}</Typography>
                     </Box>
                     <Box>
-                        <Typography variant="body2" color="text.secondary">
-                            외국인 비율
-                        </Typography>
-                        <Typography variant="h5">
-                            {stock.foreign_ratio?.toFixed(1)}% {stock.foreign_ratio ? "" : "-"}
-                        </Typography>
+                        <Typography className="stock-detail__label">외국인 비율</Typography>
+                        <Typography className="stock-detail__value">{stock.foreign_ratio?.toFixed(1)}%</Typography>
                     </Box>
                 </Box>
             </Paper>
 
-            {/* 뉴스 섹션 */}
-            <Paper sx={{ p: 4, mt: 4, borderRadius: 3 }}>
-                <Typography variant="h5" fontWeight="bold" gutterBottom>
-                    실시간 뉴스공시
-                </Typography>
-                <Divider sx={{ mb: 2 }} />
+            {/* 차트 모드 선택 */}
+            <Box className="stock-detail__chart-mode">
+                <Button
+                    className={chartMode === "area" ? "stock-detail__btn-contained" : "stock-detail__btn-outlined"}
+                    onClick={() => { setChartMode("area"); setChartPeriod("day"); }}
+                >
+                    선차트
+                </Button>
+                <Button
+                    className={chartMode === "candle" ? "stock-detail__btn-contained" : "stock-detail__btn-outlined"}
+                    onClick={() => { setChartMode("candle"); setChartPeriod("day"); }}
+                >
+                    봉차트
+                </Button>
+            </Box>
 
-                {newsLoading ? (
-                    <Box sx={{ py: 4, textAlign: "center" }}>
+            {/* 차트 기간 선택 */}
+            <Box className="stock-detail__chart-period">
+                {(chartMode === "area" ? linePeriods : candlePeriods).map((p) => (
+                    <Button
+                        key={p.value}
+                        className={chartPeriod === p.value ? "stock-detail__btn-contained" : "stock-detail__btn-outlined"}
+                        onClick={() => setChartPeriod(p.value)}
+                    >
+                        {p.label}
+                    </Button>
+                ))}
+            </Box>
+
+            {/* 차트 이미지 */}
+            <Paper className="stock-detail__chart-card">
+                <Typography className="stock-detail__chart-title">주가 차트</Typography>
+                {chartLoading ? (
+                    <Box className="stock-detail__chart-loading">
                         <LinearProgress />
-                        <Typography mt={2} color="text.secondary">
-                            뉴스 로딩 중...
-                        </Typography>
+                        <Typography>차트 로딩 중...</Typography>
+                    </Box>
+                ) : chartUrl ? (
+                    <img src={chartUrl} alt="주가 차트" className="stock-detail__chart-image"/>
+                ) : (
+                    <Typography>차트를 불러올 수 없습니다.</Typography>
+                )}
+            </Paper>
+
+            {/* 뉴스 */}
+            <Paper className="stock-detail__news-card">
+                <Typography className="stock-detail__news-title">실시간 뉴스공시</Typography>
+                <Divider className="stock-detail__divider"/>
+                {newsLoading ? (
+                    <Box className="stock-detail__chart-loading">
+                        <LinearProgress />
+                        <Typography>뉴스 로딩 중...</Typography>
                     </Box>
                 ) : news.length === 0 ? (
-                    <Typography color="text.secondary" textAlign="center" py={4}>
-                        뉴스가 없습니다.
-                    </Typography>
+                    <Typography>뉴스가 없습니다.</Typography>
                 ) : (
-                    <Box>
-                        {news.map((item, i) => (
-                            <Box
-                                key={i}
-                                sx={{
-                                    py: 2,
-                                    borderBottom: i < news.length - 1 ? "1px solid #eee" : "none",
-                                }}
-                            >
-                                <Typography variant="body1" fontWeight="medium" component="div">
-                                    <a
-                                        href={item.link}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        style={{
-                                            color: "#0d47a1",
-                                            textDecoration: "none",
-                                        }}
-                                        onMouseOver={(e) => (e.target.style.textDecoration = "underline")}
-                                        onMouseOut={(e) => (e.target.style.textDecoration = "none")}
-                                    >
-                                        {item.title}
-                                    </a>
-                                    {item.related && (
-                                        <Chip
-                                            label={item.related}
-                                            size="small"
-                                            color="primary"
-                                            variant="outlined"
-                                            sx={{ ml: 1, height: 22, fontSize: "0.7rem" }}
-                                        />
-                                    )}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                    {item.date}
-                                </Typography>
-                            </Box>
-                        ))}
-                    </Box>
+                    news.map((item, i) => (
+                        <Box key={i} className="stock-detail__news-item">
+                            <Typography className="stock-detail__news-link">
+                                <a href={item.link} target="_blank" rel="noopener noreferrer">
+                                    {item.title}
+                                </a>
+                                {item.related && <Chip label={item.related} size="small" />}
+                            </Typography>
+                            <Typography className="stock-detail__news-date">{item.date}</Typography>
+                        </Box>
+                    ))
                 )}
-
-                <Box sx={{ textAlign: "center", mt: 3 }}>
-                    <Button
-                        variant="outlined"
-                        href={`https://finance.naver.com/item/news.naver?code=${code}`}
-                        target="_blank"
-                    >
+                <Box className="stock-detail__news-more">
+                    <Button variant="outlined" href={`https://finance.naver.com/item/news.naver?code=${code}`} target="_blank">
                         네이버 증권 뉴스 전체보기
                     </Button>
                 </Box>

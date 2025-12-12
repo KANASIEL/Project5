@@ -4,16 +4,11 @@ package com.boot.controller;
 import com.boot.dto.*;
 import com.boot.service.*;
 import lombok.RequiredArgsConstructor;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -28,6 +23,7 @@ public class StockKrxController {
     private final RankingService rankingService;
     private final FavoriteStockService favoriteStockService;
     private final StockCacheService stockCacheService;
+    private final StockDetailService stockDetailService;
 
 // ==================== 즐겨찾기 API ====================
 
@@ -88,45 +84,23 @@ public class StockKrxController {
         return kosdaqService.findByCode(code);
     }
 
-    // ---------- 뉴스 크롤링 ----------
+    // 뉴스 API
     @GetMapping("/krx/news/{code}")
-    public List<DetailNewsDTO> getNews(@PathVariable String code) {
-        try {
-            Document doc = Jsoup.connect("https://finance.naver.com/item/main.naver?code=" + code)
-                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-                    .timeout(10000)
-                    .get();
+    public List<StockDetailNewsDTO> getNews(@PathVariable String code) {
+        return stockDetailService.getNews(code);
+    }
 
-            Elements items = doc.select(".sub_section.news_section li");
-            List<DetailNewsDTO> news = new ArrayList<>();
-
-            for (Element item : items) {
-                Element titleEl = item.selectFirst(".txt a:first-child");
-                if (titleEl == null) continue;
-
-                DetailNewsDTO n = new DetailNewsDTO();
-                n.setTitle(titleEl.text().trim());
-                n.setLink("https://finance.naver.com" + titleEl.attr("href"));
-
-                String date = "";
-                String related = null;
-                for (Element em : item.select("em")) {
-                    if (em.parent() != null && em.parent().classNames().contains("link_relation")) {
-                        related = em.text().trim();
-                    } else {
-                        date = em.text().trim();
-                    }
-                }
-
-                n.setDate(date.isEmpty() ? "최근" : date);
-                n.setRelated(related);
-                news.add(n);
-            }
-            return news.stream().limit(10).toList();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new ArrayList<>();
-        }
+    // 차트 이미지 URL API
+    // type = "area" (선차트) | "candle" (봉차트)
+    // period = "day", "week", "month", "month3", "year", "year3", "year5", "year6"
+    @GetMapping("/krx/chart/{code}")
+    public Map<String, String> getChart(
+            @PathVariable String code,
+            @RequestParam(defaultValue = "area") String type,
+            @RequestParam(defaultValue = "day") String period
+    ) {
+        String url = stockDetailService.getChartUrl(code, type, period);
+        return Map.of("imgUrl", url);
     }
 
     // ---------- 최근 본 종목 ----------
