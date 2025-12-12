@@ -28,6 +28,20 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
 }
 
+async def fetch_rss(session, url):
+    async with session.get(
+        url,
+        headers={
+            "User-Agent": "Mozilla/5.0",
+            "Accept": "application/rss+xml, application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+        },
+        timeout=20,
+        allow_redirects=True,
+    ) as res:
+        text = await res.text()
+        return BeautifulSoup(text, "xml")
+
 # ------------------------------------------------
 # 공통: 상세 페이지 파싱 (비동기)
 # ------------------------------------------------
@@ -112,29 +126,21 @@ def save_news(title, link, content, image_url, source, author):
 async def crawl_reuters(session):
     print("▶ Reuters RSS 시작")
 
-    rss_url = "https://www.reuters.com/rssFeed/worldNews"
+    soup = await fetch_rss(
+        session,
+        "https://www.reuters.com/rssFeed/worldNews"
+    )
 
-    try:
-        async with session.get(rss_url, headers=HEADERS, timeout=15) as res:
-            xml = await res.text()
-            soup = BeautifulSoup(xml, "xml")
+    items = soup.find_all("item")[:30]
+    print(f"   Reuters RSS items: {len(items)}")
 
-            items = soup.find_all("item")[:30]  # 최대 30개
+    for item in items:
+        title = item.title.text.strip()
+        link = item.link.text.strip()
 
-            for item in items:
-                title = item.title.text.strip()
-                link = item.link.text.strip()
+        content, img, auth = await get_article_detail(session, link, "Reuters")
+        save_news(title, link, content, img, "Reuters", auth)
 
-                if not title or not link:
-                    continue
-
-                content, img, auth = await get_article_detail(
-                    session, link, "Reuters"
-                )
-
-                save_news(title, link, content, img, "Reuters", auth)
-
-    except Exception as e:
 
 async def crawl_cnbc(session):
     print("▶ CNBC RSS 시작")
@@ -164,27 +170,21 @@ async def crawl_cnbc(session):
 async def crawl_bbc(session):
     print("▶ BBC RSS 시작")
 
-    rss_url = "https://feeds.bbci.co.uk/news/business/rss.xml"
+    soup = await fetch_rss(
+        session,
+        "https://feeds.bbci.co.uk/news/business/rss.xml"
+    )
 
-    try:
-        async with session.get(rss_url, headers=HEADERS, timeout=15) as res:
-            xml = await res.text()
-            soup = BeautifulSoup(xml, "xml")
+    items = soup.find_all("item")[:30]
+    print(f"   BBC RSS items: {len(items)}")
 
-            items = soup.find_all("item")[:30]
+    for item in items:
+        title = item.title.text.strip()
+        link = item.link.text.strip()
 
-            for item in items:
-                title = item.title.text.strip()
-                link = item.link.text.strip()
+        content, img, auth = await get_article_detail(session, link, "BBC")
+        save_news(title, link, content, img, "BBC", auth)
 
-                if not title or not link:
-                    continue
-
-                content, img, auth = await get_article_detail(session, link, "BBC")
-                save_news(title, link, content, img, "BBC", auth)
-
-    except Exception as e:
-        print(f"⚠ BBC RSS 에러: {e}")
 
 
 async def crawl_cnn(session):
@@ -214,31 +214,24 @@ async def crawl_cnn(session):
 
 
 async def crawl_yahoo(session):
-    print("▶ Yahoo Finance RSS 시작")
+    print("▶ Yahoo RSS 시작")
 
-    rss_url = "https://finance.yahoo.com/rss/topstories"
+    soup = await fetch_rss(
+        session,
+        "https://finance.yahoo.com/rss/topstories"
+    )
 
-    try:
-        async with session.get(rss_url, headers=HEADERS, timeout=15) as res:
-            xml = await res.text()
-            soup = BeautifulSoup(xml, "xml")
+    items = soup.find_all("item")[:30]
+    print(f"   Yahoo RSS items: {len(items)}")
 
-            items = soup.find_all("item")[:30]
+    for item in items:
+        title = item.title.text.strip()
+        link = item.link.text.strip()
 
-            for item in items:
-                title = item.title.text.strip()
-                link = item.link.text.strip()
-
-                if not title or not link:
-                    continue
-
-                content, img, auth = await get_article_detail(
-                    session, link, "Yahoo Finance"
-                )
-                save_news(title, link, content, img, "Yahoo Finance", auth)
-
-    except Exception as e:
-        print(f"⚠ Yahoo RSS 에러: {e}")
+        content, img, auth = await get_article_detail(
+            session, link, "Yahoo Finance"
+        )
+        save_news(title, link, content, img, "Yahoo Finance", auth)
 
 # ------------------------------------------------
 # ★ 메인 실행 함수 (Async)
