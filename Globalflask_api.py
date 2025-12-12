@@ -9,6 +9,10 @@ from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 import redis, json
 
+import threading
+import asyncio
+from scripts.global_news_crawler import task_global_crawling
+
 app = Flask(__name__)
 CORS(app)
 
@@ -162,10 +166,19 @@ def search_global_news():
     content, total_pages = _sort_and_page_global(query, page, size, order)
     return jsonify({"content": content, "number": page, "totalPages": total_pages})
 
+def run_global_crawler():
+    while True:
+        asyncio.run(task_global_crawling())
+        time.sleep(900)  # 1시간마다
+
 # ==========================
 # 서버 실행 (Render 필수)
 # ==========================
 if __name__ == "__main__":
+    threading.Thread(
+        target=run_global_crawler,
+        daemon=True
+    ).start()
+
     port = int(os.environ.get("PORT", 10000))
-    print(f"🚀 Global Flask API running on port {port}")
     app.run(host="0.0.0.0", port=port, debug=False)
