@@ -89,8 +89,72 @@
 	
 	"prev" : "前へ",
 	"next" : "次へ",
+	"searchResultCount" : "件",
 	
 	"topValueTitle": "📊 取引代金 Top 5",
 	"rank": "{{num}}位",
-	"hundredMillion": "億KRW"
+	"hundredMillion": "億 ₩",
+	"ticker": "銘柄",
+	
+  "pageTitle": "KRXリアルタイム株価表",
+  "baseTime": "基準時刻",
+  "favorites" : "お気に入り",
+  "myFavorites": "マイお気に入り",
+  "recentViewed": "最近見た銘柄",
+  "searchPlaceholder": "銘柄名またはコードを検索",
+  "searchSuggestion": "'{original}' の代わりに '{corrected}' で検索しますか？",
+  "searchResult": "検索結果",
+  "filterVolumeMin": "最小出来高",
+  "filterMarketCapMin": "最小時価総額（億）",
+  "favoritesOnly": "お気に入りのみ表示",
+  "pageInfo": "ページ {{page}} / {{total}} • 合計 {{count}}銘柄",
+  "favoriteAdd": "お気に入り追加",
+  "favoriteRemove": "お気に入り解除",
+  "rankingTrade": "売買代金",
+  "rankingVolume": "出来高",
+  "rankingChange": "変動率",
+  "rankingMarketCap": "時価総額",
+  "rankingMixed": "総合スコア",
+  "rankingTop10": "{type} Top 10",
+  "tableRank": "順位",
+  "tableName": "銘柄名",
+  "tableCurrentPrice": "現在値",
+  "tableChange": "前日比",
+  "tableChangeRate": "変動率",
+  "tableVolume": "出来高",
+  "tableTradeAmount": "売買代金（億）",
+  "tableMarketCap": "時価総額（億）",
+  "tableForeign": "外国人比率",
+  "loading": "リアルタイム価格を読み込み中...",
+  
+  "stock": {
+      "change": {
+        "UP": "上昇",
+        "UP_LIMIT": "ストップ高",
+        "DOWN": "下落",
+        "DOWN_LIMIT": "ストップ安",
+        "NONE": "-"
+      }
+    },
+
+	"ui": {
+	    "loginRequired": "ログインが必要です。（お気に入り追加/確認）",
+	    "favoritesFilter": {
+	      "show": "お気に入りのみ表示（解除）",
+	      "hide": "お気に入りフィルターをオン"
+	    }
+	  },
+	  
+  "sidebar": {
+      "recentViewed": "最近見た銘柄",
+      "recentEmpty": "最近見た銘柄はありません。",
+
+      "favoritesList": "お気に入りリスト",
+      "favoritesEmpty": "お気に入りの銘柄はありません。テーブルで星マークを押して追加してください。",
+      "removeFavorite": "お気に入り削除",
+	  "addFavorite": "お気に入りに追加"
+    },
+	
+	"viewAll": "すべて見る",
+	"won" : "₩"
 }

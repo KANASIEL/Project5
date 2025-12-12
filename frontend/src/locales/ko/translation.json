@@ -91,14 +91,76 @@
 	
   "prev" : "이전",
   "next" : "다음",
+  "searchResultCount" : "개",
   
   "topValueTitle": "📊 거래대금 Top 5",
   "rank": "{{num}}위",
-  "hundredMillion": "억"
+  "hundredMillion": "억",
+  "ticker": "종목",
+  
+	"pageTitle": "KRX 실시간 시세표",
+	"baseTime": "기준 시간",
+	"favorites" : "즐겨찾기",
+	"myFavorites": "나의 즐겨찾기",
+	"recentViewed": "최근 본 종목",
+	"searchPlaceholder": "종목명 또는 코드 검색",
+	"searchSuggestion": "{original} 대신 '{corrected}'(으)로 검색하시겠습니까?",
+	"searchResult": "검색 결과",
+	"filterVolumeMin": "거래량 최소",
+	"filterMarketCapMin": "시총 최소(억)",
+	"favoritesOnly": "즐겨찾기만 보기",
+	"pageInfo": "페이지 {{page}} / {{total}} • 총 {{count}}종목",
+	"favoriteAdd": "즐겨찾기 추가",
+	"favoriteRemove": "즐겨찾기 제거",
+	"rankingTrade": "거래대금",
+	"rankingVolume": "거래량",
+	"rankingChange": "등락률",
+	"rankingMarketCap": "시가총액",
+	"rankingMixed": "혼합점수",
+	"rankingTop10": "{type} Top 10",
+	"tableRank": "순위",
+	"tableName": "종목명",
+	"tableCurrentPrice": "현재가",
+	"tableChange": "전일비",
+	"tableChangeRate": "등락률",
+	"tableVolume": "거래량",
+	"tableTradeAmount": "거래대금(억)",
+	"tableMarketCap": "시총(억)",
+	"tableForeign": "외인",
+	"loading": "실시간 시세 로딩 중...",
+	
+	"stock": {
+	    "change": {
+	      "UP": "상승",
+	      "UP_LIMIT": "상한가",
+	      "DOWN": "하락",
+	      "DOWN_LIMIT": "하한가",
+	      "NONE": "-"
+	    }
+	},
+	
+	"ui": {
+	    "loginRequired": "로그인이 필요합니다. (즐겨찾기 추가/확인)",
+	    "favoritesFilter": {
+	      "show": "즐겨찾기만 보기 (해제)",
+	      "hide": "즐겨찾기 필터 켜기"
+	    }
+	},
+	
+	"sidebar": {
+	    "recentViewed": "최근 본 종목",
+	    "recentEmpty": "최근 본 종목이 없습니다.",
+
+	    "favoritesList": "즐겨찾기 목록",
+	    "favoritesEmpty": "즐겨찾기한 종목이 없습니다. 테이블에서 별표를 눌러 추가해 보세요.",
+	    "removeFavorite": "즐겨찾기 제거",
+		"addFavorite": "즐겨찾기 추가"
+	  },
+	 
+	  "viewAll": "전체보기",
+	  "won" : "원"
+	  
 }
-
-
-
 
 
 

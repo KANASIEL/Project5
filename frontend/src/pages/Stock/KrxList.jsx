@@ -14,10 +14,38 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import LightbulbIcon from '@mui/icons-material/Lightbulb'; // AI 제안 아이콘
 import "./KrxList.css";
+import { useTranslation } from "react-i18next";
 
 const ITEMS_PER_PAGE = 50;
 
+function getChangeInfo(changeText, t) {
+  if (!changeText) return { text: "-", className: "" };
+
+  const match = changeText.match(/^([가-힣]+)\s*(.*)$/);
+  if (!match) return { text: changeText, className: "" };
+
+  const word = match[1];
+  const number = match[2].trim();
+
+  const map = {
+    상승: { key: "UP", class: "krx-up" },
+    상한가: { key: "UP_LIMIT", class: "krx-up-limit" },
+    하락: { key: "DOWN", class: "krx-down" },
+    하한가: { key: "DOWN_LIMIT", class: "krx-down-limit" },
+  };
+
+  const info = map[word];
+  if (!info) return { text: changeText, className: "" };
+
+  const translatedWord = t(`stock.change.${info.key}`);
+  const text = number ? `${translatedWord} ${number}` : translatedWord;
+
+  return { text, className: info.class };
+}
+
 function KrxList() {
+	const { t } = useTranslation();
+	
     const FASTAPI_BASE = "http://127.0.0.1:8000";
     const navigate = useNavigate();
     const location = useLocation();
@@ -50,11 +78,11 @@ function KrxList() {
 
     // 🟢 랭킹 관련 상수 및 상태 부활
     const rankingTypes = [
-        {label: "거래대금", api: "/api/krx/ranking/trade", field: "score"},
-        {label: "거래량", api: "/api/krx/ranking/volume", field: "volume"},
-        {label: "등락률", api: "/api/krx/ranking/change", field: "changeRate"},
-        {label: "시가총액", api: "/api/krx/ranking/market", field: "marketCap"},
-        {label: "혼합점수", api: "/api/krx/ranking/mixed", field: "mixedScore"},
+		{ label: t("rankingTrade"), api: "/api/krx/ranking/trade", field: "score" },
+	    { label: t("rankingVolume"), api: "/api/krx/ranking/volume", field: "volume" },
+	    { label: t("rankingChange"), api: "/api/krx/ranking/change", field: "changeRate" },
+	    { label: t("rankingMarketCap"), api: "/api/krx/ranking/market", field: "marketCap" },
+	    { label: t("rankingMixed"), api: "/api/krx/ranking/mixed", field: "mixedScore" },
     ];
 
     const [rankingData, setRankingData] = useState([]);
@@ -67,7 +95,7 @@ function KrxList() {
         return date.toLocaleString("ko-KR", {timeZone: "Asia/Seoul"});
     };
     const formatNumber = (n) => (n != null ? n.toLocaleString() : "-");
-    const formatPrice = (p) => (p != null ? p.toLocaleString() + "원" : "-");
+    const formatPrice = (p) => (p != null ? p.toLocaleString() + t("won") : "-");
     const calculateTradeAmount = (s) => Math.round(((s.current_price || 0) * (s.volume || 0)) / 1e8);
     const isChosungQuery = (text) => /^[ㄱ-ㅎ]+$/.test(text);
     const getChangeClass = (stock) => {
@@ -333,9 +361,9 @@ function KrxList() {
         const value = item[field];
         if (value == null) return "-";
         if (["score", "mixedScore"].includes(field)) {
-            return (Math.floor(Number(value) / 1e8)).toLocaleString() + "억";
+            return (Math.floor(Number(value) / 1e8)).toLocaleString() + t("hundredMillion");
         }
-        if (["marketCap"].includes(field)) return Math.floor(Number(value)).toLocaleString() + "억";
+        if (["marketCap"].includes(field)) return Math.floor(Number(value)).toLocaleString() + t("hundredMillion");
         if (field === "volume") return Number(value).toLocaleString();
         if (field === "changeRate") return value.toString();
         return Number(value).toLocaleString();
@@ -347,7 +375,7 @@ function KrxList() {
         return (
             <Box className="krx-loading-wrapper">
                 <CircularProgress size={60} thickness={4}/>
-                <Typography className="krx-loading-text">실시간 시세 로딩 중...</Typography>
+                <Typography className="krx-loading-text">{t("loading")}</Typography>
             </Box>
         );
 
@@ -357,10 +385,10 @@ function KrxList() {
     return (
         <Box className="krx-page-wrapper">
             <Box className="krx-main-content">
-                <Typography className="krx-page-title">KRX 실시간 시세표</Typography>
+                <Typography className="krx-page-title">{t("pageTitle")}</Typography>
                 {currentData.length > 0 && currentData[0].crawled_at && (
                     <Typography className="krx-crawled-time">
-                        기준 시간: {formatKoreanTime(currentData[0].crawled_at)}
+                        {t("baseTime")}: {formatKoreanTime(currentData[0].crawled_at)}
                     </Typography>
                 )}
 
@@ -368,7 +396,7 @@ function KrxList() {
                 <Box className="krx-search-wrapper">
                     <TextField
                         fullWidth
-                        placeholder="종목명 또는 코드 검색"
+                        placeholder={t("searchPlaceholder")}
                         value={searchTerm}
                         onChange={handleSearchChange}
                         onKeyDown={(e) => {
@@ -385,9 +413,9 @@ function KrxList() {
                     />
                     {isSearching && (
                         <Typography className="krx-search-result">
-                            검색 결과: <strong>{searchResults.length}</strong>개
+                            {t("searchResult")}: <strong>{searchResults.length}</strong>{t("searchResultCount")}
                             &nbsp;|&nbsp;<span style={{cursor: "pointer", color: "blue"}}
-                                               onClick={cancelSearch}>전체보기</span>
+                                               onClick={cancelSearch}>{t("viewAll")}</span>
                         </Typography>
                     )}
                 </Box>
@@ -435,15 +463,15 @@ function KrxList() {
 
                 {/* 탭 */}
                 <Tabs value={tab} onChange={handleTabChange} centered className="krx-tabs">
-                    <Tab label={`KOSPI (${kospiCount}종목)`}/>
-                    <Tab label={`KOSDAQ (${kosdaqCount}종목)`}/>
+					<Tab label={`KOSPI (${kospi.length}${t("ticker")})`} />
+				    <Tab label={`KOSDAQ (${kosdaq.length}${t("ticker")})`} />
                 </Tabs>
 
                 {/* 즐겨찾기 필터 UI */}
                 <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', p: 1, my: 1, ml: 1 }}>
                     <Chip
                         icon={showFavoritesOnly ? <StarIcon /> : <StarBorderIcon />}
-                        label={`즐겨찾기 ${showFavoritesOnly ? '만 보기 (해제)' : '필터 켜기'}`}
+                        label={t(showFavoritesOnly ? "ui.favoritesFilter.show" : "ui.favoritesFilter.hide")}
                         onClick={handleToggleFavorites}
                         color={showFavoritesOnly ? "primary" : "default"}
                         variant={showFavoritesOnly ? "filled" : "outlined"}
@@ -452,7 +480,7 @@ function KrxList() {
                 </Box>
 
                 <Typography className="krx-page-info">
-                    페이지 {page} / {totalPages} • 총 {sortedData.length}종목
+                    {t("pageInfo", { page, total: totalPages, count: sortedData.length })}
                 </Typography>
 
                 {/* 시세표 */}
@@ -460,32 +488,49 @@ function KrxList() {
                     <Table stickyHeader size="small">
                         <TableHead>
                             <TableRow className="krx-table-head">
-                                <TableCell align="center">즐겨찾기</TableCell>
-                                {["순위", "종목명", "현재가", "전일비", "등락률", "거래량", "거래대금(억)", "시총(억)", "외인", "PER", "ROE"].map((h) => {
-                                    const fieldMap = {
-                                        "현재가": "current_price",
-                                        "거래량": "volume",
-                                        "거래대금(억)": "tradeAmount",
-                                        "시총(억)": "market_cap",
-                                        "외인": "foreign_ratio",
-                                        "PER": "per",
-                                        "ROE": "roe",
-                                        "등락률": "change_rate",
-                                        "종목명": "name"
-                                    };
-                                    const field = fieldMap[h];
-                                    return (
-                                        <TableCell
-                                            key={h}
-                                            align="center"
-                                            onClick={() => {
-                                                if (field) handleSort(field);
-                                            }}
-                                            style={{cursor: h === "순위" ? "default" : "pointer"}}
-                                        >
-                                            {h}
-                                            {sortField === field ? (sortOrder === "asc" ? "↑" : "↓") : ""}
-                                        </TableCell>
+							<TableCell align="center">{t("favorites")}</TableCell>
+
+								  {["tableRank","tableName","tableCurrentPrice","tableChange","tableChangeRate",
+								    "tableVolume","tableTradeAmount","tableMarketCap","tableForeign","PER","ROE",
+								  ].map((key) => {
+								    // ✔ i18n 키 기반 라벨 설정
+								    const label = key.startsWith("table") ? t(key) : key;
+
+								    // ✔ i18n 키 기반 정렬 매핑
+								    const sortMap = {
+								      tableName: "name",
+								      tableCurrentPrice: "current_price",
+								      tableChangeRate: "change_rate",
+								      tableVolume: "volume",
+								      tableTradeAmount: "tradeAmount",
+								      tableMarketCap: "market_cap",
+								      tableForeign: "foreign_ratio",
+								      PER: "per",
+								      ROE: "roe",
+								    };
+
+								    const sortFieldKey = sortMap[key];
+
+								    return (
+								      <TableCell
+								        key={key}
+								        align="center"
+								        onClick={() => {
+								          if (sortFieldKey) handleSort(sortFieldKey);
+								        }}
+								        style={{
+								          cursor: sortFieldKey ? "pointer" : "default",
+								        }}
+								      >
+								        {label}
+
+								        {/* 정렬 화살표 */}
+								        {sortField === sortFieldKey
+								          ? sortOrder === "asc"
+								            ? " ↑"
+								            : " ↓"
+								          : ""}
+								      </TableCell>
                                     );
                                 })}
                             </TableRow>
@@ -499,7 +544,7 @@ function KrxList() {
                                 return (
                                     <TableRow key={stock.code} hover>
                                         <TableCell align="center">
-                                            <Tooltip title={isFav ? "즐겨찾기 제거" : "즐겨찾기 추가"}>
+                                            <Tooltip title={isFav ? t("sidebar.removeFavorite") : t("sidebar.addFavorite")}>
                                                 <IconButton size="small" onClick={() => toggleFavorite(stock)}>
                                                     {isFav ? <StarIcon className="krx-star-filled"/> :
                                                         <StarBorderIcon className="krx-star-empty"/>}
@@ -513,9 +558,14 @@ function KrxList() {
                                             <div className="krx-stock-code">{stock.code}</div>
                                         </TableCell>
                                         <TableCell align="right">{formatPrice(stock.current_price)}</TableCell>
-                                        <TableCell align="center" className={changeClass}>
-                                            {stock.change || "-"}
-                                        </TableCell>
+										{(() => {
+										    const { text, className } = getChangeInfo(stock.change, t);
+										    return (
+										        <TableCell align="center" className={className}>
+										            {text}
+										        </TableCell>
+										    );
+										})()}
                                         <TableCell align="center" className={changeClass}>
                                             {stock.change_rate || "-"}
                                         </TableCell>
@@ -570,9 +620,9 @@ function KrxList() {
 
                 {/* 2. 최근 본 종목 */}
                 <Paper className="krx-sidebar-section">
-                    <Typography variant="h6" className="krx-sidebar-title">최근 본 종목</Typography>
+                    <Typography variant="h6" className="krx-sidebar-title">{t("sidebar.recentViewed")}</Typography>
                     {recentStocks.length === 0 ? (
-                        <Typography variant="body2" color="textSecondary">최근 본 종목이 없습니다.</Typography>
+                        <Typography variant="body2" color="textSecondary">{t("sidebar.recentEmpty")}</Typography>
                     ) : (
                         recentStocks.map((stock) => (
                             <Box
@@ -589,11 +639,11 @@ function KrxList() {
 
                 {/* 3. 즐겨찾기 목록 */}
                 <Paper className="krx-sidebar-section">
-                    <Typography variant="h6" className="krx-sidebar-title">즐겨찾기 목록 ({favoriteStocks.length}개)</Typography>
+                    <Typography variant="h6" className="krx-sidebar-title">{t("sidebar.favoritesList")} ({favoriteStocks.length} {t("searchResultCount")})</Typography>
                     {!isLoggedIn ? (
-                        <Typography variant="body2" color="error">로그인이 필요합니다. (즐겨찾기 추가/확인)</Typography>
+                        <Typography variant="body2" color="error">{t("ui.loginRequired")}</Typography>
                     ) : favoriteStocks.length === 0 ? (
-                        <Typography variant="body2" color="textSecondary">즐겨찾기한 종목이 없습니다. 테이블에서 별표를 눌러 추가해 보세요.</Typography>
+                        <Typography variant="body2" color="textSecondary">{t("sidebar.favoritesEmpty")}</Typography>
                     ) : (
                         favoriteStocks.map((stock) => (
                             <Box
@@ -606,7 +656,7 @@ function KrxList() {
                                 >
                                     <Typography variant="body1" sx={{ fontWeight: 'medium' }}>{stock.name}</Typography>
                                 </Box>
-                                <Tooltip title="즐겨찾기 제거">
+                                <Tooltip title={t("sidebar.removeFavorite")}>
                                     <IconButton size="small" onClick={() => toggleFavorite(stock)}>
                                         <StarIcon sx={{ color: 'gold', fontSize: '1rem' }} />
                                     </IconButton>
