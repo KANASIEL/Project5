@@ -27,11 +27,10 @@ MEDIA_LOGOS = {
 }
 
 HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/120.0.0.0 Safari/537.36"
-    )
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Referer": "https://www.google.com/"
 }
 
 DEFAULT_IMAGE = "https://via.placeholder.com/400x220?text=No+Image"
@@ -58,45 +57,67 @@ async def fetch_rss(session, url):
 # 맨 위에 있는 get_article_detail만 남기고 수정
 async def get_article_detail(session, url, source):
     try:
-        async with session.get(
-            url,
-            headers=HEADERS,
-            timeout=aiohttp.ClientTimeout(total=8)
-        ) as res:
-            print(f"[DETAIL] {source} {res.status} {url}")  # ★ 여기만 추가
-
+        # 타임아웃을 조금 더 넉넉하게 10초로 설정
+        async with session.get(url, headers=HEADERS, timeout=aiohttp.ClientTimeout(total=10)) as res:
             if res.status != 200:
-                print(f"[DETAIL SKIP] {source} {res.status}")
+                print(f"[DETAIL FAIL] {source} {res.status} {url}")
                 return "", "", None
-
+            
             html = await res.text()
             soup = BeautifulSoup(html, "html.parser")
 
-            paragraphs = soup.select("p")
+            # --- [본문 추출 로직 개선] ---
+            # 불필요한 태그 제거
+            for tag in soup(["script", "style", "nav", "footer", "header", "form", "button"]):
+                tag.decompose()
+
+            content = ""
+            paragraphs = []
+
+            # 사이트별 본문 태그가 다를 수 있어서 공통적으로 P태그를 찾되, 특정 영역 우선 검색
+            if source == "CNN":
+                # CNN은 article__content 클래스 내부가 진짜 본문
+                main_div = soup.select_one(".article__content") or soup.select_one(".zn-body-text")
+                if main_div:
+                    paragraphs = main_div.select("p")
+                else:
+                    paragraphs = soup.select("p")
+            
+            elif source == "Reuters":
+                # Reuters는 article-body__content 클래스 내부가 본문
+                main_div = soup.select_one("div[class*='article-body__content']") or soup.select_one("article")
+                if main_div:
+                    paragraphs = main_div.select("p")
+                else:
+                    paragraphs = soup.select("p")
+            
+            else:
+                paragraphs = soup.select("p")
+
+            # 본문 정제
             content = "\n".join(
                 p.get_text(strip=True)
                 for p in paragraphs
-                if len(p.get_text(strip=True)) > 20
+                if len(p.get_text(strip=True)) > 30  # 너무 짧은 문장(광고 등) 제외
             )
 
+            # --- [이미지 추출 로직 개선] ---
             image_url = ""
-            og = soup.select_one("meta[property='og:image']")
-            if og:
-                image_url = og.get("content", "")
-            
-            if not image_url or not image_url.startswith("http"):
-                image_url = None
-                
+            og_img = soup.select_one("meta[property='og:image']")
+            if og_img:
+                temp_img = og_img.get("content", "")
+                # 로고나 아이콘 같은 작은 이미지가 걸리는 것 방지
+                if temp_img and "http" in temp_img and "logo" not in temp_img.lower() and ".svg" not in temp_img:
+                    image_url = temp_img
+
+            # --- [작성자 추출] ---
             author = extract_author(soup, source)
+            
             return content, image_url, author
 
-    except asyncio.TimeoutError:
-        print(f"[DETAIL TIMEOUT] {source}")
-        return "", "", None
     except Exception as e:
-        print(f"[DETAIL ERROR] {source} → {e}")
+        print(f"[DETAIL ERROR] {source} : {e}")
         return "", "", None
-
 
 # =========================
 # 작성자 추출
@@ -158,17 +179,35 @@ def clean_title(title):
 # =========================
 async def crawl_reuters(session):
     print("▶ Reuters RSS 시작")
-    soup = await fetch_rss(session, "https://www.reuters.com/rssFeed/worldNews")
-    items = soup.find_all("item")[:30]
-    print(f"   Reuters RSS items: {len(items)}")
+    # 주소 변경: worldNews -> businessNews (더 안정적)
+    rss_url = "https://www.reutersagency.com/feed/?best-topics=business-finance&post_type=best"
+    # 혹은: "https://www.reuters.com/rssFeed/businessNews" (이게 막히면 위 주소 사용)
+    
+    try:
+        # Reuters는 RSS 요청도 헤더가 없으면 403 Forbidden 뜰 수 있음
+        soup = await fetch_rss(session, "https://www.reuters.com/rssFeed/businessNews")
+        items = soup.find_all("item")[:15] # 개수 조절
 
-    for i, item in enumerate(items):
-        title = item.title.text.strip()
-        link = item.link.text.strip()
-        print(f"   [Reuters {i+1}/{len(items)}] {title[:40]}")
+        for i, item in enumerate(items):
+            title = item.title.text.strip()
+            link = item.link.text.strip()
+            
+            # Reuters 링크가 가끔 redirect 페이지일 수 있음
+            if "reuters.com" not in link:
+                continue
 
-        content, img, auth = await get_article_detail(session, link, "Reuters")
-        save_news(title, link, content, img, "Reuters", auth)
+            print(f"   [Reuters {i+1}] {title[:30]}")
+            content, img, auth = await get_article_detail(session, link, "Reuters")
+            
+            # 본문 없으면 저장 안 함
+            if len(content) < 50:
+                print(f"   [SKIP] Reuters 본문 부족")
+                continue
+
+            save_news(title, link, content, img, "Reuters", auth)
+            
+    except Exception as e:
+        print(f"⚠ Reuters 크롤링 실패: {e}")
 
 # =========================
 # CNBC
@@ -213,29 +252,39 @@ async def crawl_bbc(session):
 # =========================
 async def crawl_cnn(session):
     print("▶ CNN RSS 시작")
-    soup = await fetch_rss(session, "http://rss.cnn.com/rss/money_latest.rss")
-    items = soup.find_all("item")[:30]
+    # 🔥 [중요] 죽은 링크(money_latest) 대신 최신 Business RSS 사용
+    rss_url = "http://rss.cnn.com/rss/edition_business.rss"
+    
+    try:
+        soup = await fetch_rss(session, rss_url)
+        items = soup.find_all("item")[:15]
 
-    for item in items:
-        raw_title = item.title.text.strip()
-        title = clean_title(raw_title)
-        link = item.link.text.strip()
+        for i, item in enumerate(items):
+            raw_title = item.title.text.strip()
+            title = clean_title(raw_title)
+            link = item.link.text.strip()
+            
+            # 동영상 뉴스, 라이브 뉴스 제외 (본문 파싱이 안됨)
+            if "/videos/" in link or "/live-news/" in link:
+                continue
 
-        if "video" in link.lower():
-            continue
+            print(f"   [CNN {i+1}] {title[:30]}")
 
-        # 🔥 RSS description 우선
-        desc = ""
-        if item.description:
-            desc = BeautifulSoup(item.description.text, "html.parser").get_text(strip=True)
+            content, img, auth = await get_article_detail(session, link, "CNN")
 
-        content, img, auth = await get_article_detail(session, link, "CNN")
+            # 본문이 너무 짧으면 RSS의 description이라도 사용
+            if len(content) < 50 and item.description:
+                desc_soup = BeautifulSoup(item.description.text, "html.parser")
+                content = desc_soup.get_text(strip=True)
 
-        # 🔥 CNN은 본문 비면 RSS description 사용
-        final_content = content if len(content) > 100 else desc
+            if len(content) < 30: 
+                print(f"   [SKIP] CNN 내용 없음")
+                continue
 
-        save_news(title, link, final_content, img, "CNN", auth)
+            save_news(title, link, content, img, "CNN", auth)
 
+    except Exception as e:
+        print(f"⚠ CNN 크롤링 실패: {e}")
 # =========================
 # Yahoo (requests + executor)
 # =========================
