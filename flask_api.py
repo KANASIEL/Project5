@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from urllib.parse import unquote
-from datetime import datetime
+from datetime import datetime, timedelta
 import threading, time, os, asyncio
 
 from pymongo.mongo_client import MongoClient
@@ -60,6 +60,21 @@ def _parse_pub_date(value):
                 continue
 
     return None
+
+# ==========================
+# 한 달 지난 기사 삭제
+# ==========================
+def delete_old_news(days: int = 30):
+    """
+    pubDate 기준으로 days일 지난 기사 삭제.
+    pubDate는 MongoDB에 datetime 타입으로 저장되어 있다고 가정.
+    """
+    threshold = datetime.now() - timedelta(days=days)
+    try:
+        result = collection.delete_many({"pubDate": {"$lt": threshold}})
+        print(f"[CLEANUP] {result.deleted_count}개 삭제 (기준일: {threshold})")
+    except Exception as e:
+        print(f"[CLEANUP ERROR] 오래된 뉴스 삭제 실패: {e}")
 
 
 # 🔹 Mongo 쿼리에서 바로 정렬 + 페이지네이션
@@ -171,6 +186,8 @@ def search_news():
 def run_crawler():
     while True:
         asyncio.run(crawler.main())
+        # 크롤링 한 번 끝날 때마다 30일 지난 기사 삭제
+        delete_old_news(30)
         time.sleep(3600)
         
 @app.route("/health")
@@ -204,3 +221,4 @@ if __name__ == "__main__":
     
     port = int(os.environ.get("PORT", 10000)) # 렌더 포트 10000 (팀원이 8585 썼어도 렌더는 10000 권장)
     app.run(host="0.0.0.0", port=port, debug=False)
+
