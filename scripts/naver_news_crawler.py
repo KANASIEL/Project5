@@ -2,7 +2,7 @@ import asyncio
 import aiohttp
 from bs4 import BeautifulSoup
 from datetime import datetime
-import random, os
+import os
 
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
@@ -11,6 +11,11 @@ from pymongo.server_api import ServerApi
 # MongoDB 연결
 # -------------------------
 MONGO_URI = os.environ.get("MONGO_URI")
+
+# 로컬 테스트할 때만 아래 주석 풀어서 사용하세요
+# if not MONGO_URI:
+#     MONGO_URI = "mongodb+srv://..." 
+
 if not MONGO_URI:
     raise RuntimeError("MONGO_URI not set in crawler")
 
@@ -166,7 +171,7 @@ async def fetch_news_detail(session, link):
 # -------------------------
 # 뉴스 리스트 크롤링
 # -------------------------
-async def fetch_news_list(session, url, max_items=30):
+async def fetch_news_list(session, url, max_items=1000):
     news_list = []
     try:
         async with session.get(url, headers=HEADERS, timeout=10) as resp:
@@ -260,29 +265,15 @@ async def crawl_category(session, category, url):
     log(f"✅ {category} 뉴스 크롤링 완료. 총 저장: {len(valid_news)}건")
 
 # -------------------------
-# 전체 카테고리 크롤링
+# [수정됨] 메인 실행 함수
+# 이름 변경: main -> task_korea_crawling
 # -------------------------
-async def main():
+async def task_korea_crawling():
     async with aiohttp.ClientSession() as session:
         for category, url in CATEGORY_URLS.items():
-            log(f"=== 크롤링 시작: {category} ===")
+            log(f"=== 🇰🇷 국내 뉴스 크롤링 시작: {category} ===")
             await crawl_category(session, category, url)
+        log("🎉 국내 뉴스 크롤링 전체 완료!")
 
-# -------------------------
-# 주기적 크롤링
-# -------------------------
-async def periodic_crawl():
-    while True:
-        log("크롤링 시작")
-        try:
-            await main()
-        except Exception as e:
-            log(f"⚠ 크롤링 중 오류 발생: {e}")
-        next_interval = random.randint(3, 10)
-        log(f"크롤링 완료. 다음 크롤링까지 {next_interval}분 대기")
-        await asyncio.sleep(next_interval * 60)
-
-
-if __name__ == "__main__":
-    asyncio.run(periodic_crawl())
-
+# 원래 있던 무한루프(periodic_crawl)와 실행부(__name__)는 삭제했습니다.
+# app.py에서 task_korea_crawling 함수만 import해서 사용합니다.
