@@ -16,7 +16,7 @@ import Header from "./common/Header.jsx";
 import Footer from "./common/Footer.jsx";
 
 import MainPage from "./pages/Main/MainPage.jsx";
-import NewsList from "./pages/NewsPage/NewsList.jsx";
+import NewsMain from "./pages/NewsPage/NewsMain.jsx";
 import KrxList from "./pages/Stock/KrxList.jsx";
 import KrxDetail from "./pages/Stock/KrxDetail.jsx";
 
@@ -82,7 +82,7 @@ function Layout() {
                     <Route path="/" element={<MainPage />} />
                     <Route path="/krx/list" element={<KrxList />} />
                     <Route path="/krx/:code" element={<KrxDetail />} />
-                    <Route path="/news" element={<NewsList />} />
+                    <Route path="/news" element={<NewsMain />} />
                     <Route path="/kakaoLogin" element={<KakaoLogin />} />
                     <Route path="/naverLogin" element={<NaverLogin />} />
                     <Route path="/googleLogin" element={<GoogleLogin />} />
