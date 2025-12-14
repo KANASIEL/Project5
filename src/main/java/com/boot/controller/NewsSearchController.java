@@ -58,11 +58,18 @@ public class NewsSearchController {
     
     @GetMapping("/trending")
     public List<Map<String, Object>> trending(
-            @RequestParam(defaultValue = "24") int hours
+            @RequestParam(name = "hours", defaultValue = "24") int hours
     ) {
-        System.out.println("🔥 인기 검색어 요청: 최근 " + hours + "시간");
         return newsService.getTrendingKeywords(hours);
     }
     
+    // 자동완성
+    @GetMapping("/autocomplete")
+    public List<String> autocomplete(
+            @RequestParam(name = "query") String query
+    ) {
+        return newsService.getAutocompleteSuggestions(query);
+    }
+
     
 }

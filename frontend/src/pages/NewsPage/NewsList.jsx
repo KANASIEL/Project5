@@ -34,6 +34,11 @@ function NewsList() {
 	const [trendingKeywords, setTrendingKeywords] = useState([]);
 	// 검색 드롭다운
 	const [showDropdown, setShowDropdown] = useState(false);
+	// 자동완성
+	const [autoKeywords, setAutoKeywords] = useState([]);
+	const [searchKeyword, setSearchKeyword] = useState("");
+	// 자동완성 선택 인덱스
+	const [activeAutoIndex, setActiveAutoIndex] = useState(-1);
 	
 	const pageSize = 5;
 
@@ -52,7 +57,28 @@ function NewsList() {
 	const CATEGORY_LIST = [
 		"금융", "증권", "산업/재계", "중기/벤처", "글로벌 경제", "생활경제", "경제 일반",
 	];
+	
+	// 자동완성
+	const fetchAutocomplete = async (q) => {
+	  const trimmed = (q || "").trim();
+	  if (!trimmed) {
+	    setAutoKeywords([]);
+	    return;
+	  }
 
+	  try {
+	    const res = await fetch(
+	      `${springBaseUrl}/api/news/autocomplete?query=${encodeURIComponent(trimmed)}`
+	    );
+	    if (!res.ok) throw new Error("autocomplete error");
+	    const data = await res.json();
+	    setAutoKeywords(data || []);
+	  } catch (e) {
+	    console.error("❌ autocomplete error", e);
+	    setAutoKeywords([]);
+	  } 
+	};
+	
 	// ⭐ 친구 코드: 하이라이트
 	const highlightText = (text) => {
 		if (!keyword || !text) return text;
@@ -210,8 +236,6 @@ function NewsList() {
 		try {
 			setLoading(true);
 			const searching = query.trim() !== "";
-			setIsSearching(searching);
-
 			let url;
 			if (searching) {
 				const qs = new URLSearchParams();
@@ -273,19 +297,23 @@ function NewsList() {
 		}, [initialKeyword, initialCategory, isInitialLoad]); // ✅ isInitialLoad 의존성 추가
 
 		useEffect(() => {
-			// 검색 상태면 AI/교정 필요없음 → 스킵
-			if (isSearching && keyword.trim()) {
-				fetchNews(activeCategory, 0, keyword, order);
-				return;
-			}
+		  if (searchKeyword.trim()) {
+		    fetchNews(activeCategory, 0, searchKeyword, order);
+		  } else {
+		    fetchNews(activeCategory, 0, "", order);
+		  }
+		}, [activeCategory, order, searchKeyword]);
 
-			fetchNews(activeCategory, 0, keyword, order);
-		}, [activeCategory, order, isSearching, keyword]);
 		
 		// 🔵 인기 검색어 초기 로드
 		useEffect(() => {
 		  fetchTrendingKeywords();
 		}, []);
+		
+		// 자동완성 바뀌면 초기화
+		useEffect(() => {
+		  setActiveAutoIndex(-1);
+		}, [autoKeywords]);
 	// 🔵 선택적 재검색
 	const handleReSearch = (term) => {
 			const t = (term || "").trim();
@@ -304,26 +332,27 @@ function NewsList() {
 		};
 
 	// 🔵 검색 실행
-	const handleSearch = () => {
-			setPage(0);
-			if (keyword.trim() === "") {
-				setIsSearching(false);
-				fetchNews(activeCategory, 0, "", order);
-				setAiSummary(null);
-				setCorrection(null);
-			} else {
-				setIsSearching(true);
-				fetchNews(activeCategory, 0, keyword, order);
-				setTimeout(() => fetchAiSummary(keyword), 500);
-				fetchCorrection(keyword);
-			}
-			const qs = new URLSearchParams();
-			qs.append("category", activeCategory);
-			if (keyword.trim()) qs.append("q", keyword.trim());
-			navigate(`/news?${qs.toString()}`, { replace: true });
-		};
+	const handleSearch = (overrideKeyword) => {
+	  const q = (overrideKeyword ?? keyword).trim();
+	  setPage(0);
 
-	const handleEnter = (e) => e.key === "Enter" && handleSearch();
+	  if (!q) {
+	    setIsSearching(false);
+	    setSearchKeyword("");
+	    setAiSummary(null);
+	    setCorrection(null);
+	  } else {
+	    setIsSearching(true);
+	    setSearchKeyword(q);      // ✅ 항상 정확한 검색어
+	    setTimeout(() => fetchAiSummary(q), 500);
+	    fetchCorrection(q);
+	  }
+
+	  const qs = new URLSearchParams();
+	  qs.append("category", activeCategory);
+	  if (q) qs.append("q", q);
+	  navigate(`/news?${qs.toString()}`, { replace: true });
+	};
 
 	const handleCategoryChange = (newCategory) => {
 		setActiveCategory(newCategory);
@@ -429,30 +458,87 @@ function NewsList() {
 					  placeholder={t("news_2.searchPlaceholder")}
 					  value={keyword}
 					  onChange={(e) => {
-					    setKeyword(e.target.value);
-					    setShowDropdown(true);   // ★ 검색 입력하면 열기
+					    const v = e.target.value;
+					    setKeyword(v);            // 입력만
+					    setShowDropdown(true);
+					    fetchAutocomplete(v);    // 자동완성만
 					  }}
 					  onFocus={() => setShowDropdown(true)}  // ★ 포커스 시 열기
 					  onBlur={() => setTimeout(() => setShowDropdown(false), 200)} // ★ 포커스 벗어나면 닫기
-					  onKeyDown={handleEnter}
+					  onKeyDown={(e) => {
+					    if (!showDropdown || autoKeywords.length === 0) {
+					      if (e.key === "Enter") handleSearch();
+					      return;
+					    }
+
+					    if (e.key === "ArrowDown") {
+					      e.preventDefault();
+					      setActiveAutoIndex((prev) =>
+					        prev < autoKeywords.length - 1 ? prev + 1 : 0
+					      );
+					    }
+
+					    if (e.key === "ArrowUp") {
+					      e.preventDefault();
+					      setActiveAutoIndex((prev) =>
+					        prev > 0 ? prev - 1 : autoKeywords.length - 1
+					      );
+					    }
+
+					    if (e.key === "Enter") {
+					      e.preventDefault();
+					      if (activeAutoIndex >= 0) {
+					        const selected = autoKeywords[activeAutoIndex];
+					        setKeyword(selected);
+					        handleSearch(selected);
+					        setShowDropdown(false);
+					      } else {
+					        handleSearch();
+					      }
+					    }
+
+					    if (e.key === "Escape") {
+					      setShowDropdown(false);
+					      setActiveAutoIndex(-1);
+					    }
+					  }}
 					/>
-						{showDropdown && trendingKeywords.length > 0 && (
-							<div className="keyword-dropdown">
-							{/* 🔥 인기 검색어 TOP5 */}
-								        {trendingKeywords.slice(0, 5).map((k, idx) => (
-								          <div
-								            key={`trend-${idx}`}
-								            className="dropdown-item"
-								            onMouseDown={() => {
-								              setKeyword(k.keyword);
-								              handleSearch();
-								            }}
-								          >
-								            📈 {k.keyword}
-								          </div>
-								        ))}
-								      </div>
-								    )}
+					{showDropdown && (autoKeywords.length > 0 || trendingKeywords.length > 0) && (
+					  <div className="keyword-dropdown">
+
+					    {/* 🔍 자동완성 검색어 */}
+						{autoKeywords.map((word, idx) => (
+						  <div
+						    key={`auto-${idx}`}
+						    className={`dropdown-item autocomplete ${
+						      idx === activeAutoIndex ? "active" : ""
+						    }`}
+						    onMouseEnter={() => setActiveAutoIndex(idx)}
+						    onMouseDown={() => {
+						      setKeyword(word);
+						      handleSearch(word);
+						      setShowDropdown(false);
+						    }}
+						  >
+						    🔎 {word}
+						  </div>
+						))}
+
+					    {/* 🔥 인기 검색어 TOP5 */}
+					    {trendingKeywords.slice(0, 5).map((k, idx) => (
+					      <div
+					        key={`trend-${idx}`}
+					        className="dropdown-item"
+					        onMouseDown={() => {
+					          setKeyword(k.keyword);
+					          handleSearch(k.keyword);
+					        }}
+					      >
+					        📈 {k.keyword}
+					      </div>
+					    ))}
+					  </div>
+					)}
 						<button className="icon-btn" onClick={handleSearch}>
 							<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
 								<path d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z" stroke="#1e40af" strokeWidth="2" />
@@ -473,7 +559,7 @@ function NewsList() {
 					                className="trending-item"
 					                onClick={() => {
 					                  setKeyword(k.keyword);
-					                  handleSearch();
+					                  handleSearch(k.keyword);
 					                }}
 					              >
 					                #{k.keyword}
@@ -711,4 +797,3 @@ function NewsList() {
 }
 
 export default NewsList;
-

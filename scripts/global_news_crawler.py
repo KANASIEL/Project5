@@ -19,7 +19,7 @@ collection = db["news_global"]
 # 미디어 로고
 # =========================
 MEDIA_LOGOS = {
-    "Reuters": "https://www.reuters.com/pf/resources/images/reuters-logo.png",
+#    "Reuters": "https://www.reuters.com/pf/resources/images/reuters-logo.png",
     "CNBC": "https://upload.wikimedia.org/wikipedia/commons/e/e3/CNBC_logo.svg",
     "CNN": "https://upload.wikimedia.org/wikipedia/commons/b/b1/CNN.svg",
     "BBC": "https://upload.wikimedia.org/wikipedia/commons/b/bc/BBC_News_2022.svg",
@@ -93,13 +93,13 @@ async def get_article_detail(session, url, source):
                 else:
                     paragraphs = soup.select("p")
             
-            elif source == "Reuters":
-                # Reuters는 article-body__content 클래스 내부가 본문
-                main_div = soup.select_one("div[class*='article-body__content']") or soup.select_one("article")
-                if main_div:
-                    paragraphs = main_div.select("p")
-                else:
-                    paragraphs = soup.select("p")
+#            elif source == "Reuters":
+#                # Reuters는 article-body__content 클래스 내부가 본문
+#                main_div = soup.select_one("div[class*='article-body__content']") or soup.select_one("article")
+#                if main_div:
+#                    paragraphs = main_div.select("p")
+#                else:
+#                    paragraphs = soup.select("p")
             
             else:
                 paragraphs = soup.select("p")
@@ -134,9 +134,9 @@ async def get_article_detail(session, url, source):
 # =========================
 def extract_author(soup, source):
     try:
-        if source == "Reuters":
-            tag = soup.select_one("span[data-testid='author-name']")
-        elif source == "CNBC":
+#        if source == "Reuters":
+#            tag = soup.select_one("span[data-testid='author-name']")
+        if source == "CNBC":
             tag = soup.select_one(".ArticleHeader-author a")
         elif source == "CNN":
             tag = soup.select_one(".byline__names")
@@ -187,37 +187,37 @@ def clean_title(title):
 # =========================
 # Reuters
 # =========================
-async def crawl_reuters(session):
-    print("▶ Reuters RSS 시작")
-    # 주소 변경: worldNews -> businessNews (더 안정적)
-    rss_url = "https://www.reutersagency.com/feed/?best-topics=business-finance&post_type=best"
-    # 혹은: "https://www.reuters.com/rssFeed/businessNews" (이게 막히면 위 주소 사용)
-    
-    try:
-        # Reuters는 RSS 요청도 헤더가 없으면 403 Forbidden 뜰 수 있음
-        soup = await fetch_rss(session, "https://www.reuters.com/rssFeed/businessNews")
-        items = soup.find_all("item")[:15] # 개수 조절
-
-        for i, item in enumerate(items):
-            title = item.title.text.strip()
-            link = item.link.text.strip()
-            
-            # Reuters 링크가 가끔 redirect 페이지일 수 있음
-            if "reuters.com" not in link:
-                continue
-
-            print(f"   [Reuters {i+1}] {title[:30]}")
-            content, img, auth = await get_article_detail(session, link, "Reuters")
-            
-            # 본문 없으면 저장 안 함
-            if len(content) < 50:
-                print(f"   [SKIP] Reuters 본문 부족")
-                continue
-
-            save_news(title, link, content, img, "Reuters", auth)
-            
-    except Exception as e:
-        print(f"⚠ Reuters 크롤링 실패: {e}")
+#async def crawl_reuters(session):
+#    print("▶ Reuters RSS 시작")
+#    # 주소 변경: worldNews -> businessNews (더 안정적)
+#    rss_url = "https://www.reutersagency.com/feed/?best-topics=business-finance&post_type=best"
+#    # 혹은: "https://www.reuters.com/rssFeed/businessNews" (이게 막히면 위 주소 사용)
+#    
+#    try:
+#        # Reuters는 RSS 요청도 헤더가 없으면 403 Forbidden 뜰 수 있음
+#        soup = await fetch_rss(session, "https://www.reuters.com/rssFeed/businessNews")
+#        items = soup.find_all("item")[:15] # 개수 조절
+#
+#        for i, item in enumerate(items):
+#            title = item.title.text.strip()
+#            link = item.link.text.strip()
+#            
+#            # Reuters 링크가 가끔 redirect 페이지일 수 있음
+#            if "reuters.com" not in link:
+#                continue
+#
+#            print(f"   [Reuters {i+1}] {title[:30]}")
+#            content, img, auth = await get_article_detail(session, link, "Reuters")
+#            
+#            # 본문 없으면 저장 안 함
+#            if len(content) < 50:
+#                print(f"   [SKIP] Reuters 본문 부족")
+#                continue
+#
+#            save_news(title, link, content, img, "Reuters", auth)
+#            
+#    except Exception as e:
+#        print(f"⚠ Reuters 크롤링 실패: {e}")
 
 # =========================
 # CNBC
@@ -384,7 +384,7 @@ async def task_global_crawling():
             connector=connector
         ) as session:
             await asyncio.gather(
-                crawl_reuters(session),
+#                crawl_reuters(session),
                 crawl_cnbc(session),
                 crawl_bbc(session),
                 crawl_cnn(session),

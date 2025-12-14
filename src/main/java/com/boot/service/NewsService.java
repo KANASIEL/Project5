@@ -20,4 +20,7 @@ public interface NewsService {
 
     // 인기검색어 집계 함수
     List<Map<String, Object>> getTrendingKeywords(int hours);
+    
+    // 자동검색어
+    List<String> getAutocompleteSuggestions(String query);
 }
