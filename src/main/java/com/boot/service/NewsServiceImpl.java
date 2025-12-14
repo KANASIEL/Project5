@@ -15,12 +15,14 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.boot.dao.SearchLogRepository;
 import com.boot.dao.StockNewsRepository;
+import com.boot.dto.NewsTerm;
 import com.boot.dto.StockNews;
 
 @Service
@@ -290,5 +292,22 @@ public class NewsServiceImpl implements NewsService {
                 .limit(5)
                 .toList();
     }
+    
+    @Override
+    public List<String> getAutocompleteSuggestions(String query) {
+        // 'query'와 일치하는 term을 찾기 위한 MongoDB 쿼리
+        Query searchQuery = new Query();
+        searchQuery.addCriteria(Criteria.where("term").regex(query, "i"));  // 대소문자 구분 없이 검색
+        searchQuery.limit(10);  // 최대 10개만 가져오기
+
+        // 검색 결과
+        List<NewsTerm> results = mongoTemplate.find(searchQuery, NewsTerm.class, "news_terms");
+
+        // 결과에서 term만 추출하여 리스트로 반환
+        return results.stream()
+                      .map(NewsTerm::getTerm)  // getTerm() 메서드 사용
+                      .collect(Collectors.toList());
+    }
+
 
 }
