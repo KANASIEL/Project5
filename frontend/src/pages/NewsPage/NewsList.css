@@ -1020,3 +1020,8 @@
   border-color: #60a5fa;
 }
 
+/* 자동완성  */
+.dropdown-item.active {
+  background-color: #e0edff;
+  color: #1e40af;
+}
