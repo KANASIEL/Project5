@@ -30,4 +30,5 @@ public class StockKosdaqDTO {
     private Double roe;               // ROE
     private Long volume;              // 거래량
     private String search;
+
 }

@@ -21,12 +21,14 @@ function StockDetail() {
     const [stock, setStock] = useState(null);
     const [news, setNews] = useState([]);
     const [chartUrl, setChartUrl] = useState("");
-    const [chartMode, setChartMode] = useState("area"); // area = 선차트, candle = 봉차트
+    const [chartMode, setChartMode] = useState("area");
     const [chartPeriod, setChartPeriod] = useState("day");
     const [loading, setLoading] = useState(true);
     const [newsLoading, setNewsLoading] = useState(true);
     const [chartLoading, setChartLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [priceInfo, setPriceInfo] = useState(null);
+    const [priceLoading, setPriceLoading] = useState(true);
 
     useEffect(() => {
         const fetchStock = async () => {
@@ -48,6 +50,23 @@ function StockDetail() {
             }
         };
         fetchStock();
+    }, [code]);
+
+
+    useEffect(  () => {
+        const fetchPriceInfo = async () => {
+            try {
+                setPriceLoading(true);
+                const res = await axios.get(`/api/krx/price/${code}`);
+                setPriceInfo(res.data);
+            } catch (err) {
+                console.error(err);
+                setPriceInfo(null);
+            } finally {
+                setPriceLoading(false);
+            }
+        };
+        if (code) fetchPriceInfo();
     }, [code]);
 
     useEffect(() => {
@@ -114,6 +133,13 @@ function StockDetail() {
         { label: "월봉", value: "month" },
     ];
 
+    // 거래대금 억 단위 변환 헬퍼
+    const formatTradeAmount = (amount) => {
+        if (!amount || amount === 0) return "-";
+        const billion = Math.round(amount / 100000000) / 10;
+        return billion.toLocaleString() + "억 원";
+    };
+
     return (
         <Box className="stock-detail__container">
             <Button
@@ -124,7 +150,7 @@ function StockDetail() {
                 뒤로가기
             </Button>
 
-            {/* 종목 정보 */}
+            {/* 종목 기본 정보 */}
             <Paper className="stock-detail__info">
                 <Typography className="stock-detail__name">{stock.name}</Typography>
                 <Typography className="stock-detail__code">{stock.code} • {stock.market || "KOSPI"}</Typography>
@@ -155,6 +181,59 @@ function StockDetail() {
                         <Typography className="stock-detail__value">{stock.foreign_ratio?.toFixed(1)}%</Typography>
                     </Box>
                 </Box>
+            </Paper>
+
+            {/* 주요 시세 섹션 - 실시간 데이터 */}
+            <Paper className="stock-detail__info" style={{ marginTop: "30px" }}>
+                <Typography className="stock-detail__chart-title">주요 시세 (실시간)</Typography>
+                {priceLoading ? (
+                    <LinearProgress style={{ margin: "20px" }} />
+                ) : (
+                    <Box className="stock-detail__grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "16px", padding: "0 20px" }}>
+                        <Box>
+                            <Typography className="stock-detail__label">전일 종가</Typography>
+                            <Typography className="stock-detail__value">
+                                {priceInfo?.prevClose ? priceInfo.prevClose.toLocaleString() : "-"}원
+                            </Typography>
+                        </Box>
+                        <Box>
+                            <Typography className="stock-detail__label">시가</Typography>
+                            <Typography className="stock-detail__value">
+                                {priceInfo?.openPrice ? priceInfo.openPrice.toLocaleString() : "-"}원
+                            </Typography>
+                        </Box>
+                        <Box>
+                            <Typography className="stock-detail__label">고가</Typography>
+                            <Typography className="stock-detail__value" style={{ color: "#d32f2f" }}>
+                                {priceInfo?.highPrice ? priceInfo.highPrice.toLocaleString() : "-"}원
+                            </Typography>
+                        </Box>
+                        <Box>
+                            <Typography className="stock-detail__label">저가</Typography>
+                            <Typography className="stock-detail__value" style={{ color: "#1976d2" }}>
+                                {priceInfo?.lowPrice ? priceInfo.lowPrice.toLocaleString() : "-"}원
+                            </Typography>
+                        </Box>
+                        <Box>
+                            <Typography className="stock-detail__label">상한가</Typography>
+                            <Typography className="stock-detail__value">
+                                {priceInfo?.upperLimit ? priceInfo.upperLimit.toLocaleString() : "-"}원
+                            </Typography>
+                        </Box>
+                        <Box>
+                            <Typography className="stock-detail__label">하한가</Typography>
+                            <Typography className="stock-detail__value">
+                                {priceInfo?.lowerLimit ? priceInfo.lowerLimit.toLocaleString() : "-"}원
+                            </Typography>
+                        </Box>
+                        <Box>
+                            <Typography className="stock-detail__label">거래대금</Typography>
+                            <Typography className="stock-detail__value">
+                                {priceInfo?.tradeAmount ? formatTradeAmount(priceInfo.tradeAmount) : "-"}
+                            </Typography>
+                        </Box>
+                    </Box>
+                )}
             </Paper>
 
             {/* 차트 모드 선택 */}
@@ -219,8 +298,7 @@ function StockDetail() {
                                 <a href={item.link} target="_blank" rel="noopener noreferrer">
                                     {item.title}
                                 </a>
-                                {/* The Chip component (which renders a <div>) is now legally nested */}
-                                {item.related && <Chip label={item.related} size="small" />}
+                                {item.related && <Chip label={item.related} size="small" style={{ marginLeft: "8px" }} />}
                             </Typography>
                             <Typography className="stock-detail__news-date">{item.date}</Typography>
                         </Box>

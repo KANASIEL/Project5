@@ -141,3 +141,20 @@
     text-align: center;
     margin-top: 20px;
 }
+
+/* 재무지표 그리드 반응형 */
+@media (max-width: 600px) {
+    .stock-detail__grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* 테이블 스타일 */
+.MuiTableCell-root {
+    padding: 10px !important;
+    font-size: 0.95rem;
+}
+
+.MuiTableHead-root {
+    background-color: #f5f5f5;
+}

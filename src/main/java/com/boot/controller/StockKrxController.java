@@ -103,6 +103,12 @@ public class StockKrxController {
         return Map.of("imgUrl", url);
     }
 
+    // 주요 시세 정보 API
+    @GetMapping("/krx/price/{code}")
+    public StockPriceInfoDTO getPriceInfo(@PathVariable String code) {
+        return stockDetailService.getPriceInfo(code);
+    }
+
     // ---------- 최근 본 종목 ----------
     @PostMapping("/krx/recent/add")
     public ResponseEntity<Void> addRecentStock(@RequestBody Map<String, String> body) {
