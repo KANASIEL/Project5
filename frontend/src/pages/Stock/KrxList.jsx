@@ -161,6 +161,8 @@ function KrxList() {
         setSearchResults([]);
         setPage(1);
         setSearchSuggestion(null);
+        setSearchTerm(""); // 검색 입력창도 비워줍니다.
+        navigate(location.pathname, { replace: true });
     };
 
     // 🌟 AI 제안 클릭 핸들러: 제안된 쿼리로 재검색 실행
@@ -267,8 +269,12 @@ function KrxList() {
             setLoading(true);
             try {
                 if (initialQuery) {
+                    // 1. URL 쿼리가 있으면 검색 실행
                     await runSearch(initialQuery);
                 } else {
+                    // 2. URL 쿼리가 없으면 일반 데이터 로드 (전체보기 포함)
+                    // 검색 결과 모드를 확실히 끕니다.
+                    setIsSearching(false);
                     await fetchData();
                     setLoading(false);
                 }
@@ -279,6 +285,7 @@ function KrxList() {
         };
 
         initializeData();
+        // 의존성 배열에 initialQuery를 넣어 URL 파라미터가 변경될 때마다 초기화 로직을 타도록 보장합니다.
     }, [initialQuery]);
 
     useEffect(() => {
