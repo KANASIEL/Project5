@@ -15,7 +15,6 @@ import Levenshtein
 # ⚠️ 주의: 실제 운영 환경에서는 반드시 환경 변수를 사용해야 합니다!
 MONGO_URI = "mongodb+srv://kh:1234@cluster0.fbav0ho.mongodb.net/"
 # ⭐️ [수정] 여기에 유효한 API 키를 넣어주세요.
-# ----------------------------------------------------------------------
 
 app = FastAPI()
 
@@ -295,11 +294,22 @@ def search_stocks(
                 and_filters.extend(char_filters)
         filter_query = {"$and": and_filters}
     else:
-        # 일반 키워드 검색 (형태소 분석 사용)
+        # 일반 키워드 검색 (종목명 + 종목코드 모두 검색)
         tokens = kiwi.tokenize(q)
         keywords = [t.form for t in tokens if t.tag in ["NNG", "NNP", "SL", "SN", "SH"]]
-        if not keywords: keywords = [q]
-        filter_query = {"$or": [{"name": {"$regex": re.escape(kw), "$options": "i"}} for kw in keywords]}
+        if not keywords:
+            keywords = [q]
+
+        or_conditions = []
+        for kw in keywords:
+            # 종목명 검색
+            or_conditions.append({"name": {"$regex": re.escape(kw), "$options": "i"}})
+            # 종목코드 검색 (정확히 일치하거나 포함)
+            if re.match(r'^\d{1,6}$', kw):
+                or_conditions.append({"code": {"$regex": f"^{kw.ljust(6, '0')}$", "$options": "i"}})  # 정확 일치 (앞 0 채움)
+                or_conditions.append({"code": {"$regex": re.escape(kw), "$options": "i"}})  # 부분 일치
+
+        filter_query = {"$or": or_conditions}
 
     krx_results = list(krx_col.find(filter_query, {"_id": 0}))
     target_codes = [doc['code'] for doc in krx_results if 'code' in doc]
