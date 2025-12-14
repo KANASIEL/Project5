@@ -1,5 +1,6 @@
 package com.boot.controller;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.boot.dao.SearchLogRepository;
+import com.boot.dto.SearchLog;
 import com.boot.service.NewsService;
 
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,12 @@ public class NewsSearchController {
             @RequestParam("q") String query,
             @RequestParam(value = "category", required = false) String category
     ) {
+    	//검색기록
+    	SearchLog log = new SearchLog();
+        log.setKeyword(query);
+        log.setTimestamp(new Date());
+        searchLogRepository.save(log);
+        
         return newsService.searchWithTfidfRanking(query, category);
     }
 
