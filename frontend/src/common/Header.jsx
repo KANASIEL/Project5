@@ -35,13 +35,13 @@ export default function Header() {
                         </span>
 
                         <div className="dropdown-menu">
-                            <Link to="/news?region=korea" className="dropdown-item">
-                                {t("Domestic")}
-                            </Link>
-                            <Link to="/news?region=global" className="dropdown-item">
-                                {t("International")}
-                            </Link>
-                        </div>
+						    <a href="/news?region=korea" className="dropdown-item">
+						        {t("Domestic")}
+						    </a>
+						    <a href="/news?region=global" className="dropdown-item">
+						        {t("International")}
+						    </a>
+						</div>
                     </div>
                     <Link to="#" className="stock-header__nav-item">{t("about")}</Link>
                 </nav>
