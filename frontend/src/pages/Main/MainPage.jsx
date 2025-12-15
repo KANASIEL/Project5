@@ -65,8 +65,6 @@ function MainPage() {
                     </button>
                 </form>
             </div>
-
-            <p className="bottom-text">{t("bottomText")}</p>
         </div>
     );
 }
