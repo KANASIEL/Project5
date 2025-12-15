@@ -1,4 +1,4 @@
-import React, { useEffect, useState} from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./NewsList.css";
 import { useTranslation } from "react-i18next";
@@ -432,23 +432,6 @@ function NewsList() {
 			{/* 🔵 2. 중앙: 뉴스 메인 */}
 						<div className="news-main">
 							<div className="news-container">
-					{/* 🔵 오타 교정 바 */}
-					{correction && (
-						<div className="correction-bar">
-							<span>혹시 이런 단어를 찾으셨나요?</span>
-							<button
-								type="button"
-								className="correction-link"
-								onClick={() => handleReSearch(correction.corrected)}
-								style={{ marginLeft: 4, marginRight: 4 }}
-							>
-								[{correction.corrected}]
-							</button>
-							<span className="correction-original">
-								(입력한 단어: {correction.original})
-							</span>
-						</div>
-					)}
 
 					{/* 검색창 */}
 					<div className="search-box">
@@ -549,27 +532,23 @@ function NewsList() {
 						</button>
 					</div>
 
-					{/* 🔥 인기검색어 표시 }
-					{trendingKeywords.length > 0 && (
-						<div className="trending-box">
-							<span className="trending-title">{t("news_2.trendingTitle")}</span>
-
-							<div className="trending-list">
-								{trendingKeywords.map((k, idx) => (
-									<button
-										key={idx}
-										className="trending-item"
-										onClick={() => {
-											setKeyword(k.keyword);
-											handleSearch(k.keyword);
-										}}
-									>
-										#{k.keyword}
-									</button>
-								))}
-							</div>
+					{/* 🔵 오타 교정 바 */}
+					{correction && (
+						<div className="correction-bar">
+							<span>혹시 이런 단어를 찾으셨나요?</span>
+							<button
+								type="button"
+								className="correction-link"
+								onClick={() => handleReSearch(correction.corrected)}
+								style={{ marginLeft: 4, marginRight: 4 }}
+							>
+								[{correction.corrected}]
+							</button>
+							<span className="correction-original">
+								(입력한 단어: {correction.original})
+							</span>
 						</div>
-					)*/}
+					)}
 
 					{/* 🔵 ✅ 완전 수정: AI 요약 UI */}
 					{keyword.trim() && (
@@ -627,12 +606,11 @@ function NewsList() {
 					>
 						{/* 1. 현재 선택된 값을 보여주는 버튼 (드롭다운 트리거) */}
 						<button
-						  className="sort-dropdown-trigger"
-						  onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
+							className="sort-dropdown-trigger"
+							onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
 						>
-						  {order === 'desc' ? '🕒 ' : '📅 '}
-						  {order === 'desc' ? t("news_2.sortLatest") : t("news_2.sortOldest")}
-						  <span className="dropdown-arrow">{isSortDropdownOpen ? '▲' : '▼'}</span>
+							{order === 'desc' ? t("news_2.sortLatest") : t("news_2.sortOldest")}
+							<span className="dropdown-arrow">{isSortDropdownOpen ? '▲' : '▼'}</span>
 						</button>
 
 						{/* 2. 실제 펼쳐지는 목록 (CSS로 둥글게 처리할 부분) */}
@@ -856,5 +834,3 @@ function NewsList() {
 }
 
 export default NewsList;
-
-
