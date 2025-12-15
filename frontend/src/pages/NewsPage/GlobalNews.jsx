@@ -406,7 +406,10 @@ function GlobalNews() {
 				<div className="modal-overlay" onClick={closeModal}>
 					<div className="modal-content" onClick={(e) => e.stopPropagation()}>
 						<div className="modal-header">
-							<h2>{selectedNews.title}</h2>
+							<h2
+								className="modal-title"
+								dangerouslySetInnerHTML={{ __html: selectedNews.title || "" }}
+							/>
 							<button className="modal-close-btn" onClick={closeModal}>
 								×
 							</button>
