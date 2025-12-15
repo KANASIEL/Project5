@@ -307,7 +307,7 @@ function GlobalNews() {
 							className="sort-dropdown-trigger"
 							onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
 						>
-							{order === "desc" ? "최신순" : "오래된순"}
+							{order === "desc" ? "🕒 최신순" : "📅 오래된순"}
 							<span className="dropdown-arrow">{isSortDropdownOpen ? '▲' : '▼'}</span>
 						</button>
 						{isSortDropdownOpen && (
@@ -485,3 +485,4 @@ function GlobalNews() {
 }
 
 export default GlobalNews;
+
