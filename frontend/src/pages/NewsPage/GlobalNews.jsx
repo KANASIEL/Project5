@@ -2,8 +2,10 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./NewsList.css";
+import { useTranslation } from "react-i18next";
 
 function GlobalNews() {
+	const { t } = useTranslation();
 	const MEDIA_LOGOS = {
 		CNBC: "https://upload.wikimedia.org/wikipedia/commons/e/e3/CNBC_logo.svg",
 		CNN: "https://upload.wikimedia.org/wikipedia/commons/b/b1/CNN.svg",
@@ -16,7 +18,7 @@ function GlobalNews() {
 	const [translating, setTranslating] = useState(false);
 
 	const springBaseUrl = "http://localhost:8585";
-	const CATEGORIES = ["전체", "CNBC", "CNN", "BBC", "Yahoo Finance"];
+	const CATEGORIES = ["all", "CNBC", "CNN", "BBC", "Yahoo Finance"];
 	const RECENT_KEY = "stockNews_recentlyViewed";
 	const pageSize = 10;
 
@@ -24,7 +26,7 @@ function GlobalNews() {
 	const navigate = useNavigate();
 	const params = new URLSearchParams(location.search);
 
-	const initialCategory = params.get("category") || "전체";
+	const initialCategory = params.get("category") || "all";
 	const initialKeyword = params.get("q") || "";
 
 	const [items, setItems] = useState([]);
@@ -49,26 +51,32 @@ function GlobalNews() {
 	// 📄 기본 목록 조회 (카테고리 + 정렬 + 페이징)
 	const fetchNews = async (category, pageNumber = 0, sortOrder = order) => {
 		try {
-			setLoading(true);
-			setSearchMode(false);
+			    setLoading(true);
+			    setSearchMode(false);
 
-			const targetCategory = category || "전체";
-			const url = `${springBaseUrl}/news/global?page=${pageNumber}&size=${pageSize}&sort=${sortOrder}&category=${targetCategory}`;
+			    const isAll = !category || category === "all";
 
-			const res = await fetch(url);
-			const data = await res.json();
+			    const url =
+			      `${springBaseUrl}/news/global` +
+			      `?page=${pageNumber}` +
+			      `&size=${pageSize}` +
+			      `&sort=${sortOrder}` +
+			      (isAll ? "" : `&category=${encodeURIComponent(category)}`);
 
-			setItems(data.content || []);
-			setPage(data.number ?? 0);
-			setTotalPages(data.totalPages ?? 1);
-		} catch (e) {
-			console.error("❌ 해외 뉴스 로드 실패:", e);
-			setItems([]);
-			setPage(0);
-			setTotalPages(1);
-		} finally {
-			setLoading(false);
-		}
+			    const res = await fetch(url);
+			    const data = await res.json();
+
+			    setItems(data.content || []);
+			    setPage(data.number ?? 0);
+			    setTotalPages(data.totalPages ?? 1);
+			  } catch (e) {
+			    console.error("❌ 해외 뉴스 로드 실패:", e);
+			    setItems([]);
+			    setPage(0);
+			    setTotalPages(1);
+			  } finally {
+			    setLoading(false);
+			  }
 	};
 
 	// 🔍 검색 API 호출 (카테고리 + 키워드)
@@ -83,7 +91,7 @@ function GlobalNews() {
 			setLoading(true);
 			setSearchMode(true);
 
-			const targetCategory = category || "전체";
+			const targetCategory = category || "all";
 
 			const url =
 				`${springBaseUrl}/news/global/search?` +
@@ -115,7 +123,7 @@ function GlobalNews() {
 	// 최초 로드 및 URL 바뀔 때
 	useEffect(() => {
 		// URL 쿼리에서 category, q 동기화
-		const urlCategory = params.get("category") || "전체";
+		const urlCategory = params.get("category") || "all";
 		const urlKeyword = params.get("q") || "";
 
 		setActiveCategory(urlCategory);
@@ -279,7 +287,7 @@ function GlobalNews() {
 			{/* 🔹 왼쪽: 최근 본 기사 */}
 			<div className="sidebar-left">
 				<div className="sidebar-section">
-					<h3 className="sidebar-title">⭐ 최근 본 기사</h3>
+					<h3 className="sidebar-title">{t("globalNews.recentViewed")}</h3>
 					<ul className="recent-list">
 						{recentlyViewed.map((news, i) => (
 							<li
@@ -302,7 +310,7 @@ function GlobalNews() {
 					<div className="search-box">
 						<input
 							type="text"
-							placeholder="삼성전자, 애플, 엔비디아..."
+							placeholder={t("globalNews.placeholder")}
 							value={keyword}
 							onChange={(e) => setKeyword(e.target.value)}
 							onKeyDown={(e) => {
@@ -332,8 +340,8 @@ function GlobalNews() {
 								key={cat}
 								className={cat === activeCategory ? "active" : ""}
 								onClick={() => handleCategoryChange(cat)}
-							>
-								{cat}
+								>
+								{cat === "all" ? t("all") : cat}
 							</button>
 						))}
 					</div>
@@ -346,7 +354,7 @@ function GlobalNews() {
 							className="sort-dropdown-trigger"
 							onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
 						>
-							{order === "desc" ? "🕒 최신순" : "📅 오래된순"}
+							{order === "desc" ? t("globalNews.sort.latest") : t("globalNews.sort.oldest")}
 							<span className="dropdown-arrow">{isSortDropdownOpen ? '▲' : '▼'}</span>
 						</button>
 						{isSortDropdownOpen && (
@@ -357,7 +365,7 @@ function GlobalNews() {
 										setIsSortDropdownOpen(false);
 									}}
 								>
-									🕒 최신순
+									{t("globalNews.sort.latest")}
 								</li>
 								<li
 									onClick={() => {
@@ -365,7 +373,7 @@ function GlobalNews() {
 										setIsSortDropdownOpen(false);
 									}}
 								>
-									📅 오래된순
+									{t("globalNews.sort.oldest")}
 								</li>
 							</ul>
 						)}
@@ -373,9 +381,9 @@ function GlobalNews() {
 
 					{/* 리스트 / 로딩 / 빈 결과 */}
 					{loading ? (
-						<p className="loading-message">로딩중...</p>
+						<p className="loading-message">{t("globalNews.loading")}</p>
 					) : items.length === 0 ? (
-						<p className="empty-message">뉴스가 없습니다.</p>
+						<p className="empty-message">{t("globalNews.empty")}</p>
 					) : (
 						<ul className="news-list">
 							{items.map((n, i) => (
@@ -422,7 +430,7 @@ function GlobalNews() {
 					{!searchMode && totalPages > 1 && (
 						<div className="pagination">
 							<button onClick={() => goToPage(page - 1)} disabled={page === 0}>
-								이전
+								{t("globalNews.pagination.prev")}
 							</button>
 							<span>
 								{page + 1} / {totalPages}
@@ -431,7 +439,7 @@ function GlobalNews() {
 								onClick={() => goToPage(page + 1)}
 								disabled={page + 1 >= totalPages}
 							>
-								다음
+								{t("globalNews.pagination.next")}
 							</button>
 						</div>
 					)}
@@ -445,10 +453,7 @@ function GlobalNews() {
 				<div className="modal-overlay" onClick={closeModal}>
 					<div className="modal-content" onClick={(e) => e.stopPropagation()}>
 						<div className="modal-header">
-							<h2
-								className="modal-title"
-								dangerouslySetInnerHTML={{ __html: selectedNews.title || "" }}
-							/>
+							<h2>{selectedNews.title}</h2>
 							<div style={{ display: "flex", gap: "8px" }}>
 								<button
 									className="translate-btn"
@@ -485,7 +490,7 @@ function GlobalNews() {
 											rel="noreferrer"
 											className="modal-origin-btn"
 										>
-											기사원문
+											{t("globalNews.original")}
 										</a>
 									)}
 								</div>

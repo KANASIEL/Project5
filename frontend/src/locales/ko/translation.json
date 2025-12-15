@@ -154,7 +154,7 @@
 	    "removeFavorite": "즐겨찾기 제거",
 		"addFavorite": "즐겨찾기 추가"
 	  },
-	 
+	 "all" : "전체",
 	  "viewAll": "전체보기",
 	  "won" : "원",
 	  "clickInferredWord": "추론 단어 클릭",

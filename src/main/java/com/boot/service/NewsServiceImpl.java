@@ -8,8 +8,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
@@ -32,6 +35,7 @@ public class NewsServiceImpl implements NewsService {
     private final NlpService nlpService;
     private final SearchLogRepository searchLogRepository;
     private final MongoTemplate mongoTemplate;
+    private final Map<String, List<Map<String, Object>>> tfidfCache = new ConcurrentHashMap<>();
 
     // 🔵 FastAPI 연동용 RestTemplate & 기본 URL
     private final RestTemplate restTemplate = new RestTemplate();
@@ -93,7 +97,7 @@ public class NewsServiceImpl implements NewsService {
                 candidates = stockNewsRepository
                         .findAll()
                         .stream()
-                        .limit(200)
+                        .limit(100)
                         .collect(Collectors.toList());
             } else {
                 var pageable = PageRequest.of(
@@ -307,6 +311,46 @@ public class NewsServiceImpl implements NewsService {
         return results.stream()
                       .map(NewsTerm::getTerm)  // getTerm() 메서드 사용
                       .collect(Collectors.toList());
+    }
+    
+    @Override
+    public Slice<Map<String, Object>> searchWithTfidfSlice(
+            String query,
+            String category,
+            int page,
+            int size
+    ) {
+        String cacheKey =
+                query.trim().toLowerCase()
+                + "::"
+                + (category == null ? "" : category.trim());
+
+        List<Map<String, Object>> allResults = tfidfCache.get(cacheKey);
+        if (allResults == null) {
+            allResults = searchWithTfidfRanking(query, category);
+
+            if (tfidfCache.size() >= 100) {
+                tfidfCache.clear();
+            }
+            tfidfCache.put(cacheKey, allResults);
+        }
+
+        int start = page * size;
+        int end = Math.min(start + size + 1, allResults.size());
+
+        List<Map<String, Object>> content =
+                start >= allResults.size()
+                        ? List.of()
+                        : new ArrayList<>(allResults.subList(start, end));
+
+        boolean hasNext = content.size() > size;
+        if (hasNext) content.remove(size);
+
+        return new SliceImpl<>(
+                content,
+                PageRequest.of(page, size),
+                hasNext
+        );
     }
 
 
