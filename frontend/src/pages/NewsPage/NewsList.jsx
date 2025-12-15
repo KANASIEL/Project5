@@ -60,23 +60,31 @@ function NewsList() {
 
 	// 자동완성
 	const fetchAutocomplete = async (q) => {
-		const trimmed = (q || "").trim();
-		if (!trimmed) {
-			setAutoKeywords([]);
-			return;
-		}
+	  const trimmed = (q || "").trim();
 
-		try {
-			const res = await fetch(
-				`${springBaseUrl}/api/news/autocomplete?query=${encodeURIComponent(trimmed)}`
-			);
-			if (!res.ok) throw new Error("autocomplete error");
-			const data = await res.json();
-			setAutoKeywords(data || []);
-		} catch (e) {
-			console.error("❌ autocomplete error", e);
-			setAutoKeywords([]);
-		}
+	  if (!trimmed || trimmed.length < 2) {
+	    setAutoKeywords([]);
+	    return;
+	  }
+
+	  // 한글/영문/숫자만
+	  if (!/^[가-힣a-zA-Z0-9\s]+$/.test(trimmed)) {
+	    return;
+	  }
+
+	  try {
+	    const res = await fetch(
+	      `${springBaseUrl}/api/news/autocomplete?query=${encodeURIComponent(trimmed)}`
+	    );
+
+	    if (!res.ok) throw new Error("autocomplete error");
+
+	    const data = await res.json();
+	    setAutoKeywords(data || []);
+	  } catch (e) {
+	    console.error("❌ autocomplete error", e);
+	    setAutoKeywords([]);
+	  }
 	};
 
 	// ⭐ 친구 코드: 하이라이트
@@ -441,10 +449,11 @@ function NewsList() {
 							placeholder={t("news_2.searchPlaceholder")}
 							value={keyword}
 							onChange={(e) => {
-								const v = e.target.value;
-								setKeyword(v);            // 입력만
-								setShowDropdown(true);
-								fetchAutocomplete(v);    // 자동완성만
+							  if (e.nativeEvent.isComposing) return;
+							  const v = e.target.value;
+							  setKeyword(v);
+							  setShowDropdown(true);
+							  fetchAutocomplete(v);
 							}}
 							onFocus={() => setShowDropdown(true)}  // ★ 포커스 시 열기
 							onBlur={() => setTimeout(() => setShowDropdown(false), 200)} // ★ 포커스 벗어나면 닫기
@@ -800,3 +809,4 @@ function NewsList() {
 }
 
 export default NewsList;
+
