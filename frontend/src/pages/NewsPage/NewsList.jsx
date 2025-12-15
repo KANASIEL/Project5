@@ -606,11 +606,12 @@ function NewsList() {
 					>
 						{/* 1. 현재 선택된 값을 보여주는 버튼 (드롭다운 트리거) */}
 						<button
-							className="sort-dropdown-trigger"
-							onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
+						  className="sort-dropdown-trigger"
+						  onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
 						>
-							{order === 'desc' ? t("news_2.sortLatest") : t("news_2.sortOldest")}
-							<span className="dropdown-arrow">{isSortDropdownOpen ? '▲' : '▼'}</span>
+						  {order === 'desc' ? '🕒 ' : '📅 '}
+						  {order === 'desc' ? t("news_2.sortLatest") : t("news_2.sortOldest")}
+						  <span className="dropdown-arrow">{isSortDropdownOpen ? '▲' : '▼'}</span>
 						</button>
 
 						{/* 2. 실제 펼쳐지는 목록 (CSS로 둥글게 처리할 부분) */}
@@ -618,27 +619,27 @@ function NewsList() {
 							<ul className="sort-dropdown-menu">
 								{/* 🕒 최신순 */}
 								<li
-									className={order === 'desc' ? 'active' : ''}
-									onClick={() => {
-										setOrder('desc');
-										setPage(0);
-										fetchNews(activeCategory, 0, keyword, 'desc');
-										setIsSortDropdownOpen(false); // 닫기
-									}}
+								  className={order === 'desc' ? 'active' : ''}
+								  onClick={() => {
+								    setOrder('desc');
+								    setPage(0);
+								    fetchNews(activeCategory, 0, keyword, 'desc');
+								    setIsSortDropdownOpen(false);
+								  }}
 								>
-									{t("news_2.sortLatest")}
+								  🕒 {t("news_2.sortLatest")}
 								</li>
-								{/* 📅 오래된순 */}
+								
 								<li
-									className={order === 'asc' ? 'active' : ''}
-									onClick={() => {
-										setOrder('asc');
-										setPage(0);
-										fetchNews(activeCategory, 0, keyword, 'asc');
-										setIsSortDropdownOpen(false); // 닫기
-									}}
+								  className={order === 'asc' ? 'active' : ''}
+								  onClick={() => {
+								    setOrder('asc');
+								    setPage(0);
+								    fetchNews(activeCategory, 0, keyword, 'asc');
+								    setIsSortDropdownOpen(false);
+								  }}
 								>
-									{t("news_2.sortOldest")}
+								  📅 {t("news_2.sortOldest")}
 								</li>
 							</ul>
 						)}
@@ -834,3 +835,4 @@ function NewsList() {
 }
 
 export default NewsList;
+
