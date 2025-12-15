@@ -1,37 +1,111 @@
-/* ===== 1. 전체 레이아웃 컨테이너 (추가) ===== */
+/* =======================================================
+ * CSS: 전체 레이아웃 (Layout Container)
+ * 데스크톱에서 중앙 정렬을 유지합니다.
+ * ======================================================= */
 .layout-container {
     display: flex;
     justify-content: center;
     width: 100%;
-    max-width: 1100px;
+    max-width: 1100px; /* 중앙 콘텐츠 + 양쪽 사이드바 + 갭 = 1100px */
     margin: 0 auto;
     padding: 10px 0;
     gap: 20px;
-    /* (추가/확인) sticky 요소의 컨테이너는 overflow: hidden이 없어야 합니다. */
-    overflow: visible;
-    /* 명시적으로 추가하여 혹시 모를 hidden 설정을 방지 */
+    /* Fixed 요소를 위해 overflow: visible 유지 */
+    overflow: visible; 
+}
+
+/* 🔵 중앙 뉴스 메인 영역 */
+.news-main {
+    flex-grow: 1; 
+    order: 2; /* 데스크톱 순서 (중앙) */
 }
 
 
-/* ===== 2. 사이드바 공통 스타일 (Fixed 적용) ===== */
-.sidebar-left,
-.sidebar-right {
-    width: 250px;
-    flex-shrink: 0;
-    position: fixed;
-    /* <--- Fixed로 변경 */
-    top: 330px;
-    /* <--- 고정될 화면 상단 위치 */
+/* =======================================================
+ * 🥇 데스크톱 사이드바 (position: fixed)
+ * 🚨 핵심: calc() 값 (820px)과 top 값은 사용자 요구대로 유지
+ * 🚨 수정: 미디어 쿼리 시작점을 1100px로 올립니다.
+ * ======================================================= */
+@media (min-width: 1100px) { /* 🚨 1000px -> 1100px로 변경 */
+    .sidebar-left,
+    .sidebar-right {
+        width: 250px;
+        flex-shrink: 0;
+        
+        position: fixed; 
+        top: 295px; 
+        z-index: 5;
+        
+        margin-left: 0;
+        margin-right: 0;
+    }
+    
+    /* 1. 왼쪽 사이드바 위치 (사용자 요구대로 820px 유지) */
+    .sidebar-left {
+        order: 1;
+        left: calc(50% - 820px); /* ✅ 사용자 요구대로 유지 */
+        right: auto;
+    }
+
+    /* 2. 오른쪽 사이드바 위치 (사용자 요구대로 820px 유지) */
+    .sidebar-right {
+        order: 3;
+        right: calc(50% - 820px); /* ✅ 사용자 요구대로 유지 */
+        left: auto;
+    }
 }
 
-.sidebar-left {
-    left: 20px
-    /* 좌측 경계에 고정 */
-}
 
-.sidebar-right {
-    right: 20px;
-    /* 우측 경계에 고정 */
+/* ------------------------------------------------------------- */
+/* 🥈 반응형 미디어 쿼리 (화면 너비 1099px 이하: 쌓기 & 100% 너비 보장)
+/* 🚨 수정: max-width를 1099px로 설정하여 전환 시점을 일치시킵니다.
+/* ------------------------------------------------------------- */
+@media (max-width: 1099px) { /* 🚨 1000px -> 1099px로 변경 */
+    .layout-container {
+        flex-direction: column;
+        max-width: 100%;
+        padding: 10px 15px; 
+        gap: 15px; 
+    }
+
+    /* 1. 사이드바 너비 100% 및 Fixed 해제 */
+    .sidebar-left,
+    .sidebar-right {
+        width: 100%;
+        position: static; /* Fixed 해제 */
+        top: auto;
+        left: auto !important; 
+        right: auto !important;
+    }
+    
+    /* 2. 중앙 영역 너비 100% 및 제약 해제 */
+    .news-main {
+        max-width: 100%; 
+        min-width: auto; 
+        width: 100%; 
+    }
+    
+    /* 3. 모바일 순서 재조정 */
+    .news-main {
+        order: 3; 
+    }
+    
+    .sidebar-left {
+        order: 1; 
+        margin-top: 10px;
+        margin-bottom: 10px; 
+    }
+
+    .sidebar-right {
+        order: 2; 
+        margin-top: 10px; 
+        margin-bottom: 0; 
+    }
+    
+    /* 사이드바 내부 섹션의 패딩을 컨테이너 패딩과 통일하거나 조정 가능 (옵션) */
+    .sidebar-section {
+        padding: 15px; /* 모바일에서 좌우 패딩을 더 넓게 조정 */
+    }
 }
 
 .sidebar-section {
@@ -643,6 +717,33 @@
     /* 가운데 정렬 */
 }
 
+/* ☰ 세 줄 메뉴 아이콘 스타일 */
+.menu-toggle-icon {
+    /* 🚨 새로운 CSS 추가 */
+    width: 40px; /* 아이콘이 차지할 공간 */
+    height: 40px;
+    flex-shrink: 0; /* 공간이 좁아져도 줄어들지 않음 */
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 5px; /* 검색어 입력창과의 간격 */
+    transition: 0.2s;
+    border-radius: 50%;
+}
+
+.menu-toggle-icon:hover {
+    background-color: #f0f0f0;
+}
+
+/* SVG 아이콘 스타일 */
+.menu-toggle-icon svg {
+    width: 24px;
+    height: 24px;
+    color: #1e40af; /* 파란색으로 아이콘 색상 설정 */
+}
+
+
 /* ===== 검색창 ===== */
 .search-box {
     position: relative;  
@@ -670,6 +771,7 @@
     border: none;
     outline: none;
     font-size: 15px;
+	padding-left: 0;
 }
 
 /* 아이콘 버튼 */
@@ -1201,9 +1303,22 @@
     padding: 10px 15px; /* 헤더 여백 */
     border-bottom: 1px solid #f0f0f0;
 }
+
+.ranking-toggle-box .ranking-toggle-header:hover {
+    background-color: #f6f8ff; /* 호버 효과 추가 */
+}
+
+.ranking-toggle-box .toggle-title {
+    /* 기존 sidebar-title과 유사하게 디자인 */
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e40af;
+    margin: 0;
+}
+
 .translate-btn {
-  padding: 5px 8px;
-  border-radius: 8px;
+  padding: 6px 12px;
+  border-radius: 6px;
   border: 1px solid #c7d2fe;
   background: #eef2ff;
   color: #1e40af;
@@ -1219,18 +1334,3 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
-.ranking-toggle-box .ranking-toggle-header:hover {
-    background-color: #f6f8ff; /* 호버 효과 추가 */
-}
-
-.ranking-toggle-box .toggle-title {
-    /* 기존 sidebar-title과 유사하게 디자인 */
-    font-size: 16px;
-    font-weight: 700;
-    color: #1e40af;
-    margin: 0;
-}
-
-
-
-
