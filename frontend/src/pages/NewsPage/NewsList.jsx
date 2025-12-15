@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState} from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./NewsList.css";
 import { useTranslation } from "react-i18next";
@@ -855,3 +855,4 @@ function NewsList() {
 }
 
 export default NewsList;
+
