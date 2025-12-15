@@ -33,6 +33,8 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import Mypage from "./pages/Mypage/Mypage.jsx";
 import UpdateMypage from "./pages/Mypage/UpdateMypage.jsx";
 
+import About from "./common/About.jsx";
+
 import { AuthProvider } from "./context/AuthContext";
 
 import CustomSelect from "./common/CustomSelect.jsx";
@@ -93,6 +95,7 @@ function Layout() {
                     <Route path="/login" element={<Login />} />
                     <Route path="/mypage" element={<Mypage />} />
                     <Route path="/updateMypage" element={<UpdateMypage />} />
+                    <Route path="/about" element={<About />} />
                 </Routes>
             </main>
 

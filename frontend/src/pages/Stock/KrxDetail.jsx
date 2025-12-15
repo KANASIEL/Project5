@@ -274,12 +274,6 @@ function StockDetail() {
                                 {priceInfo?.lowerLimit ? priceInfo.lowerLimit.toLocaleString() : "-"}{t("won")}
                             </Typography>
                         </Box>
-                        <Box>
-                            <Typography className="stock-detail__label">{t("stockDetail.price.tradeAmount")}</Typography>
-                            <Typography className="stock-detail__value">
-                                {priceInfo?.tradeAmount ? formatTradeAmount(priceInfo.tradeAmount) : "-"}
-                            </Typography>
-                        </Box>
                     </Box>
                 )}
             </Paper>

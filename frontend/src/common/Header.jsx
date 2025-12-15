@@ -43,7 +43,7 @@ export default function Header() {
 						    </a>
 						</div>
                     </div>
-                    <Link to="#" className="stock-header__nav-item">{t("about")}</Link>
+                    <Link to="/about" className="stock-header__nav-item">{t("about")}</Link>
                 </nav>
 
                 {/* 오른쪽 사용자 영역 */}
