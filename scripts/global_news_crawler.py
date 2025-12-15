@@ -7,6 +7,9 @@ import datetime
 import os
 import requests
 import re
+import redis
+import json
+
 # =========================
 # MongoDB
 # =========================
@@ -16,24 +19,29 @@ db = client["stock"]
 collection = db["news_global"]
 
 # =========================
+# Redis
+# =========================
+REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
+redis_client = redis.from_url(REDIS_URL, decode_responses=True)
+CACHE_TTL = 300  # 5분
+
+REDIS_KEY_GLOBAL_LATEST = "global:news:latest"
+
+# =========================
 # 미디어 로고
 # =========================
 MEDIA_LOGOS = {
-#    "Reuters": "https://www.reuters.com/pf/resources/images/reuters-logo.png",
     "CNBC": "https://upload.wikimedia.org/wikipedia/commons/e/e3/CNBC_logo.svg",
     "CNN": "https://upload.wikimedia.org/wikipedia/commons/b/b1/CNN.svg",
     "BBC": "https://upload.wikimedia.org/wikipedia/commons/b/bc/BBC_News_2022.svg",
     "Yahoo Finance": "https://s.yimg.com/cv/apiv2/default/logo_yahoo_finance.png"
 }
 
+DEFAULT_IMAGE = "https://via.placeholder.com/400x220?text=No+Image"
+
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+    "User-Agent": "Mozilla/5.0",
     "Accept-Language": "en-US,en;q=0.9",
-    "Referer": "https://edition.cnn.com/",
-    "Upgrade-Insecure-Requests": "1",
-    "Cache-Control": "max-age=0",
-    "Connection": "keep-alive"
 }
 
 CNN_RSS_URLS = [
@@ -43,99 +51,49 @@ CNN_RSS_URLS = [
     "http://rss.cnn.com/rss/edition_technology.rss",
 ]
 
-DEFAULT_IMAGE = "https://via.placeholder.com/400x220?text=No+Image"
 # =========================
 # RSS Fetch
 # =========================
 async def fetch_rss(session, url):
-    async with session.get(
-        url,
-        headers={
-            "User-Agent": "Mozilla/5.0",
-            "Accept": "application/rss+xml, application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language": "en-US,en;q=0.9",
-        },
-        timeout=20,
-        allow_redirects=True,
-    ) as res:
+    async with session.get(url, headers=HEADERS, timeout=20) as res:
         text = await res.text()
         return BeautifulSoup(text, "xml")
 
 # =========================
-# 공통 상세 페이지 (async)
+# 기사 상세
 # =========================
-# 맨 위에 있는 get_article_detail만 남기고 수정
 async def get_article_detail(session, url, source):
     try:
-        # 타임아웃을 조금 더 넉넉하게 10초로 설정
-        async with session.get(url, headers=HEADERS, timeout=aiohttp.ClientTimeout(total=10)) as res:
+        async with session.get(url, headers=HEADERS, timeout=10) as res:
             if res.status != 200:
-                print(f"[DETAIL FAIL] {source} {res.status} {url}")
                 return "", "", None
-            
-            html = await res.text()
-            soup = BeautifulSoup(html, "html.parser")
 
-            # --- [본문 추출 로직 개선] ---
-            # 불필요한 태그 제거
-            for tag in soup(["script", "style", "nav", "footer", "header", "form", "button"]):
+            soup = BeautifulSoup(await res.text(), "html.parser")
+
+            for tag in soup(["script", "style", "nav", "footer", "header"]):
                 tag.decompose()
 
-            content = ""
-            paragraphs = []
-
-            # 사이트별 본문 태그가 다를 수 있어서 공통적으로 P태그를 찾되, 특정 영역 우선 검색
-            if source == "CNN":
-                # CNN은 article__content 클래스 내부가 진짜 본문
-                main_div = soup.select_one(".article__content") or soup.select_one(".zn-body-text")
-                if main_div:
-                    paragraphs = main_div.select("p")
-                else:
-                    paragraphs = soup.select("p")
-            
-#            elif source == "Reuters":
-#                # Reuters는 article-body__content 클래스 내부가 본문
-#                main_div = soup.select_one("div[class*='article-body__content']") or soup.select_one("article")
-#                if main_div:
-#                    paragraphs = main_div.select("p")
-#                else:
-#                    paragraphs = soup.select("p")
-            
-            else:
-                paragraphs = soup.select("p")
-
-            # 본문 정제
+            paragraphs = soup.select("p")
             content = "\n".join(
                 p.get_text(strip=True)
                 for p in paragraphs
-                if len(p.get_text(strip=True)) > 30  # 너무 짧은 문장(광고 등) 제외
+                if len(p.get_text(strip=True)) > 30
             )
 
-            # --- [이미지 추출 로직 개선] ---
-            image_url = ""
-            og_img = soup.select_one("meta[property='og:image']")
-            if og_img:
-                temp_img = og_img.get("content", "")
-                # 로고나 아이콘 같은 작은 이미지가 걸리는 것 방지
-                if temp_img and "http" in temp_img and "logo" not in temp_img.lower() and ".svg" not in temp_img:
-                    image_url = temp_img
+            og = soup.select_one("meta[property='og:image']")
+            image_url = og.get("content") if og else ""
 
-            # --- [작성자 추출] ---
             author = extract_author(soup, source)
-            
             return content, image_url, author
 
-    except Exception as e:
-        print(f"[DETAIL ERROR] {source} : {e}")
+    except:
         return "", "", None
 
 # =========================
-# 작성자 추출
+# 작성자
 # =========================
 def extract_author(soup, source):
     try:
-#        if source == "Reuters":
-#            tag = soup.select_one("span[data-testid='author-name']")
         if source == "CNBC":
             tag = soup.select_one(".ArticleHeader-author a")
         elif source == "CNN":
@@ -146,7 +104,6 @@ def extract_author(soup, source):
             tag = soup.select_one("[data-testid='author-name']")
         else:
             tag = None
-
         return tag.get_text(strip=True) if tag else None
     except:
         return None
@@ -156,13 +113,12 @@ def extract_author(soup, source):
 # =========================
 def save_news(title, link, content, image_url, source, author):
     if collection.find_one({"link": link}):
-        print(f"   [SKIP] {source}: {title[:30]}")
         return
 
     if not image_url:
         image_url = MEDIA_LOGOS.get(source) or DEFAULT_IMAGE
 
-    doc = {
+    collection.insert_one({
         "title": title,
         "link": link,
         "content": content,
@@ -171,195 +127,72 @@ def save_news(title, link, content, image_url, source, author):
         "mediaLogo": MEDIA_LOGOS.get(source, ""),
         "author": author,
         "region": "global",
-        "pubDate": datetime.datetime.now(),
-        "createdAt": datetime.datetime.now()
-    }
-
-    collection.insert_one(doc)
-    print(f"   ✔ 저장됨 [{source}] {title[:40]}")
-
-def clean_title(title):
-    # IMG, HTML 태그 제거
-    title = re.sub(r"<[^>]+>", "", title)
-    title = title.replace("IMG", "").strip()
-    return title
+        "pubDate": datetime.datetime.utcnow(),
+        "createdAt": datetime.datetime.utcnow()
+    })
 
 # =========================
-# Reuters
-# =========================
-#async def crawl_reuters(session):
-#    print("▶ Reuters RSS 시작")
-#    # 주소 변경: worldNews -> businessNews (더 안정적)
-#    rss_url = "https://www.reutersagency.com/feed/?best-topics=business-finance&post_type=best"
-#    # 혹은: "https://www.reuters.com/rssFeed/businessNews" (이게 막히면 위 주소 사용)
-#    
-#    try:
-#        # Reuters는 RSS 요청도 헤더가 없으면 403 Forbidden 뜰 수 있음
-#        soup = await fetch_rss(session, "https://www.reuters.com/rssFeed/businessNews")
-#        items = soup.find_all("item")[:15] # 개수 조절
-#
-#        for i, item in enumerate(items):
-#            title = item.title.text.strip()
-#            link = item.link.text.strip()
-#            
-#            # Reuters 링크가 가끔 redirect 페이지일 수 있음
-#            if "reuters.com" not in link:
-#                continue
-#
-#            print(f"   [Reuters {i+1}] {title[:30]}")
-#            content, img, auth = await get_article_detail(session, link, "Reuters")
-#            
-#            # 본문 없으면 저장 안 함
-#            if len(content) < 50:
-#                print(f"   [SKIP] Reuters 본문 부족")
-#                continue
-#
-#            save_news(title, link, content, img, "Reuters", auth)
-#            
-#    except Exception as e:
-#        print(f"⚠ Reuters 크롤링 실패: {e}")
-
-# =========================
-# CNBC
-# =========================
-async def crawl_cnbc(session):
-    print("▶ CNBC RSS 시작")
-    soup = await fetch_rss(
-        session,
-        "https://www.cnbc.com/id/100727362/device/rss/rss.html"
-    )
-    items = soup.find_all("item")[:30]
-
-    for i, item in enumerate(items):
-        title = item.title.text.strip()
-        link = item.link.text.strip()
-        print(f"   [CNBC {i+1}/{len(items)}] {title[:40]}")
-
-        content, img, auth = await get_article_detail(session, link, "CNBC")
-        save_news(title, link, content, img, "CNBC", auth)
-
-# =========================
-# BBC
-# =========================
-async def crawl_bbc(session):
-    print("▶ BBC RSS 시작")
-    soup = await fetch_rss(
-        session,
-        "https://feeds.bbci.co.uk/news/business/rss.xml"
-    )
-    items = soup.find_all("item")[:30]
-
-    for i, item in enumerate(items):
-        title = item.title.text.strip()
-        link = item.link.text.strip()
-        print(f"   [BBC {i+1}/{len(items)}] {title[:40]}")
-
-        content, img, auth = await get_article_detail(session, link, "BBC")
-        save_news(title, link, content, img, "BBC", auth)
-
-# =========================
-# CNN
-# =========================
-async def crawl_cnn(session):
-    print("▶ CNN RSS 병합 시작")
-
-    seen_links = set()
-    total_saved = 0
-
-    for rss_url in CNN_RSS_URLS:
-        print(f"   ▶ RSS: {rss_url}")
-        soup = await fetch_rss(session, rss_url)
-        items = soup.find_all("item")
-
-        for item in items:
-            raw_title = item.title.text.strip()
-            title = clean_title(raw_title)
-
-            link = item.link.text.strip()
-            if not link or "video" in link.lower():
-                continue
-
-            # 🔥 RSS 간 중복 제거
-            if link in seen_links:
-                continue
-            seen_links.add(link)
-
-            # 🔹 RSS description
-            rss_desc = ""
-            if item.description:
-                rss_desc = BeautifulSoup(
-                    item.description.text, "html.parser"
-                ).get_text(strip=True)
-
-            # 🔹 상세 페이지 시도 (대부분 실패 → fallback)
-            content, img, auth = await get_article_detail(
-                session, link, "CNN"
-            )
-
-            final_content = content if len(content) > 100 else rss_desc
-
-            if not final_content:
-                continue
-
-            total_saved += 1
-            print(f"   ✔ [CNN {total_saved}] 저장 시도: {title[:40]}")
-
-            save_news(title, link, final_content, img, "CNN", auth)
-
-    print(f"▶ CNN 병합 완료: {total_saved}개 저장 시도")
-        
-# =========================
-# Yahoo (requests + executor)
+# Yahoo
 # =========================
 def get_article_detail_yahoo(url):
-    res = requests.get(
-        url,
-        headers={
-            "User-Agent": "Mozilla/5.0",
-            "Accept-Language": "en-US,en;q=0.9",
-        },
-        timeout=15
+    soup = BeautifulSoup(
+        requests.get(url, headers=HEADERS, timeout=10).text,
+        "html.parser"
     )
-    soup = BeautifulSoup(res.text, "html.parser")
-
-    paragraphs = soup.select("p")
     content = "\n".join(
         p.get_text(strip=True)
-        for p in paragraphs
+        for p in soup.select("p")
         if len(p.get_text(strip=True)) > 20
     )
-
-    image_url = ""
     og = soup.select_one("meta[property='og:image']")
-    if og:
-        image_url = og.get("content", "")
-
-    author = extract_author(soup, "Yahoo Finance")
-    return content, image_url, author
+    return content, og.get("content") if og else "", extract_author(soup, "Yahoo Finance")
 
 async def crawl_yahoo(session):
-    print("▶ Yahoo RSS 시작")
-    soup = await fetch_rss(
-        session,
-        "https://finance.yahoo.com/rss/topstories"
-    )
-    items = soup.find_all("item")[:30]
-
+    soup = await fetch_rss(session, "https://finance.yahoo.com/rss/topstories")
     loop = asyncio.get_running_loop()
 
-    for i, item in enumerate(items):
+    for item in soup.find_all("item")[:30]:
         title = item.title.text.strip()
         link = item.link.text.strip()
-        print(f"   [Yahoo {i+1}/{len(items)}] {title[:40]}")
 
         content, img, auth = await loop.run_in_executor(
-            None,
-            get_article_detail_yahoo,
-            link
+            None, get_article_detail_yahoo, link
         )
 
         save_news(title, link, content, img, "Yahoo Finance", auth)
 
+# =========================
+# CNN / CNBC / BBC
+# =========================
+async def crawl_generic(session, rss_url, source):
+    soup = await fetch_rss(session, rss_url)
+    for item in soup.find_all("item")[:30]:
+        title = re.sub("<[^>]+>", "", item.title.text.strip())
+        link = item.link.text.strip()
+
+        content, img, auth = await get_article_detail(session, link, source)
+        save_news(title, link, content, img, source, auth)
+
+# =========================
+# 🔥 Redis 캐시 생성
+# =========================
+def cache_global_news():
+    news = list(
+        collection.find({"region": "global"})
+        .sort("pubDate", -1)
+        .limit(200)
+    )
+
+    for n in news:
+        n["_id"] = str(n["_id"])
+
+    redis_client.setex(
+        REDIS_KEY_GLOBAL_LATEST,
+        CACHE_TTL,
+        json.dumps(news)
+    )
+
+    print("⚡ Redis 글로벌 뉴스 캐시 갱신 완료")
 
 # =========================
 # 메인 태스크
@@ -369,30 +202,46 @@ is_global_crawling = False
 async def task_global_crawling():
     global is_global_crawling
     if is_global_crawling:
-        print("⏭ 이미 글로벌 크롤링 중")
         return
 
     is_global_crawling = True
     try:
-        print(f"\n[{datetime.datetime.now()}] 🌍 글로벌 뉴스 크롤링 시작")
-
-        timeout = aiohttp.ClientTimeout(total=10)
-        connector = aiohttp.TCPConnector(limit=10, ssl=False)
-
-        async with aiohttp.ClientSession(
-            timeout=timeout,
-            connector=connector
-        ) as session:
+        async with aiohttp.ClientSession() as session:
             await asyncio.gather(
-#                crawl_reuters(session),
-                crawl_cnbc(session),
-                crawl_bbc(session),
-                crawl_cnn(session),
+                crawl_generic(session, "https://www.cnbc.com/id/100727362/device/rss/rss.html", "CNBC"),
+                crawl_generic(session, "https://feeds.bbci.co.uk/news/business/rss.xml", "BBC"),
                 crawl_yahoo(session),
                 return_exceptions=True
             )
 
-        print("🎉 글로벌 크롤링 완료")
+        # 🔥 크롤링 끝나면 Redis 캐시 생성
+        cache_global_news()
 
     finally:
         is_global_crawling = False
+
+# =========================
+# 🔥 화면/API용 조회 함수
+# =========================
+def get_global_news_fast():
+    cached = redis_client.get(REDIS_KEY_GLOBAL_LATEST)
+    if cached:
+        return json.loads(cached)
+
+    # fallback
+    news = list(
+        collection.find({"region": "global"})
+        .sort("pubDate", -1)
+        .limit(200)
+    )
+
+    for n in news:
+        n["_id"] = str(n["_id"])
+
+    redis_client.setex(
+        REDIS_KEY_GLOBAL_LATEST,
+        CACHE_TTL,
+        json.dumps(news)
+    )
+
+    return news
