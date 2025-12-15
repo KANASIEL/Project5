@@ -55,3 +55,15 @@ C:\Dev\TeamProject\Project5\scripts  or cd scripts
 uvicorn StockSearch:app --reload  
 
 StockSearch.py 내부 API키도 마찬가지로 보안으로인해 따로 보관중입니다.  
+
+
+프로젝트 실행 순서  
+1. ubuntu: redis-server
+2. (프로젝트 폴더 루트 기준) cd frontend  
+3. npm install
+4. npm run dev
+5. boot 실행
+6. 터미널 추가: cd script
+7. uvicorn StockSearch:app --reload
+8. 터미널 추가: cd script
+9. python fastapi_server.py
