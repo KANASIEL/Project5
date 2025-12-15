@@ -647,7 +647,7 @@
     position: relative;  
     width: 60%;
     height: 48px;
-    margin: 0 auto 0px;
+    margin: 0 auto 15px;
     display: flex;
     align-items: center;
     background: #fff;
@@ -1069,3 +1069,4 @@
   color: #888;
   font-size: 12px;
 }
+
