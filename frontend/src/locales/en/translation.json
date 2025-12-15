@@ -65,8 +65,8 @@
       "analysis": "Analysis",
       "model": "Model",
       "explainType": "Type",
-      "sortLatest": "🕒 Latest",
-      "sortOldest": "📅 Oldest",
+      "sortLatest": "Latest",
+      "sortOldest": "Oldest",
       "noResult": "❌ No results for {{keyword}}",
       "noNews": "No news available yet",
       "noImage": "No Image"
@@ -156,7 +156,7 @@
     "removeFavorite": "Remove from Favorites",
 	"addFavorite": "Add to Favorites"
   },
-  
+  "all" : "All",
   "viewAll": "View All",
   "won" : "₩",
   "clickInferredWord": "Click inferred word",
@@ -223,7 +223,34 @@
 	      "loading": "Loading news...",
 	      "empty": "No news available",
 	      "more": "View all news on Naver Finance"
+	    },
+		"global": {
+	      "placeholder": "Samsung, Apple, NVIDIA...",
+	      "recentViewed": "⭐ Recently Viewed",
+	      "sort": {
+	        "latest": "🕒 Latest",
+	        "oldest": "📅 Oldest"
+	      },
+	      "pagination": {
+	        "prev": "Previous",
+	        "next": "Next"
+	      },
+	      "original": "Original Article"
 	    }
-	  }
-	
+	  },
+	  "globalNews": {
+	      "placeholder": "Samsung Electronics, Apple, NVIDIA...",
+	      "recentViewed": "⭐ Recently Viewed Articles",
+	      "sort": {
+	        "latest": "🕒 Latest",
+	        "oldest": "📅 Oldest"
+	      },
+	      "pagination": {
+	        "prev": "Prev",
+	        "next": "Next"
+	      },
+	      "original": "Original Article",
+	      "loading": "Loading...",
+	      "empty": "No news available"
+	    }
 }
