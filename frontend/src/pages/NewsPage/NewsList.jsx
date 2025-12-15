@@ -446,7 +446,11 @@ function NewsList() {
 								fetchAutocomplete(v);    // 자동완성만
 							}}
 							onFocus={() => setShowDropdown(true)}  // ★ 포커스 시 열기
-							onBlur={() => setTimeout(() => setShowDropdown(false), 200)} // ★ 포커스 벗어나면 닫기
+							onBlur={() => setTimeout(() => { 
+							        // 드롭다운이 열린 상태에서만 닫도록 안전 장치 추가 (선택 사항)
+							        setShowDropdown(false); 
+							        setActiveAutoIndex(-1);
+							    }, 100)} // 100ms 지연으로 충분
 							onKeyDown={(e) => {
 								if (!showDropdown || autoKeywords.length === 0) {
 									if (e.key === "Enter") handleSearch();
@@ -498,7 +502,6 @@ function NewsList() {
 										onMouseDown={() => {
 											setKeyword(word);
 											handleSearch(word);
-											setShowDropdown(false);
 										}}
 									>
 										🔎 {word}
@@ -835,4 +838,5 @@ function NewsList() {
 }
 
 export default NewsList;
+
 
