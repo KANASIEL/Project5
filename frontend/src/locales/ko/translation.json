@@ -160,9 +160,18 @@
 	 
 	  "viewAll": "전체보기",
 	  "won" : "원",
+	  "clickInferredWord": "추론 단어 클릭",
+	  "reSearchSimilarStocks": "유사 종목 재검색",
 	  
 	  "Domestic" : "국내 뉴스",
-	  "International" : "해외 뉴스"
+	  "International" : "해외 뉴스",
+	  
+	  "search": {
+	      "suggestion": {
+	        "similar": "혹시 **{{top}}**을(를) 포함한 유사 종목 (총 {{count}}개)을 찾으시나요?",
+	        "inferred": "혹시 **{{inferred}}**을(를) 검색하셨나요? 가장 유력한 종목은 **{{top}}**입니다. (총 {{count}}개)"
+	      }
+	    }
 	  
 }
 

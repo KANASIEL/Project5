@@ -158,8 +158,17 @@
 	
 	"viewAll": "すべて見る",
 	"won" : "₩",
+	"clickInferredWord": "推定単語をクリック",
+	"reSearchSimilarStocks": "類似銘柄を再検索",
 	
 	"Domestic" : "国内ニュース",
-	"International" : "海外ニュース"
+	"International" : "海外ニュース",
+	
+	"search": {
+	    "suggestion": {
+	      "similar": "**{{top}}** を含む類似銘柄（{{count}}件）をお探しですか？",
+	      "inferred": "もしかして **{{inferred}}** を検索しましたか？最も関連性の高い銘柄は **{{top}}** です。（{{count}}件）"
+	    }
+	  }
 	
 }

@@ -13,8 +13,11 @@ import {
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import "./KrxDetail.css";
+import { useTranslation } from "react-i18next";
 
 function StockDetail() {
+	const { t } = useTranslation();
+	
     const { code } = useParams();
     const navigate = useNavigate();
 

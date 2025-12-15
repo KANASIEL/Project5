@@ -159,7 +159,17 @@
   
   "viewAll": "View All",
   "won" : "₩",
+  "clickInferredWord": "Click inferred word",
+  "reSearchSimilarStocks": "Search similar stocks again",
   
   "Domestic" : "Domestic News",
-  "International" : "International News"
+  "International" : "International News",
+  
+  "search": {
+      "suggestion": {
+        "similar": "Are you looking for stocks related to **{{top}}**? ({{count}} results)",
+        "inferred": "Did you mean **{{inferred}}**? The most relevant stock is **{{top}}**. ({{count}} similar stocks)"
+      }
+    }
+	
 }
