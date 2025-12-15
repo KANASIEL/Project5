@@ -577,7 +577,6 @@ function NewsList() {
 					{keyword.trim() && (
 						<div className="ai-summary-section">
 							<div className="ai-summary-header">
-								<span className="ai-icon"></span>
 								<span>AI {t("news_2.analysis")}</span>
 								{summaryLoading && <span className="summary-loading">{t("common.loading")}</span>}
 							</div>
@@ -801,4 +800,5 @@ function NewsList() {
 }
 
 export default NewsList;
+
 
