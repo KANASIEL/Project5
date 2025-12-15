@@ -60,31 +60,23 @@ function NewsList() {
 
 	// 자동완성
 	const fetchAutocomplete = async (q) => {
-	  const trimmed = (q || "").trim();
+		const trimmed = (q || "").trim();
+		if (!trimmed) {
+			setAutoKeywords([]);
+			return;
+		}
 
-	  if (!trimmed || trimmed.length < 2) {
-	    setAutoKeywords([]);
-	    return;
-	  }
-
-	  // 한글/영문/숫자만
-	  if (!/^[가-힣a-zA-Z0-9\s]+$/.test(trimmed)) {
-	    return;
-	  }
-
-	  try {
-	    const res = await fetch(
-	      `${springBaseUrl}/api/news/autocomplete?query=${encodeURIComponent(trimmed)}`
-	    );
-
-	    if (!res.ok) throw new Error("autocomplete error");
-
-	    const data = await res.json();
-	    setAutoKeywords(data || []);
-	  } catch (e) {
-	    console.error("❌ autocomplete error", e);
-	    setAutoKeywords([]);
-	  }
+		try {
+			const res = await fetch(
+				`${springBaseUrl}/api/news/autocomplete?query=${encodeURIComponent(trimmed)}`
+			);
+			if (!res.ok) throw new Error("autocomplete error");
+			const data = await res.json();
+			setAutoKeywords(data || []);
+		} catch (e) {
+			console.error("❌ autocomplete error", e);
+			setAutoKeywords([]);
+		}
 	};
 
 	// ⭐ 친구 코드: 하이라이트
@@ -442,6 +434,24 @@ function NewsList() {
 			<div className="news-main">
 				<div className="news-container">
 
+					{/* 🔵 오타 교정 바 */}
+					{correction && (
+						<div className="correction-bar">
+							<span>혹시 이런 단어를 찾으셨나요?</span>
+							<button
+								type="button"
+								className="correction-link"
+								onClick={() => handleReSearch(correction.corrected)}
+								style={{ marginLeft: 4, marginRight: 4 }}
+							>
+								[{correction.corrected}]
+							</button>
+							<span className="correction-original">
+								(입력한 단어: {correction.original})
+							</span>
+						</div>
+					)}
+
 					{/* 검색창 */}
 					<div className="search-box">
 						<input
@@ -449,11 +459,10 @@ function NewsList() {
 							placeholder={t("news_2.searchPlaceholder")}
 							value={keyword}
 							onChange={(e) => {
-							  if (e.nativeEvent.isComposing) return;
-							  const v = e.target.value;
-							  setKeyword(v);
-							  setShowDropdown(true);
-							  fetchAutocomplete(v);
+								const v = e.target.value;
+								setKeyword(v);            // 입력만
+								setShowDropdown(true);
+								fetchAutocomplete(v);    // 자동완성만
 							}}
 							onFocus={() => setShowDropdown(true)}  // ★ 포커스 시 열기
 							onBlur={() => setTimeout(() => setShowDropdown(false), 200)} // ★ 포커스 벗어나면 닫기
@@ -516,7 +525,7 @@ function NewsList() {
 								))}
 
 								{/* 🔥 인기 검색어 TOP5 */}
-								{trendingKeywords.slice(0, 5).map((k, idx) => (
+								{trendingKeywords.slice(0, 6).map((k, idx) => (
 									<div
 										key={`trend-${idx}`}
 										className="dropdown-item"
@@ -541,23 +550,6 @@ function NewsList() {
 							</svg>
 						</button>
 					</div>
-					
-					{/* 🔵 오타 교정 바 */}
-					{correction && (
-						<div className="correction-bar">
-							<span>혹시 이런 단어를 찾으셨나요?</span>
-							<button
-								type="button"
-								className="correction-link"
-								onClick={() => handleReSearch(correction.corrected)}
-							>
-								[{correction.corrected}]
-							</button>
-							<span className="correction-original">
-								(입력한 단어: {correction.original})
-							</span>
-						</div>
-					)}
 
 					{/* 🔥 인기검색어 표시 */}
 					{trendingKeywords.length > 0 && (
@@ -809,4 +801,3 @@ function NewsList() {
 }
 
 export default NewsList;
-
