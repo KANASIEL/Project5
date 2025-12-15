@@ -234,8 +234,10 @@
 
 /* 테이블 */
 .krx-table-container {
+    max-height: 1000px; /* 최대 높이 설정 */
     border-radius: 18px;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     box-shadow: 0 12px 40px rgba(0,0,0,0.1);
     border: 1.8px solid #e2e8f0;
 }

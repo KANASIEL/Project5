@@ -46,7 +46,7 @@ function KrxList() {
     const [favoriteSet, setFavoriteSet] = useState(new Set());
 
     const [sortField, setSortField] = useState(null);
-    const [sortOrder, setSortOrder] = "asc";
+    const [sortOrder, setSortOrder] = useState("asc");
     const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
     const [filters, setFilters] = useState({volumeMin: null, marketCapMin: null});
 
