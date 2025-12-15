@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./NewsList.css";
 import { useTranslation } from "react-i18next";
@@ -25,9 +25,9 @@ function NewsList() {
 
 	// 🔵 오타 교정 상태
 	const [correction, setCorrection] = useState(null);
-
 	// ⭐ 거래대금 Top5 (추가)
 	const [tradeRanking, setTradeRanking] = useState([]);
+	const [isRankingOpen, setIsRankingOpen] = useState(true);
 	//드롭다운
 	const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
 	// 인기 검색어
@@ -57,7 +57,6 @@ function NewsList() {
 	const CATEGORY_LIST = [
 		"금융", "증권", "산업/재계", "중기/벤처", "글로벌 경제", "생활경제", "경제 일반",
 	];
-
 	// 자동완성
 	const fetchAutocomplete = async (q) => {
 		const trimmed = (q || "").trim();
@@ -431,9 +430,8 @@ function NewsList() {
 			</div>
 
 			{/* 🔵 2. 중앙: 뉴스 메인 */}
-			<div className="news-main">
-				<div className="news-container">
-
+						<div className="news-main">
+							<div className="news-container">
 					{/* 🔵 오타 교정 바 */}
 					{correction && (
 						<div className="correction-bar">
@@ -551,7 +549,7 @@ function NewsList() {
 						</button>
 					</div>
 
-					{/* 🔥 인기검색어 표시 */}
+					{/* 🔥 인기검색어 표시 }
 					{trendingKeywords.length > 0 && (
 						<div className="trending-box">
 							<span className="trending-title">{t("news_2.trendingTitle")}</span>
@@ -571,7 +569,7 @@ function NewsList() {
 								))}
 							</div>
 						</div>
-					)}
+					)*/}
 
 					{/* 🔵 ✅ 완전 수정: AI 요약 UI */}
 					{keyword.trim() && (
@@ -721,30 +719,87 @@ function NewsList() {
 				</div>
 			</div>
 
-			{/* ⭐ 3. 오른쪽 사이드바: 거래대금 Top 5 */}
+			{/* ⭐ 3. 오른쪽 사이드바 */}
 			<div className="sidebar-right">
-				<div className="sidebar-section stock-ranking-section">
-					<h3 className="sidebar-title">	{t("topValueTitle")}</h3>
-					<ul className="stock-ranking-list">
-						{tradeRanking.slice(0, 5).map((item, i) => (
-							<li
-								key={item.code || i}
-								className="stock-ranking-item"
-								// 필요하면 종목 상세로 이동
-								onClick={() => navigate(`/krx/${item.code}`)}
-							>
-								<div className="stock-ranking-left">
-									<span className="stock-ranking-rank">{t("rank", { num: i + 1 })}</span>
-									<div className="stock-ranking-name">{item.name}</div>
-								</div>
-								<div className="stock-ranking-amount">
-									{formatRankingValue(item, "score")}
-								</div>
-							</li>
-						))}
-					</ul>
-				</div>
-			</div>
+						    
+						    {/* 1. ✅ 변경: 급상승 검색어 섹션 (토글 없이 항상 표시) */}
+							{trendingKeywords.length > 0 && (
+							        <div className="sidebar-section trending-list-box"> 
+							            
+							            {/* ⭐⭐⭐ 이 부분을 아래와 같이 수정합니다 ⭐⭐⭐ */}
+							            <div className="ranking-header-with-date">
+							                <h3 className="sidebar-title" style={{ margin: 0, borderBottom: 'none', padding: 0 }}>🔥 인기 검색어</h3> 
+							                <span className="update-datetime">
+							                    {new Date().toLocaleString("ko-KR", { 
+							                        month: '2-digit', 
+							                        day: '2-digit', 
+							                        hour: '2-digit', 
+							                        minute: '2-digit', 
+							                        hour12: false, 
+							                    })} 
+							                </span>
+							            </div>
+							            {/* ⭐⭐⭐ 수정 끝 ⭐⭐⭐ */}
+							            
+							            <ul className="keyword-list always-open"> 
+							                {trendingKeywords.slice(0, 10).map((k, idx) => (
+							                    <li
+							                        key={idx}
+							                        className="keyword-item"
+							                        onClick={() => {
+							                            setKeyword(k.keyword);
+							                            handleSearch(k.keyword);
+							                        }}
+							                    >
+							                        {/* ⭐ 변경: 순위 표시 형태를 '1위'로 변경 */}
+							                        <span className="keyword-rank">{idx + 1}위</span> 
+							                        <span className="keyword-text">{k.keyword}</span>
+							                    </li>
+							                ))}
+							            </ul>
+							        </div>
+							    )}
+						    
+						    {/* 2. ✅ 변경: 거래대금 Top5 섹션 (토글형 유지) */}
+						    <div className="sidebar-section ranking-toggle-box" style={{ marginTop: trendingKeywords.length > 0 ? '15px' : '0' }}>
+						        {/* 토글 헤더 (클릭 시 토글) */}
+						        <div className="ranking-toggle-header" onClick={() => setIsRankingOpen(!isRankingOpen)}>
+						            <h3 className="toggle-title">{t("topValueTitle")}</h3>
+						            <button
+						                className="toggle-button"
+						            >
+						                {isRankingOpen ? '▲' : '▼'}
+						            </button>
+						        </div>
+
+						        {/* 토글 콘텐츠 */}
+						        <div className={`ranking-toggle-content ${isRankingOpen ? 'open' : ''}`}>
+						            <ul className="stock-ranking-list">
+						                {tradeRanking.slice(0, 5).map((item, i) => (
+						                    <li
+						                        key={item.code || i}
+						                        className="stock-ranking-item"
+						                        onClick={() => navigate(`/krx/${item.code}`)}
+						                    >
+						                        <div className="stock-ranking-left">
+						                            <span className="stock-ranking-rank">{t("rank", { num: i + 1 })}</span>
+						                            <div className="stock-ranking-name">{item.name}</div>
+						                        </div>
+						                        <div className="stock-ranking-amount">
+						                            {formatRankingValue(item, "score")}
+						                        </div>
+						                    </li>
+						                ))}
+						                {tradeRanking.length === 0 && (
+						                    <li className="stock-ranking-item" style={{ justifyContent: 'center', cursor: 'default' }}>
+						                        <div className="stock-ranking-name" style={{ color: '#888' }}>{t("common.noData")}</div>
+						                    </li>
+						                )}
+						            </ul>
+						        </div>
+						    </div>
+
+						</div>
 
 			{/* ⭐ 4. 모달 (변경없음) */}
 			{selectedNews && (
@@ -800,5 +855,3 @@ function NewsList() {
 }
 
 export default NewsList;
-
-
