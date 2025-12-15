@@ -1202,8 +1202,8 @@
     border-bottom: 1px solid #f0f0f0;
 }
 .translate-btn {
-  padding: 6px 12px;
-  border-radius: 6px;
+  padding: 5px 8px;
+  border-radius: 8px;
   border: 1px solid #c7d2fe;
   background: #eef2ff;
   color: #1e40af;
@@ -1230,6 +1230,7 @@
     color: #1e40af;
     margin: 0;
 }
+
 
 
 
