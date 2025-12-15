@@ -46,7 +46,7 @@ function KrxList() {
     const [favoriteSet, setFavoriteSet] = useState(new Set());
 
     const [sortField, setSortField] = useState(null);
-    const [sortOrder, setSortOrder] = useState("asc");
+    const [sortOrder, setSortOrder] = "asc";
     const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
     const [filters, setFilters] = useState({volumeMin: null, marketCapMin: null});
 
@@ -64,11 +64,32 @@ function KrxList() {
     const [rankingLoading, setRankingLoading] = useState(false);
 
     // --- 유틸리티 함수 ---
+    // 🚩 [복구] 한국 시간으로 변환하는 함수를 다시 추가합니다.
     const formatKoreanTime = (dateStr) => {
         if (!dateStr) return "-";
+
+        // 1. UTC 문자열을 Date 객체로 파싱 (예: 2025-12-15T00:30:55.620Z)
         const date = new Date(dateStr);
-        return date.toLocaleString("ko-KR", {timeZone: "Asia/Seoul"});
+
+        // 2. Invalid Date 체크
+        if (isNaN(date.getTime())) {
+            console.error("날짜 파싱 실패:", dateStr);
+            return dateStr + " (파싱 오류)";
+        }
+
+        // 3. KST 시간대로 포맷하여 반환
+        return date.toLocaleString("ko-KR", {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false,
+            timeZone: "Asia/Seoul" // 한국 시간대로 강제 지정
+        });
     };
+
     const formatNumber = (n) => (n != null ? n.toLocaleString() : "-");
     const formatPrice = (p) => (p != null ? p.toLocaleString() + "원" : "-");
     const calculateTradeAmount = (s) => Math.round(((s.current_price || 0) * (s.volume || 0)) / 1e8);
@@ -408,6 +429,7 @@ function KrxList() {
                 <Typography className="krx-page-title">KRX 실시간 시세표</Typography>
                 {currentData.length > 0 && currentData[0].crawled_at && (
                     <Typography className="krx-crawled-time">
+                        {/* 🚩 [복구] formatKoreanTime 함수를 사용하여 한국 시간으로 표시 */}
                         기준 시간: {formatKoreanTime(currentData[0].crawled_at)}
                     </Typography>
                 )}
