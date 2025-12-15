@@ -158,7 +158,10 @@
 	  },
 	 
 	  "viewAll": "전체보기",
-	  "won" : "원"
+	  "won" : "원",
+	  
+	  "Domestic" : "국내 뉴스",
+	  "International" : "해외 뉴스"
 	  
 }
 

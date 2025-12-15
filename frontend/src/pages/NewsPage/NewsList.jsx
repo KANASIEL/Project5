@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 
 function NewsList() {
 	const { t } = useTranslation();
-	
+
 	const [items, setItems] = useState([]);
 	const [loading, setLoading] = useState(false);
 
@@ -39,7 +39,7 @@ function NewsList() {
 	const [searchKeyword, setSearchKeyword] = useState("");
 	// 자동완성 선택 인덱스
 	const [activeAutoIndex, setActiveAutoIndex] = useState(-1);
-	
+
 	const pageSize = 5;
 
 	// 🔵 라우팅
@@ -57,28 +57,28 @@ function NewsList() {
 	const CATEGORY_LIST = [
 		"금융", "증권", "산업/재계", "중기/벤처", "글로벌 경제", "생활경제", "경제 일반",
 	];
-	
+
 	// 자동완성
 	const fetchAutocomplete = async (q) => {
-	  const trimmed = (q || "").trim();
-	  if (!trimmed) {
-	    setAutoKeywords([]);
-	    return;
-	  }
+		const trimmed = (q || "").trim();
+		if (!trimmed) {
+			setAutoKeywords([]);
+			return;
+		}
 
-	  try {
-	    const res = await fetch(
-	      `${springBaseUrl}/api/news/autocomplete?query=${encodeURIComponent(trimmed)}`
-	    );
-	    if (!res.ok) throw new Error("autocomplete error");
-	    const data = await res.json();
-	    setAutoKeywords(data || []);
-	  } catch (e) {
-	    console.error("❌ autocomplete error", e);
-	    setAutoKeywords([]);
-	  } 
+		try {
+			const res = await fetch(
+				`${springBaseUrl}/api/news/autocomplete?query=${encodeURIComponent(trimmed)}`
+			);
+			if (!res.ok) throw new Error("autocomplete error");
+			const data = await res.json();
+			setAutoKeywords(data || []);
+		} catch (e) {
+			console.error("❌ autocomplete error", e);
+			setAutoKeywords([]);
+		}
 	};
-	
+
 	// ⭐ 친구 코드: 하이라이트
 	const highlightText = (text) => {
 		if (!keyword || !text) return text;
@@ -124,15 +124,15 @@ function NewsList() {
 	}, []);
 
 	// 인기검색어
-	  const fetchTrendingKeywords = async () => {
-	    try {
-	      const res = await fetch(`${springBaseUrl}/api/news/trending?hours=24`);
-	      const data = await res.json();
-	      setTrendingKeywords(data || []);
-	    } catch (err) {
-	      console.error("❌ 인기검색어 로드 실패:", err);
-	    }
-	  };
+	const fetchTrendingKeywords = async () => {
+		try {
+			const res = await fetch(`${springBaseUrl}/api/news/trending?hours=24`);
+			const data = await res.json();
+			setTrendingKeywords(data || []);
+		} catch (err) {
+			console.error("❌ 인기검색어 로드 실패:", err);
+		}
+	};
 
 	// 🔵 AI 요약 (chat_summary_lib 완벽 연동)
 	const fetchAiSummary = async (query) => {
@@ -173,27 +173,26 @@ function NewsList() {
 	// 🔵 오타 교정 API 호출
 	const fetchCorrection = async (q) => {
 		const trimmed = (q || "").trim();
-		if (!trimmed) {
-			setCorrection(null);
-			return;
-		}
-
-		// ✅ 영문/숫자/공백만 있는 경우에만 교정 API 호출
-		const englishOnlyRegex = /^[A-Za-z0-9\s]+$/;
-		if (!englishOnlyRegex.test(trimmed)) {
-			// 한글/특수문자 섞여 있으면 교정 기능 스킵
+		if (!trimmed || trimmed.length < 2) {
 			setCorrection(null);
 			return;
 		}
 
 		try {
+			// FastAPI news-search-correction 호출 (IME + 뉴스 교정 통합)
 			const res = await fetch(
-				`${springBaseUrl}/api/news/correct?q=${encodeURIComponent(trimmed)}`
+				`${fastApiBaseUrl}/news-search-correction?q=${encodeURIComponent(trimmed)}`
 			);
 			if (!res.ok) throw new Error("correction error");
 			const data = await res.json();
-			if (data.corrected && data.original && data.corrected !== data.original) {
-				setCorrection(data);
+
+			// news.corrected와 original 비교해서 correction 설정
+			if (data.news && data.news.corrected !== trimmed) {
+				setCorrection({
+					original: trimmed,
+					corrected: data.news.corrected,
+					source: data.news.source
+				});
 			} else {
 				setCorrection(null);
 			}
@@ -202,32 +201,33 @@ function NewsList() {
 			setCorrection(null);
 		}
 	};
-	
+
+
 	// 거래대금/랭킹 값 포맷 (국내 주식페이지와 동일 로직)
 	const formatRankingValue = (item, field) => {
-	  const value = item[field];
-	  if (value == null) return "-";
+		const value = item[field];
+		if (value == null) return "-";
 
-	  if (["score", "mixedScore"].includes(field)) {
-	    const val = Number(value) / 1e8; // 원 → 억
-	    return (val > 0 ? Math.floor(val) : val).toLocaleString() + t("hundredMillion");
-	  }
+		if (["score", "mixedScore"].includes(field)) {
+			const val = Number(value) / 1e8; // 원 → 억
+			return (val > 0 ? Math.floor(val) : val).toLocaleString() + t("hundredMillion");
+		}
 
-	  if (["marketCap"].includes(field)) {
-	    const val = Number(value);
-	    return (val > 0 ? Math.floor(val) : val).toLocaleString() + t("hundredMillion");
-	  }
+		if (["marketCap"].includes(field)) {
+			const val = Number(value);
+			return (val > 0 ? Math.floor(val) : val).toLocaleString() + t("hundredMillion");
+		}
 
-	  if (field === "volume") {
-	    return Number(value).toLocaleString();
-	  }
+		if (field === "volume") {
+			return Number(value).toLocaleString();
+		}
 
-	  if (field === "changeRate") {
-	    return value.toString();
-	  }
+		if (field === "changeRate") {
+			return value.toString();
+		}
 
-	  const val = Number(value);
-	  return (val > 0 ? Math.floor(val) : val).toLocaleString();
+		const val = Number(value);
+		return (val > 0 ? Math.floor(val) : val).toLocaleString();
 	};
 
 
@@ -267,91 +267,92 @@ function NewsList() {
 		}
 	};
 	// 🔵 초기 로드
-		useEffect(() => {
-		  if (initialKeyword) {
-		    setKeyword(initialKeyword);
-		    setIsSearching(true);
-		    setAiSummary(null);
-		    setCorrection(null);
-		    
-		    fetchNews(initialCategory || activeCategory, 0, initialKeyword, order);
-		    
-		    // ✅ 초기 로드일 때만 AI/교정 실행
-		    if (isInitialLoad) {
-		      setTimeout(() => fetchAiSummary(initialKeyword), 500);
-		      fetchCorrection(initialKeyword);
-		    }
-		  } else {
-		    // 검색어 없을 때 기본 카테고리 뉴스
-		    fetchNews(initialCategory || activeCategory, 0, "", order);
-		    setAiSummary(null);
-		    setCorrection(null);
-		  }
-		  
-		  if (initialCategory) {
-		    setActiveCategory(initialCategory);
-		  }
-		  
-		  // 🔵 초기 로드 완료 후 false로 변경 (중복 방지)
-		  setIsInitialLoad(false);
-		}, [initialKeyword, initialCategory, isInitialLoad]); // ✅ isInitialLoad 의존성 추가
+	useEffect(() => {
+		if (initialKeyword) {
+			setKeyword(initialKeyword);
+			setIsSearching(true);
+			setAiSummary(null);
+			setCorrection(null);
 
-		useEffect(() => {
-		  if (searchKeyword.trim()) {
-		    fetchNews(activeCategory, 0, searchKeyword, order);
-		  } else {
-		    fetchNews(activeCategory, 0, "", order);
-		  }
-		}, [activeCategory, order, searchKeyword]);
+			fetchNews(initialCategory || activeCategory, 0, initialKeyword, order);
 
-		
-		// 🔵 인기 검색어 초기 로드
-		useEffect(() => {
-		  fetchTrendingKeywords();
-		}, []);
-		
-		// 자동완성 바뀌면 초기화
-		useEffect(() => {
-		  setActiveAutoIndex(-1);
-		}, [autoKeywords]);
+			setTimeout(() => {
+				fetchAiSummary(initialKeyword);
+				fetchCorrection(initialKeyword);  // 한글 오타 교정 강제 실행
+			}, 500);
+
+		} else {
+			// 검색어 없을 때 기본 카테고리 뉴스
+			fetchNews(initialCategory || activeCategory, 0, "", order);
+			setAiSummary(null);
+			setCorrection(null);
+		}
+
+		if (initialCategory) {
+			setActiveCategory(initialCategory);
+		}
+
+		// 🔵 초기 로드 완료 후 false로 변경 (중복 방지)
+		setIsInitialLoad(false);
+	}, [initialKeyword, initialCategory, isInitialLoad]); // ✅ isInitialLoad 의존성 추가
+
+	useEffect(() => {
+		if (searchKeyword.trim()) {
+			fetchNews(activeCategory, 0, searchKeyword, order);
+		} else {
+			fetchNews(activeCategory, 0, "", order);
+		}
+	}, [activeCategory, order, searchKeyword]);
+
+
+	// 🔵 인기 검색어 초기 로드
+	useEffect(() => {
+		fetchTrendingKeywords();
+	}, []);
+
+	// 자동완성 바뀌면 초기화
+	useEffect(() => {
+		setActiveAutoIndex(-1);
+	}, [autoKeywords]);
 	// 🔵 선택적 재검색
 	const handleReSearch = (term) => {
-			const t = (term || "").trim();
-			if (!t) return;
-			setKeyword(t);
-			setPage(0);
-			setIsSearching(true);
-			fetchNews(activeCategory, 0, t, order);
-			fetchAiSummary(t);
-			fetchCorrection(t);
+		const t = (term || "").trim();
+		if (!t) return;
+		setKeyword(t);
+		setPage(0);
+		setIsSearching(true);
+		fetchNews(activeCategory, 0, t, order);
+		fetchAiSummary(t);
+		fetchCorrection(t);
 
-			const qs = new URLSearchParams();
-			qs.append("category", activeCategory);
-			qs.append("q", t);
-			navigate(`/news?${qs.toString()}`, { replace: true });
-		};
+		const qs = new URLSearchParams();
+		qs.append("category", activeCategory);
+		qs.append("q", t);
+		navigate(`/news?${qs.toString()}`, { replace: true });
+	};
 
 	// 🔵 검색 실행
 	const handleSearch = (overrideKeyword) => {
-	  const q = (overrideKeyword ?? keyword).trim();
-	  setPage(0);
+		const q = (overrideKeyword ?? keyword).trim();
+		setPage(0);
 
-	  if (!q) {
-	    setIsSearching(false);
-	    setSearchKeyword("");
-	    setAiSummary(null);
-	    setCorrection(null);
-	  } else {
-	    setIsSearching(true);
-	    setSearchKeyword(q);      // ✅ 항상 정확한 검색어
-	    setTimeout(() => fetchAiSummary(q), 500);
-	    fetchCorrection(q);
-	  }
+		if (!q) {
+			setIsSearching(false);
+			setSearchKeyword("");
+			setAiSummary(null);
+			setCorrection(null);
+		} else {
+			setIsSearching(true);
+			setSearchKeyword(q);      // 항상 정확한 검색어
+			// 검색 실행 시에도 교정 다시 호출
+			fetchCorrection(q);
+			setTimeout(() => fetchAiSummary(q), 500);
+		}
 
-	  const qs = new URLSearchParams();
-	  qs.append("category", activeCategory);
-	  if (q) qs.append("q", q);
-	  navigate(`/news?${qs.toString()}`, { replace: true });
+		const qs = new URLSearchParams();
+		qs.append("category", activeCategory);
+		if (q) qs.append("q", q);
+		navigate(`/news?${qs.toString()}`, { replace: true });
 	};
 
 	const handleCategoryChange = (newCategory) => {
@@ -435,144 +436,143 @@ function NewsList() {
 
 					{/* 🔵 오타 교정 바 */}
 					{correction && (
-					  <div className="correction-bar">
-					    <span>혹시 이런 단어를 찾으셨나요?</span>
-					    <button
-					      type="button"
-					      className="correction-link"
-					      onClick={() => handleReSearch(correction.corrected)}
-					      style={{ marginLeft: 4, marginRight: 4 }}
-					    >
-					      [{correction.corrected}]
-					    </button>
-					    <span className="correction-original">
-					      (입력한 단어: {correction.original})
-					    </span>
-					  </div>
+						<div className="correction-bar">
+							<span>혹시 이런 단어를 찾으셨나요?</span>
+							<button
+								type="button"
+								className="correction-link"
+								onClick={() => handleReSearch(correction.corrected)}
+								style={{ marginLeft: 4, marginRight: 4 }}
+							>
+								[{correction.corrected}]
+							</button>
+							<span className="correction-original">
+								(입력한 단어: {correction.original})
+							</span>
+						</div>
 					)}
 
 					{/* 검색창 */}
 					<div className="search-box">
-					<input
-					  type="text"
-					  placeholder={t("news_2.searchPlaceholder")}
-					  value={keyword}
-					  onChange={(e) => {
-					    const v = e.target.value;
-					    setKeyword(v);            // 입력만
-					    setShowDropdown(true);
-					    fetchAutocomplete(v);    // 자동완성만
-					  }}
-					  onFocus={() => setShowDropdown(true)}  // ★ 포커스 시 열기
-					  onBlur={() => setTimeout(() => setShowDropdown(false), 200)} // ★ 포커스 벗어나면 닫기
-					  onKeyDown={(e) => {
-					    if (!showDropdown || autoKeywords.length === 0) {
-					      if (e.key === "Enter") handleSearch();
-					      return;
-					    }
+						<input
+							type="text"
+							placeholder={t("news_2.searchPlaceholder")}
+							value={keyword}
+							onChange={(e) => {
+								const v = e.target.value;
+								setKeyword(v);            // 입력만
+								setShowDropdown(true);
+								fetchAutocomplete(v);    // 자동완성만
+							}}
+							onFocus={() => setShowDropdown(true)}  // ★ 포커스 시 열기
+							onBlur={() => setTimeout(() => setShowDropdown(false), 200)} // ★ 포커스 벗어나면 닫기
+							onKeyDown={(e) => {
+								if (!showDropdown || autoKeywords.length === 0) {
+									if (e.key === "Enter") handleSearch();
+									return;
+								}
 
-					    if (e.key === "ArrowDown") {
-					      e.preventDefault();
-					      setActiveAutoIndex((prev) =>
-					        prev < autoKeywords.length - 1 ? prev + 1 : 0
-					      );
-					    }
+								if (e.key === "ArrowDown") {
+									e.preventDefault();
+									setActiveAutoIndex((prev) =>
+										prev < autoKeywords.length - 1 ? prev + 1 : 0
+									);
+								}
 
-					    if (e.key === "ArrowUp") {
-					      e.preventDefault();
-					      setActiveAutoIndex((prev) =>
-					        prev > 0 ? prev - 1 : autoKeywords.length - 1
-					      );
-					    }
+								if (e.key === "ArrowUp") {
+									e.preventDefault();
+									setActiveAutoIndex((prev) =>
+										prev > 0 ? prev - 1 : autoKeywords.length - 1
+									);
+								}
 
-					    if (e.key === "Enter") {
-					      e.preventDefault();
-					      if (activeAutoIndex >= 0) {
-					        const selected = autoKeywords[activeAutoIndex];
-					        setKeyword(selected);
-					        handleSearch(selected);
-					        setShowDropdown(false);
-					      } else {
-					        handleSearch();
-					      }
-					    }
+								if (e.key === "Enter") {
+									e.preventDefault();
+									if (activeAutoIndex >= 0) {
+										const selected = autoKeywords[activeAutoIndex];
+										setKeyword(selected);
+										handleSearch(selected);
+										setShowDropdown(false);
+									} else {
+										handleSearch();
+									}
+								}
 
-					    if (e.key === "Escape") {
-					      setShowDropdown(false);
-					      setActiveAutoIndex(-1);
-					    }
-					  }}
-					/>
-					{showDropdown && (autoKeywords.length > 0 || trendingKeywords.length > 0) && (
-					  <div className="keyword-dropdown">
+								if (e.key === "Escape") {
+									setShowDropdown(false);
+									setActiveAutoIndex(-1);
+								}
+							}}
+						/>
+						{showDropdown && (autoKeywords.length > 0 || trendingKeywords.length > 0) && (
+							<div className="keyword-dropdown">
 
-					    {/* 🔍 자동완성 검색어 */}
-						{autoKeywords.map((word, idx) => (
-						  <div
-						    key={`auto-${idx}`}
-						    className={`dropdown-item autocomplete ${
-						      idx === activeAutoIndex ? "active" : ""
-						    }`}
-						    onMouseEnter={() => setActiveAutoIndex(idx)}
-						    onMouseDown={() => {
-						      setKeyword(word);
-						      handleSearch(word);
-						      setShowDropdown(false);
-						    }}
-						  >
-						    🔎 {word}
-						  </div>
-						))}
+								{/* 🔍 자동완성 검색어 */}
+								{autoKeywords.map((word, idx) => (
+									<div
+										key={`auto-${idx}`}
+										className={`dropdown-item autocomplete ${idx === activeAutoIndex ? "active" : ""
+											}`}
+										onMouseEnter={() => setActiveAutoIndex(idx)}
+										onMouseDown={() => {
+											setKeyword(word);
+											handleSearch(word);
+											setShowDropdown(false);
+										}}
+									>
+										🔎 {word}
+									</div>
+								))}
 
-					    {/* 🔥 인기 검색어 TOP5 */}
-					    {trendingKeywords.slice(0, 5).map((k, idx) => (
-					      <div
-					        key={`trend-${idx}`}
-					        className="dropdown-item"
-					        onMouseDown={() => {
-					          setKeyword(k.keyword);
-					          handleSearch(k.keyword);
-					        }}
-					      >
-					        📈 {k.keyword}
-					      </div>
-					    ))}
-					  </div>
-					)}
+								{/* 🔥 인기 검색어 TOP5 */}
+								{trendingKeywords.slice(0, 5).map((k, idx) => (
+									<div
+										key={`trend-${idx}`}
+										className="dropdown-item"
+										onMouseDown={() => {
+											setKeyword(k.keyword);
+											handleSearch(k.keyword);
+										}}
+									>
+										📈 {k.keyword}
+									</div>
+								))}
+							</div>
+						)}
 						<button
-					  type="button"
-					  className="icon-btn"
-					  onMouseDown={() => handleSearch()}
-					>
-					  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-					    <path d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z" stroke="#1e40af" strokeWidth="2" />
-					    <path d="M21 21L16.65 16.65" stroke="#1e40af" strokeWidth="2" />
-					  </svg>
-					</button>
+							type="button"
+							className="icon-btn"
+							onMouseDown={() => handleSearch()}
+						>
+							<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+								<path d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z" stroke="#1e40af" strokeWidth="2" />
+								<path d="M21 21L16.65 16.65" stroke="#1e40af" strokeWidth="2" />
+							</svg>
+						</button>
 					</div>
-					
-					{/* 🔥 인기검색어 표시 */}
-					      {trendingKeywords.length > 0 && (
-					        <div className="trending-box">
-					          <span className="trending-title">{t("news_2.trendingTitle")}</span>
 
-					          <div className="trending-list">
-					            {trendingKeywords.map((k, idx) => (
-					              <button
-					                key={idx}
-					                className="trending-item"
-					                onClick={() => {
-					                  setKeyword(k.keyword);
-					                  handleSearch(k.keyword);
-					                }}
-					              >
-					                #{k.keyword}
-					              </button>
-					            ))}
-					          </div>
-					        </div>
-					      )}
-					
+					{/* 🔥 인기검색어 표시 */}
+					{trendingKeywords.length > 0 && (
+						<div className="trending-box">
+							<span className="trending-title">{t("news_2.trendingTitle")}</span>
+
+							<div className="trending-list">
+								{trendingKeywords.map((k, idx) => (
+									<button
+										key={idx}
+										className="trending-item"
+										onClick={() => {
+											setKeyword(k.keyword);
+											handleSearch(k.keyword);
+										}}
+									>
+										#{k.keyword}
+									</button>
+								))}
+							</div>
+						</div>
+					)}
+
 					{/* 🔵 ✅ 완전 수정: AI 요약 UI */}
 					{keyword.trim() && (
 						<div className="ai-summary-section">
@@ -611,13 +611,13 @@ function NewsList() {
 					{/* 카테고리 탭 */}
 					<div className="category-tabs">
 						{CATEGORY_LIST.map((cat) => (
-						    <button
-						        key={cat}
-						        className={cat === activeCategory ? "active" : ""}
-						        onClick={() => handleCategoryChange(cat)}
-						    >
-						        {t(`category.${cat}`)}
-						    </button>
+							<button
+								key={cat}
+								className={cat === activeCategory ? "active" : ""}
+								onClick={() => handleCategoryChange(cat)}
+							>
+								{t(`category.${cat}`)}
+							</button>
 						))}
 					</div>
 
@@ -673,10 +673,10 @@ function NewsList() {
 						<p className="loading-message">{t("common.loadingNews")}</p>
 					) : listToShow.length === 0 ? (
 						<p className="empty-message">
-						{isSearching
-						  ? t("news_2.noResult", { keyword })
-						  : t("news_2.noNews")
-						}
+							{isSearching
+								? t("news_2.noResult", { keyword })
+								: t("news_2.noNews")
+							}
 						</p>
 					) : (
 						<ul className="news-list">
@@ -739,7 +739,7 @@ function NewsList() {
 									<div className="stock-ranking-name">{item.name}</div>
 								</div>
 								<div className="stock-ranking-amount">
-								  {formatRankingValue(item, "score")}
+									{formatRankingValue(item, "score")}
 								</div>
 							</li>
 						))}
@@ -801,4 +801,3 @@ function NewsList() {
 }
 
 export default NewsList;
-
