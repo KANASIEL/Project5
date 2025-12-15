@@ -170,6 +170,60 @@
         "similar": "Are you looking for stocks related to **{{top}}**? ({{count}} results)",
         "inferred": "Did you mean **{{inferred}}**? The most relevant stock is **{{top}}**. ({{count}} similar stocks)"
       }
-    }
+    },
+	
+	"stockDetail": {
+	    "common": {
+	      "back": "Back",
+	      "loading": "Loading stock information...",
+	      "notFound": "Stock not found",
+	      "loadFail": "Failed to load data"
+	    },
+	    "info": {
+	      "currentPrice": "Current Price",
+	      "change": "Change",
+	      "changeRate": "Change Rate",
+	      "volume": "Volume",
+	      "marketCap": "Market Cap",
+	      "foreignRatio": "Foreign Ownership"
+	    },
+	    "price": {
+	      "title": "Key Prices (Real-time)",
+	      "prevClose": "Previous Close",
+	      "open": "Open",
+	      "high": "High",
+	      "low": "Low",
+	      "upperLimit": "Upper Limit",
+	      "lowerLimit": "Lower Limit",
+	      "tradeAmount": "Trading Value"
+	    },
+	    "chart": {
+	      "title": "Price Chart",
+	      "area": "Line Chart",
+	      "candle": "Candlestick",
+	      "loading": "Loading chart...",
+	      "unavailable": "Unable to load chart",
+	      "period": {
+	        "day": "1 Day",
+	        "week": "1 Week",
+	        "month3": "3 Months",
+	        "year": "1 Year",
+	        "year3": "3 Years",
+	        "year5": "5 Years",
+	        "year10": "10 Years"
+	      },
+		  "candlePeriod": {
+          "day": "Daily",
+          "week": "Weekly",
+          "month": "Monthly"
+        }
+	    },
+	    "news": {
+	      "title": "Latest News & Disclosures",
+	      "loading": "Loading news...",
+	      "empty": "No news available",
+	      "more": "View all news on Naver Finance"
+	    }
+	  }
 	
 }

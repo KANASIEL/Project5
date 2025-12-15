@@ -169,6 +169,60 @@
 	      "similar": "**{{top}}** を含む類似銘柄（{{count}}件）をお探しですか？",
 	      "inferred": "もしかして **{{inferred}}** を検索しましたか？最も関連性の高い銘柄は **{{top}}** です。（{{count}}件）"
 	    }
-	  }
+	  },
+	  
+	  "stockDetail": {
+	      "common": {
+	        "back": "戻る",
+	        "loading": "銘柄情報を読み込み中...",
+	        "notFound": "銘柄が見つかりません",
+	        "loadFail": "データの読み込みに失敗しました"
+	      },
+	      "info": {
+	        "currentPrice": "現在価格",
+	        "change": "前日比",
+	        "changeRate": "騰落率",
+	        "volume": "出来高",
+	        "marketCap": "時価総額",
+	        "foreignRatio": "外国人保有率"
+	      },
+	      "price": {
+	        "title": "主要価格（リアルタイム）",
+	        "prevClose": "前日終値",
+	        "open": "始値",
+	        "high": "高値",
+	        "low": "安値",
+	        "upperLimit": "ストップ高",
+	        "lowerLimit": "ストップ安",
+	        "tradeAmount": "売買代金"
+	      },
+	      "chart": {
+	        "title": "株価チャート",
+	        "area": "ラインチャート",
+	        "candle": "ローソク足",
+	        "loading": "チャートを読み込み中...",
+	        "unavailable": "チャートを表示できません",
+	        "period": {
+	          "day": "1日",
+	          "week": "1週間",
+	          "month3": "3か月",
+	          "year": "1年",
+	          "year3": "3年",
+	          "year5": "5年",
+	          "year10": "10年"
+	        },
+			"candlePeriod": {
+		       "day": "日足",
+		       "week": "週足",
+		       "month": "月足"
+		     }
+	      },
+	      "news": {
+	        "title": "最新ニュース・公示",
+	        "loading": "ニュースを読み込み中...",
+	        "empty": "ニュースはありません",
+	        "more": "ネイバー証券でニュース一覧を見る"
+	      }
+	    }
 	
 }

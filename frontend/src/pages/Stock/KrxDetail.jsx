@@ -16,11 +16,43 @@ import "./KrxDetail.css";
 import { useTranslation } from "react-i18next";
 
 function StockDetail() {
-	const { t } = useTranslation();
 	
+	// 변동 방향 키 추출 (판단 전용)
+	const getChangeKey = (change) => {
+	  if (!change) return "FLAT";
+
+	  const value = String(change).trim();
+
+	  if (value.includes("상한")) return "LIMIT_UP";
+	  if (value.includes("하한")) return "LIMIT_DOWN";
+	  if (value.includes("상승") || value.includes("▲") || value.includes("+")) return "UP";
+	  if (value.includes("하락") || value.includes("▼") || value.includes("-")) return "DOWN";
+	  if (value.includes("보합") || value === "0" || value === "0.00") return "FLAT";
+
+	  return "FLAT";
+	};
+
+	// 숫자만 추출 ("하락3,800" → "3,800")
+	const extractChangeNumber = (change) => {
+	  if (!change) return "0";
+
+	  const match = String(change).match(/([\d,]+)/);
+	  return match ? match[1] : "0";
+	};
+
+	const CHANGE_CLASS_MAP = {
+	  UP: "red",
+	  LIMIT_UP: "red",
+	  DOWN: "blue",
+	  LIMIT_DOWN: "blue",
+	  FLAT: "gray",
+	};
+
+
+	const { t } = useTranslation();
     const { code } = useParams();
     const navigate = useNavigate();
-
+	
     const [stock, setStock] = useState(null);
     const [news, setNews] = useState([]);
     const [chartUrl, setChartUrl] = useState("");
@@ -32,7 +64,13 @@ function StockDetail() {
     const [error, setError] = useState(null);
     const [priceInfo, setPriceInfo] = useState(null);
     const [priceLoading, setPriceLoading] = useState(true);
+	
+	const changeKey = getChangeKey(stock?.change);
+  	const changeClass = CHANGE_CLASS_MAP[changeKey];
+ 	const changeNumber = extractChangeNumber(stock?.change);
+  	const changeText = t(`stock.change.${changeKey}`);
 
+	
     useEffect(() => {
         const fetchStock = async () => {
             try {
@@ -47,7 +85,7 @@ function StockDetail() {
                 else setError("종목을 찾을 수 없습니다.");
             } catch (err) {
                 console.error(err);
-                setError("데이터 로드 실패");
+                setError(t("stockDetail.common.loadFail"));
             } finally {
                 setLoading(false);
             }
@@ -111,7 +149,7 @@ function StockDetail() {
             <Box className="stock-detail__container">
                 <LinearProgress />
                 <Typography className="stock-detail__loading-text">
-                    종목 정보 로딩 중...
+                    {t("stockDetail.common.loading")}
                 </Typography>
             </Box>
         );
@@ -119,21 +157,21 @@ function StockDetail() {
     if (error)
         return <Alert severity="error" className="stock-detail__alert">{error}</Alert>;
     if (!stock)
-        return <Alert severity="warning" className="stock-detail__alert">종목을 찾을 수 없습니다.</Alert>;
+        return <Alert severity="warning" className="stock-detail__alert">{t("stockDetail.common.notFound")}</Alert>;
 
     const linePeriods = [
-        { label: "1일", value: "day" },
-        { label: "1주일", value: "week" },
-        { label: "3개월", value: "month3" },
-        { label: "1년", value: "year" },
-        { label: "3년", value: "year3" },
-        { label: "5년", value: "year5" },
-        { label: "10년", value: "year10" },
+        { label: t("stockDetail.chart.period.day"), value: "day" },
+        { label: t("stockDetail.chart.period.week"), value: "week" },
+        { label: t("stockDetail.chart.period.month3"), value: "month3" },
+        { label: t("stockDetail.chart.period.year"), value: "year" },
+        { label: t("stockDetail.chart.period.year3"), value: "year3" },
+        { label: t("stockDetail.chart.period.year5"), value: "year5" },
+        { label: t("stockDetail.chart.period.year10"), value: "year10" },
     ];
     const candlePeriods = [
-        { label: "일봉", value: "day" },
-        { label: "주봉", value: "week" },
-        { label: "월봉", value: "month" },
+        { label: t("stockDetail.chart.candlePeriod.day"), value: "day" },
+        { label: t("stockDetail.chart.candlePeriod.week"), value: "week" },
+        { label: t("stockDetail.chart.candlePeriod.month"), value: "month" },
     ];
 
     // 거래대금 억 단위 변환 헬퍼
@@ -150,7 +188,7 @@ function StockDetail() {
                 onClick={() => navigate(-1)}
                 className="stock-detail__back-btn"
             >
-                뒤로가기
+                {t("stockDetail.common.back")}
             </Button>
 
             {/* 종목 기본 정보 */}
@@ -160,27 +198,34 @@ function StockDetail() {
 
                 <Box className="stock-detail__grid">
                     <Box>
-                        <Typography className="stock-detail__label">현재가</Typography>
-                        <Typography className="stock-detail__value">{stock.current_price?.toLocaleString() || "-"}원</Typography>
+                        <Typography className="stock-detail__label">{t("stockDetail.info.currentPrice")}</Typography>
+                        <Typography className="stock-detail__value">{stock.current_price?.toLocaleString() || "-"}{t("won")}</Typography>
                     </Box>
+					<Box>
+					      <Typography className="stock-detail__label">
+					        {t("stockDetail.info.change")}
+					      </Typography>
+
+					      <Typography className={`stock-detail__value ${changeClass}`}>
+					        {changeKey === "FLAT"
+					          ? `0 ${changeText}`
+					          : `${changeNumber} ${changeText}`}
+					      </Typography>
+					    </Box>
                     <Box>
-                        <Typography className="stock-detail__label">전일비</Typography>
-                        <Typography className={`stock-detail__value ${stock.change?.includes("+") ? "red" : "blue"}`}>{stock.change || "-"}</Typography>
-                    </Box>
-                    <Box>
-                        <Typography className="stock-detail__label">등락률</Typography>
+                        <Typography className="stock-detail__label">{t("stockDetail.info.changeRate")}</Typography>
                         <Typography className={`stock-detail__value ${stock.change_rate?.includes("+") ? "red" : "blue"}`}>{stock.change_rate || "-"}</Typography>
                     </Box>
                     <Box>
-                        <Typography className="stock-detail__label">거래량</Typography>
+                        <Typography className="stock-detail__label">{t("stockDetail.info.volume")}</Typography>
                         <Typography className="stock-detail__value">{stock.volume?.toLocaleString() || "-"}</Typography>
                     </Box>
                     <Box>
-                        <Typography className="stock-detail__label">시가총액</Typography>
-                        <Typography className="stock-detail__value">{stock.market_cap ? stock.market_cap.toLocaleString() + "억" : "-"}</Typography>
+                        <Typography className="stock-detail__label">{t("stockDetail.info.marketCap")}</Typography>
+                        <Typography className="stock-detail__value">{stock.market_cap ? stock.market_cap.toLocaleString() + t("hundredMillion") : "-"}</Typography>
                     </Box>
                     <Box>
-                        <Typography className="stock-detail__label">외국인 비율</Typography>
+                        <Typography className="stock-detail__label">{t("stockDetail.info.foreignRatio")}</Typography>
                         <Typography className="stock-detail__value">{stock.foreign_ratio?.toFixed(1)}%</Typography>
                     </Box>
                 </Box>
@@ -188,49 +233,49 @@ function StockDetail() {
 
             {/* 주요 시세 섹션 - 실시간 데이터 */}
             <Paper className="stock-detail__info" style={{ marginTop: "30px" }}>
-                <Typography className="stock-detail__chart-title">주요 시세 (실시간)</Typography>
+                <Typography className="stock-detail__chart-title">{t("stockDetail.price.title")}</Typography>
                 {priceLoading ? (
                     <LinearProgress style={{ margin: "20px" }} />
                 ) : (
                     <Box className="stock-detail__grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "16px", padding: "0 20px" }}>
                         <Box>
-                            <Typography className="stock-detail__label">전일 종가</Typography>
+                            <Typography className="stock-detail__label">{t("stockDetail.price.prevClose")}</Typography>
                             <Typography className="stock-detail__value">
-                                {priceInfo?.prevClose ? priceInfo.prevClose.toLocaleString() : "-"}원
+                                {priceInfo?.prevClose ? priceInfo.prevClose.toLocaleString() : "-"}{t("won")}
                             </Typography>
                         </Box>
                         <Box>
-                            <Typography className="stock-detail__label">시가</Typography>
+                            <Typography className="stock-detail__label">{t("stockDetail.price.open")}</Typography>
                             <Typography className="stock-detail__value">
-                                {priceInfo?.openPrice ? priceInfo.openPrice.toLocaleString() : "-"}원
+                                {priceInfo?.openPrice ? priceInfo.openPrice.toLocaleString() : "-"}{t("won")}
                             </Typography>
                         </Box>
                         <Box>
-                            <Typography className="stock-detail__label">고가</Typography>
+                            <Typography className="stock-detail__label">{t("stockDetail.price.high")}</Typography>
                             <Typography className="stock-detail__value" style={{ color: "#d32f2f" }}>
-                                {priceInfo?.highPrice ? priceInfo.highPrice.toLocaleString() : "-"}원
+                                {priceInfo?.highPrice ? priceInfo.highPrice.toLocaleString() : "-"}{t("won")}
                             </Typography>
                         </Box>
                         <Box>
-                            <Typography className="stock-detail__label">저가</Typography>
+                            <Typography className="stock-detail__label">{t("stockDetail.price.low")}</Typography>
                             <Typography className="stock-detail__value" style={{ color: "#1976d2" }}>
-                                {priceInfo?.lowPrice ? priceInfo.lowPrice.toLocaleString() : "-"}원
+                                {priceInfo?.lowPrice ? priceInfo.lowPrice.toLocaleString() : "-"}{t("won")}
                             </Typography>
                         </Box>
                         <Box>
-                            <Typography className="stock-detail__label">상한가</Typography>
+                            <Typography className="stock-detail__label">{t("stockDetail.price.upperLimit")}</Typography>
                             <Typography className="stock-detail__value">
-                                {priceInfo?.upperLimit ? priceInfo.upperLimit.toLocaleString() : "-"}원
+                                {priceInfo?.upperLimit ? priceInfo.upperLimit.toLocaleString() : "-"}{t("won")}
                             </Typography>
                         </Box>
                         <Box>
-                            <Typography className="stock-detail__label">하한가</Typography>
+                            <Typography className="stock-detail__label">{t("stockDetail.price.lowerLimit")}</Typography>
                             <Typography className="stock-detail__value">
-                                {priceInfo?.lowerLimit ? priceInfo.lowerLimit.toLocaleString() : "-"}원
+                                {priceInfo?.lowerLimit ? priceInfo.lowerLimit.toLocaleString() : "-"}{t("won")}
                             </Typography>
                         </Box>
                         <Box>
-                            <Typography className="stock-detail__label">거래대금</Typography>
+                            <Typography className="stock-detail__label">{t("stockDetail.price.tradeAmount")}</Typography>
                             <Typography className="stock-detail__value">
                                 {priceInfo?.tradeAmount ? formatTradeAmount(priceInfo.tradeAmount) : "-"}
                             </Typography>
@@ -245,13 +290,13 @@ function StockDetail() {
                     className={chartMode === "area" ? "stock-detail__btn-contained" : "stock-detail__btn-outlined"}
                     onClick={() => { setChartMode("area"); setChartPeriod("day"); }}
                 >
-                    선차트
+                   {t("stockDetail.chart.area")}
                 </Button>
                 <Button
                     className={chartMode === "candle" ? "stock-detail__btn-contained" : "stock-detail__btn-outlined"}
                     onClick={() => { setChartMode("candle"); setChartPeriod("day"); }}
                 >
-                    봉차트
+                    {t("stockDetail.chart.candle")}
                 </Button>
             </Box>
 
@@ -270,30 +315,30 @@ function StockDetail() {
 
             {/* 차트 이미지 */}
             <Paper className="stock-detail__chart-card">
-                <Typography className="stock-detail__chart-title">주가 차트</Typography>
+                <Typography className="stock-detail__chart-title">{t("stockDetail.chart.title")}</Typography>
                 {chartLoading ? (
                     <Box className="stock-detail__chart-loading">
                         <LinearProgress />
-                        <Typography>차트 로딩 중...</Typography>
+                        <Typography>{t("stockDetail.chart.loading")}</Typography>
                     </Box>
                 ) : chartUrl ? (
                     <img src={chartUrl} alt="주가 차트" className="stock-detail__chart-image"/>
                 ) : (
-                    <Typography>차트를 불러올 수 없습니다.</Typography>
+                    <Typography>{t("stockDetail.chart.unavailable")}</Typography>
                 )}
             </Paper>
 
             {/* 뉴스 */}
             <Paper className="stock-detail__news-card">
-                <Typography className="stock-detail__news-title">실시간 뉴스공시</Typography>
+                <Typography className="stock-detail__news-title">{t("stockDetail.news.title")}</Typography>
                 <Divider className="stock-detail__divider"/>
                 {newsLoading ? (
                     <Box className="stock-detail__chart-loading">
                         <LinearProgress />
-                        <Typography>뉴스 로딩 중...</Typography>
+                        <Typography>{t("stockDetail.news.loading")}</Typography>
                     </Box>
                 ) : news.length === 0 ? (
-                    <Typography>뉴스가 없습니다.</Typography>
+                    <Typography>{t("stockDetail.news.empty")}</Typography>
                 ) : (
                     news.map((item, i) => (
                         <Box key={i} className="stock-detail__news-item">
@@ -309,7 +354,7 @@ function StockDetail() {
                 )}
                 <Box className="stock-detail__news-more">
                     <Button variant="outlined" href={`https://finance.naver.com/item/news.naver?code=${code}`} target="_blank">
-                        네이버 증권 뉴스 전체보기
+                        {t("stockDetail.news.more")}
                     </Button>
                 </Box>
             </Paper>
