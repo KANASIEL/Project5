@@ -1317,13 +1317,21 @@
 }
 
 .translate-btn {
-  padding: 6px 12px;
-  border-radius: 6px;
+  padding: 5px 8px;
+  border-radius: 8px;
   border: 1px solid #c7d2fe;
   background: #eef2ff;
   color: #1e40af;
   cursor: pointer;
   font-size: 13px;
+
+  /* 🔴 핵심 */
+  white-space: nowrap;     /* 줄바꿈 방지 */
+  display: inline-flex;    /* 내부 정렬 안정화 */
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;          /* flex 안에서 찌그러지지 않게 */
+  min-width: 96px;         /* 버튼 가로 최소값 (원하면 조절) */
 }
 
 .translate-btn:hover {
