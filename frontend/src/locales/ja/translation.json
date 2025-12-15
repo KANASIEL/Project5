@@ -156,5 +156,9 @@
     },
 	
 	"viewAll": "すべて見る",
-	"won" : "₩"
+	"won" : "₩",
+	
+	"Domestic" : "国内ニュース",
+	"International" : "海外ニュース"
+	
 }

@@ -31,15 +31,15 @@ export default function Header() {
                     <Link to="/krx/list" className="stock-header__nav-item">{t("domesticStock")}</Link>
                     <div className="stock-header__dropdown">
                         <span className="stock-header__nav-item dropdown-trigger">
-                            뉴스 ▾
+                            {t("news")} ▾
                         </span>
 
                         <div className="dropdown-menu">
                             <Link to="/news?region=korea" className="dropdown-item">
-                                국내 뉴스
+                                {t("Domestic")}
                             </Link>
                             <Link to="/news?region=global" className="dropdown-item">
-                                해외 뉴스
+                                {t("International")}
                             </Link>
                         </div>
                     </div>

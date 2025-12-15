@@ -157,5 +157,8 @@
   },
   
   "viewAll": "View All",
-  "won" : "₩"
+  "won" : "₩",
+  
+  "Domestic" : "Domestic News",
+  "International" : "International News"
 }
