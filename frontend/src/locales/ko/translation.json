@@ -135,6 +135,7 @@
 	      "UP_LIMIT": "상한가",
 	      "DOWN": "하락",
 	      "DOWN_LIMIT": "하한가",
+		  "FLAT": "보합",
 	      "NONE": "-"
 	    }
 	},

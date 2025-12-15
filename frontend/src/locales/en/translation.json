@@ -134,6 +134,7 @@
       "UP_LIMIT": "Limit Up",
       "DOWN": "Fall",
       "DOWN_LIMIT": "Limit Down",
+	  "FLAT": "Flat",
       "NONE": "-"
     }
   },
