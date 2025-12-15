@@ -448,43 +448,47 @@ function NewsList() {
 							onFocus={() => setShowDropdown(true)}  // ★ 포커스 시 열기
 							onBlur={() => setTimeout(() => setShowDropdown(false), 200)} // ★ 포커스 벗어나면 닫기
 							onKeyDown={(e) => {
-								if (!showDropdown || autoKeywords.length === 0) {
-									if (e.key === "Enter") handleSearch();
-									return;
-								}
+															if (!showDropdown || autoKeywords.length === 0) {
+																if (e.key === "Enter") {
+																	handleSearch();
+																	setShowDropdown(false); // ✅ 추가: 드롭다운이 닫히도록
+																}
+																return;
+															}
 
-								if (e.key === "ArrowDown") {
-									e.preventDefault();
-									setActiveAutoIndex((prev) =>
-										prev < autoKeywords.length - 1 ? prev + 1 : 0
-									);
-								}
+															if (e.key === "ArrowDown") {
+																e.preventDefault();
+																setActiveAutoIndex((prev) =>
+																	prev < autoKeywords.length - 1 ? prev + 1 : 0
+																);
+															}
 
-								if (e.key === "ArrowUp") {
-									e.preventDefault();
-									setActiveAutoIndex((prev) =>
-										prev > 0 ? prev - 1 : autoKeywords.length - 1
-									);
-								}
+															if (e.key === "ArrowUp") {
+																e.preventDefault();
+																setActiveAutoIndex((prev) =>
+																	prev > 0 ? prev - 1 : autoKeywords.length - 1
+																);
+															}
 
-								if (e.key === "Enter") {
-									e.preventDefault();
-									if (activeAutoIndex >= 0) {
-										const selected = autoKeywords[activeAutoIndex];
-										setKeyword(selected);
-										handleSearch(selected);
-										setShowDropdown(false);
-									} else {
-										handleSearch();
-									}
-								}
+															if (e.key === "Enter") {
+																e.preventDefault();
+																if (activeAutoIndex >= 0) {
+																	const selected = autoKeywords[activeAutoIndex];
+																	setKeyword(selected);
+																	handleSearch(selected);
+																	setShowDropdown(false);
+																} else {
+																	handleSearch();
+																	setShowDropdown(false); 
+																}
+															}
 
-								if (e.key === "Escape") {
-									setShowDropdown(false);
-									setActiveAutoIndex(-1);
-								}
-							}}
-						/>
+															if (e.key === "Escape") {
+																setShowDropdown(false);
+																setActiveAutoIndex(-1);
+															}
+														}}
+													/>
 						{showDropdown && (autoKeywords.length > 0 || trendingKeywords.length > 0) && (
 							<div className="keyword-dropdown">
 
@@ -834,3 +838,4 @@ function NewsList() {
 }
 
 export default NewsList;
+
