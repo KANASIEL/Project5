@@ -64,10 +64,6 @@ function MainPage() {
                         </svg>
                     </button>
                 </form>
-
-                {searchTerm && (
-                    <p className="search-hint" dangerouslySetInnerHTML={{ __html: t("searchHint") }} />
-                )}
             </div>
 
             <p className="bottom-text">{t("bottomText")}</p>
