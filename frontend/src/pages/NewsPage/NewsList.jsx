@@ -434,24 +434,6 @@ function NewsList() {
 			<div className="news-main">
 				<div className="news-container">
 
-					{/* 🔵 오타 교정 바 */}
-					{correction && (
-						<div className="correction-bar">
-							<span>혹시 이런 단어를 찾으셨나요?</span>
-							<button
-								type="button"
-								className="correction-link"
-								onClick={() => handleReSearch(correction.corrected)}
-								style={{ marginLeft: 4, marginRight: 4 }}
-							>
-								[{correction.corrected}]
-							</button>
-							<span className="correction-original">
-								(입력한 단어: {correction.original})
-							</span>
-						</div>
-					)}
-
 					{/* 검색창 */}
 					<div className="search-box">
 						<input
@@ -550,6 +532,23 @@ function NewsList() {
 							</svg>
 						</button>
 					</div>
+					
+					{/* 🔵 오타 교정 바 */}
+					{correction && (
+						<div className="correction-bar">
+							<span>혹시 이런 단어를 찾으셨나요?</span>
+							<button
+								type="button"
+								className="correction-link"
+								onClick={() => handleReSearch(correction.corrected)}
+							>
+								[{correction.corrected}]
+							</button>
+							<span className="correction-original">
+								(입력한 단어: {correction.original})
+							</span>
+						</div>
+					)}
 
 					{/* 🔥 인기검색어 표시 */}
 					{trendingKeywords.length > 0 && (
