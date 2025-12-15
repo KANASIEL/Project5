@@ -353,15 +353,20 @@ function GlobalNews() {
                         {n.content?.substring(0, 120)}...
                       </p>
                       <div className="news-meta">
-                        <span
-                          style={{
-                            fontWeight: "bold",
-                            marginRight: "8px",
-                            color: "blue",
-                          }}
-                        >
-                          {n.source}
-                        </span>
+                        <div className="left-meta">
+													{/* 🔹 언론사 로고 */}
+													{MEDIA_LOGOS[n.source] && (
+														<img
+															src={MEDIA_LOGOS[n.source]}
+															alt={n.source}
+															className="media-logo"
+														/>
+													)}
+													{/* 원하면 텍스트는 빼거나 남겨두기 */}
+													{/* <span style={{ fontWeight: "bold", marginLeft: "6px", color: "blue" }}>
+					                                  {n.source}
+					                                </span> */}
+												</div>
                         <span>
                           {n.pubDate &&
                             new Date(n.pubDate).toLocaleString("ko-KR")}
@@ -477,3 +482,4 @@ function GlobalNews() {
 }
 
 export default GlobalNews;
+
