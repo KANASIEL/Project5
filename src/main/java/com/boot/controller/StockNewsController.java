@@ -63,7 +63,7 @@ public class StockNewsController {
     public Page<StockGlobalNews> getGlobalNews(
             @RequestParam(required = false) String category,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "desc") String sort
     ) {
         return stockNewsService.getGlobalNews(category, page, size, sort);
@@ -74,7 +74,7 @@ public class StockNewsController {
             @RequestParam String q,
             @RequestParam(required = false) String category,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(defaultValue = "10") int size,   // ✅ 통일
             @RequestParam(defaultValue = "desc") String sort
     ) {
         return stockNewsService.searchGlobalNews(category, q, page, size, sort);
