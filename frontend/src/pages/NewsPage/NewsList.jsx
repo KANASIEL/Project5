@@ -627,11 +627,12 @@ function NewsList() {
 					>
 						{/* 1. 현재 선택된 값을 보여주는 버튼 (드롭다운 트리거) */}
 						<button
-							className="sort-dropdown-trigger"
-							onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
+						  className="sort-dropdown-trigger"
+						  onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
 						>
-							{order === 'desc' ? t("news_2.sortLatest") : t("news_2.sortOldest")}
-							<span className="dropdown-arrow">{isSortDropdownOpen ? '▲' : '▼'}</span>
+						  {order === 'desc' ? '🕒 ' : '📅 '}
+						  {order === 'desc' ? t("news_2.sortLatest") : t("news_2.sortOldest")}
+						  <span className="dropdown-arrow">{isSortDropdownOpen ? '▲' : '▼'}</span>
 						</button>
 
 						{/* 2. 실제 펼쳐지는 목록 (CSS로 둥글게 처리할 부분) */}
@@ -855,4 +856,5 @@ function NewsList() {
 }
 
 export default NewsList;
+
 
