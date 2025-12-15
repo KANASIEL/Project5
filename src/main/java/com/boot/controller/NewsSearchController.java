@@ -74,28 +74,12 @@ public class NewsSearchController {
     // 자동완성
     @GetMapping("/autocomplete")
     public List<String> autocomplete(
-            @RequestParam(name = "query", required = false) String query
+            @RequestParam(name = "query") String query
     ) {
-        // ✅ null / 공백 / 1글자 차단
-        if (query == null) return List.of();
-
-        String q = query.trim();
-        if (q.length() < 2) return List.of();
-
-        // ✅ 한글 / 영문 / 숫자 / 공백만 허용 (IME 깨짐 방지)
-        if (!q.matches("^[가-힣a-zA-Z0-9\\s]+$")) {
-            return List.of();
-        }
-
-        try {
-            return newsService.getAutocompleteSuggestions(q);
-        } catch (Exception e) {
-            // ❗ 여기서 잡아주지 않으면 500 계속 남
-            e.printStackTrace();
-            return List.of();
-        }
+        return newsService.getAutocompleteSuggestions(query);
     }
 
     
 }
+
 
