@@ -39,7 +39,7 @@ function NewsList() {
 	const [showDropdown, setShowDropdown] = useState(false);
 	// 자동완성
 	const [autoKeywords, setAutoKeywords] = useState([]);
-	const [searchKeyword, setSearchKeyword] = useState("");
+	const [setSearchKeyword] = useState("");
 	// 자동완성 선택 인덱스
 	const [activeAutoIndex, setActiveAutoIndex] = useState(-1);
 
@@ -56,6 +56,9 @@ function NewsList() {
 	const springBaseUrl = "http://localhost:8585";
 	const renderBaseUrl = "https://project5-n56u.onrender.com";
 	const fastApiBaseUrl = "http://localhost:8000";
+	
+	const SEARCH_CACHE = new Map();
+	const CACHE_TTL = 30000; // 30초
 
 	const CATEGORY_LIST = [
 		"금융", "증권", "산업/재계", "중기/벤처", "글로벌 경제", "생활경제", "경제 일반",
@@ -233,35 +236,66 @@ function NewsList() {
 	};
 
 
-	// 통합된 fetchNews
+	// 🔵 상단에 캐시 상태 추가 (기존 state들 다음에)
 	const fetchNews = async (category, pageNumber = 0, query = keyword, sortOrder = order) => {
 	  try {
 	    setLoading(true);
-	    const searching = query.trim() !== "";
+	    
+	    const searching = query.trim() !== "";  // ✅ 맨 위로 이동
+	    
+	    // ✅ 검색 캐시 키 생성 (searching 먼저 정의)
+	    const cacheKey = searching ? `search:${query.trim()}:${category}:${sortOrder}` : null;
+	    
+	    // ✅ 캐시 HIT 확인
+	    if (searching && cacheKey) {
+	      const cached = SEARCH_CACHE.get(cacheKey);
+	      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+	        console.log("✅ 캐시 HIT:", cacheKey);
+	        setItems(cached.data);
+	        setPage(0);
+	        setTotalPages(1);
+	        setLoading(false);
+	        return;
+	      }
+	    }
+
 	    let url;
 	    
 	    if (searching) {
 	      const qs = new URLSearchParams();
 	      qs.append("q", query);
 	      if (category) qs.append("category", category);
-	      // ✅ 검색 시 order 매핑: accuracy -> score, desc/asc -> pubDate
-	      if (sortOrder === "accuracy") {
-	        qs.append("sort", "score,desc");  // 정확도순 (내림차순)
-	      } else {
-	        qs.append("sort", `pubDate,${sortOrder}`);  // 시간순
-	      }
 	      url = `${springBaseUrl}/api/news/search-tfidf?${qs.toString()}`;
 	    } else {
-	      // 검색 없을 때: category별 페이지네이션 (시간순만)
 	      url = `${renderBaseUrl}/news?category=${encodeURIComponent(category)}&page=${pageNumber}&size=${pageSize}&order=${sortOrder}`;
 	    }
 
+	    console.log("🔍 API 호출:", url);
 	    const res = await fetch(url);
 	    if (!res.ok) throw new Error(`HTTP ${res.status}`);
 	    const data = await res.json();
 
 	    if (searching) {
-	      setItems(data || []);
+	      let sortedItems = [...(data || [])];
+	      
+	      if (sortOrder === "accuracy") {
+	        sortedItems.sort((a, b) => (b.score || 0) - (a.score || 0));
+	      } else if (sortOrder === "desc") {
+	        sortedItems.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+	      } else if (sortOrder === "asc") {
+	        sortedItems.sort((a, b) => new Date(a.pubDate) - new Date(b.pubDate));
+	      }
+	      
+	      // ✅ 캐시 저장
+	      if (cacheKey) {
+	        SEARCH_CACHE.set(cacheKey, {
+	          data: sortedItems,
+	          timestamp: Date.now()
+	        });
+	        console.log("✅ 캐시 저장:", cacheKey, sortedItems.length, "개");
+	      }
+	      
+	      setItems(sortedItems);
 	      setPage(0);
 	      setTotalPages(1);
 	    } else {
@@ -296,7 +330,7 @@ function NewsList() {
 		} else {
 			// 검색어 없을 때 기본 카테고리 뉴스
 			setOrder("desc");
-			fetchNews(initialCategory || activeCategory, 0, "", order);
+			fetchNews(initialCategory || activeCategory, 0, "", "desc");
 			setAiSummary(null);
 			setCorrection(null);
 		}
@@ -310,12 +344,12 @@ function NewsList() {
 	}, [initialKeyword, initialCategory, isInitialLoad]); // ✅ isInitialLoad 의존성 추가
 
 	useEffect(() => {
-		if (searchKeyword.trim()) {
-			fetchNews(activeCategory, 0, searchKeyword, order);
-		} else {
-			fetchNews(activeCategory, 0, "", order);
-		}
-	}, [activeCategory, order, searchKeyword]);
+	  if (keyword.trim()) {
+	    fetchNews(activeCategory, 0, keyword, order);
+	  } else {
+	    fetchNews(activeCategory, 0, "", order);
+	  }
+	}, [activeCategory, order, keyword]);
 
 
 	// 🔵 인기 검색어 초기 로드
@@ -328,13 +362,16 @@ function NewsList() {
 		setActiveAutoIndex(-1);
 	}, [autoKeywords]);
 	// 🔵 선택적 재검색
-	const handleReSearch = (term) => {
+	const handleReSearch = async (term) => {
 		const t = (term || "").trim();
 		if (!t) return;
+		
 		setKeyword(t);
 		setPage(0);
 		setIsSearching(true);
-		fetchNews(activeCategory, 0, t, order);
+		setOrder("accuracy");
+		await fetchNews(activeCategory, 0, t, "accuracy");
+		  
 		fetchAiSummary(t);
 		fetchCorrection(t);
 
@@ -345,7 +382,7 @@ function NewsList() {
 	};
 
 	// 🔵 검색 실행
-	const handleSearch = (overrideKeyword) => {
+	const handleSearch = async (overrideKeyword) => {
 		const q = (overrideKeyword ?? keyword).trim();
 		setPage(0);
 
@@ -355,10 +392,12 @@ function NewsList() {
 			setOrder("desc");
 			setAiSummary(null);
 			setCorrection(null);
+			fetchNews(activeCategory, 0, "", "desc");
 		} else {
 			setIsSearching(true);
 			setSearchKeyword(q);      // 항상 정확한 검색어
 			setOrder("accuracy");
+			await fetchNews(activeCategory, 0, q, "accuracy");
 			fetchCorrection(q);
 			setTimeout(() => fetchAiSummary(q), 500);
 		}
@@ -628,7 +667,8 @@ function NewsList() {
 							className="sort-dropdown-trigger"
 							onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
 						>
-							{order === 'desc' ? t("news_2.sortLatest") : t("news_2.sortOldest")}
+						{order === 'accuracy' ? t("news_2.sortAccuracy") : 
+						 order === 'desc' ? t("news_2.sortLatest") : t("news_2.sortOldest")}
 							<span className="dropdown-arrow">{isSortDropdownOpen ? '▲' : '▼'}</span>
 						</button>
 
