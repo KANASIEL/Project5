@@ -18,19 +18,17 @@
 ### 개발환경  
 - 'Language: Java 17'  
 - 'IDE: STS, IntelliJ IDEA, VS Code'  
-- 'Framework: Spring Boot 2.x'  
-- 'Database: Oracle DB 11g, 21c XE'  
-- 'ORM: MyBatis'  
+- 'Framework: Spring Boot 3.x'  
+- 'Database: Oracle DB 11g, 21c XE, MongoDB Atlas'  
+- 'ORM: Mybatis, JPA'  
 
 ## 주요기능  
 ### 로그인  
 
 ### 회원가입  
 
-### 진료, 미용 예약 및 조회
+### 실시간 국내종목(Kospi, Kosdaq) 시세  
 
-### 마이페이지
+### 실시간 국내/해외 금융관련 뉴스  
 
-### 진료, 미용 완료 횟수에 따른 멤버쉽 관리
-
-### 챗봇을 통한 상담  
+### 지능형 검색엔진(형태소 분석, TF-IDF랭킹, AI오타보정)  
