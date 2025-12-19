@@ -171,16 +171,61 @@ Redis 캐시를 활용하여 빠른 뉴스 조회 및 검색 기능을 제공합
 
 ## ⚙ 핵심 로직
 <b>해외 뉴스 크롤링 스케줄 실행</b>
-def run_global_crawler():
+ef run_global_crawler():
     while True:
-        asyncio.run(task_global_crawling())
-        time.sleep(900)
+        try:
+            asyncio.run(task_global_crawling())
+        except Exception as e:
+            print(f"[GLOBAL CRAWLER ERROR] {e}")
 
+        time.sleep(900)  # 15분
+        
+<hr>
 <b>Redis 캐시 기반 조회 로직</b>
 def get_global_with_cache(prefix, source, page, size, order, query):
+    key = _cache_key_global(prefix, source, page, size, order)
+    try:
+        cached = redis_client.get(key)
+        if cached:
+            return json.loads(cached)
+    except Exception:
+        pass
 
+    content, total_pages = _sort_and_page_global(query, page, size, order)
+    result = {"content": content, "number": page, "totalPages": total_pages}
+
+    try:
+        redis_client.setex(key, CACHE_TTL, json.dumps(result))
+    except Exception:
+        pass
+
+    return result
+
+<hr>
 <b>뉴스 데이터 품질 검증</b>
 def _is_valid_news(news: dict) -> bool:
+    title = (news.get("title") or "").strip()
+    content = (news.get("content") or "").strip()
+    source = (news.get("source") or "").strip()
+
+    # 제목 없음
+    if len(title) < 5:
+        return False
+
+    # 본문 없음 or 의미 없는 문구
+    if (
+        len(content) < 30 or
+        "enable js" in content.lower() or
+        "disable any ad blocker" in content.lower()
+    ):
+        return False
+
+    # 언론사 없음
+    if not source:
+        return False
+
+    return True
+
 
 
 
