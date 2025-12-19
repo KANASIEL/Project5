@@ -64,6 +64,7 @@ async def task_global_crawling():
     global is_global_crawling
     if is_global_crawling:
         return
+        
     is_global_crawling = True
     try:
         async with aiohttp.ClientSession() as session:
@@ -91,19 +92,23 @@ async def get_article_detail(session, url, source):
         async with session.get(url, headers=HEADERS, timeout=10) as res:
             if res.status != 200:
                 return "", "", None
+                
             soup = BeautifulSoup(await res.text(), "html.parser")
             for tag in soup(["script", "style", "nav", "footer", "header"]):
                 tag.decompose()
+                
             paragraphs = soup.select("p")
             content = "\n".join(
                 p.get_text(strip=True)
                 for p in paragraphs
                 if len(p.get_text(strip=True)) > 30
             )
+            
             og = soup.select_one("meta[property='og:image']")
             image_url = og.get("content") if og else ""
             author = extract_author(soup, source)
             return content, image_url, author
+            
     except:
         return "", "", None
         
