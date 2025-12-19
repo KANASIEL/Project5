@@ -65,6 +65,7 @@
 
 
 ## 🧩 주요 코드
+<img width="1037" height="504" alt="image" src="https://github.com/user-attachments/assets/10461eb8-6cd7-4f0f-bffb-cde0f1e2b7e7" />
 
 async def task_global_crawling():
     global is_global_crawling
