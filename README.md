@@ -81,9 +81,7 @@ async def task_global_crawling():
     finally:
         is_global_crawling = False
 
-- 해외 뉴스 크롤링 전체 흐름을 제어하는 메인 비동기 태스크
-- 여러 해외 뉴스 소스를 asyncio.gather로 병렬 수
-- 크롤링 후 Redis 캐시 생성 자동 처리
+
 
 
 
