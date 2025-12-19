@@ -67,57 +67,12 @@
 ## 🧩 주요 코드
 <img width="1037" height="504" alt="image" src="https://github.com/user-attachments/assets/10461eb8-6cd7-4f0f-bffb-cde0f1e2b7e7" />
 
-async def task_global_crawling():
-    global is_global_crawling
-    if is_global_crawling:
-        return
-        
-    is_global_crawling = True
-    try:
-        async with aiohttp.ClientSession() as session:
-            await asyncio.gather(
-                crawl_generic(session, "https://www.cnbc.com/id/100727362/device/rss/rss.html", "CNBC"),
-                crawl_generic(session, "https://feeds.bbci.co.uk/news/business/rss.xml", "BBC"),
-                crawl_yahoo(session),
-                return_exceptions=True
-            )
-
-        # 크롤링 끝나면 Redis 캐시 생성
-        cache_global_news()
-
-    finally:
-        is_global_crawling = False
-
 - 해외 뉴스 크롤링 전체 흐름을 제어하는 메인 비동기 태스크
 - 여러 해외 뉴스 소스를 asyncio.gather로 병렬 수집
 - 크롤링 완료 후 Redis 캐시 생성까지 자동 처리
 
 
-
-async def get_article_detail(session, url, source):
-    try:
-        async with session.get(url, headers=HEADERS, timeout=10) as res:
-            if res.status != 200:
-                return "", "", None
-                
-            soup = BeautifulSoup(await res.text(), "html.parser")
-            for tag in soup(["script", "style", "nav", "footer", "header"]):
-                tag.decompose()
-                
-            paragraphs = soup.select("p")
-            content = "\n".join(
-                p.get_text(strip=True)
-                for p in paragraphs
-                if len(p.get_text(strip=True)) > 30
-            )
-            
-            og = soup.select_one("meta[property='og:image']")
-            image_url = og.get("content") if og else ""
-            author = extract_author(soup, source)
-            return content, image_url, author
-            
-    except:
-        return "", "", None
+<img width="786" height="583" alt="image" src="https://github.com/user-attachments/assets/e41ca461-fa4b-4641-9e53-24ac31fe2198" />
         
 - 해외 뉴스 상세 페이지에서 본문, 이미지, 작성자 정보 추출
 - 불필요한 태그 제거를 통한 콘텐츠 정제 처리
@@ -125,20 +80,7 @@ async def get_article_detail(session, url, source):
 
 
 
-def cache_global_news():
-    news = list(
-        collection.find({"region": "global"})
-        .sort("pubDate", -1)
-        .limit(200)
-    )
-    for n in news:
-        n["_id"] = str(n["_id"])
-    redis_client.setex(
-        REDIS_KEY_GLOBAL_LATEST,
-        CACHE_TTL,
-        json.dumps(news)
-    )
-    print("Redis 글로벌 뉴스 캐시 갱신 완료")
+<img width="508" height="394" alt="image" src="https://github.com/user-attachments/assets/dea3eb84-0103-46b8-9d54-96357cff7d76" />
 
 - 최신 해외 뉴스 데이터를 Redis에 캐시 저장
 - 화면/API 요청 시 DB 조회 없이 빠른 응답 제공
@@ -172,45 +114,19 @@ Redis 캐시를 활용하여 빠른 뉴스 조회 및 검색 기능을 제공합
 
 ## ⚙ 핵심 로직
 # 해외 뉴스 크롤링 스케줄 실행
-def run_global_crawler():
-    while True:
-        try:
-            asyncio.run(task_global_crawling())
-        except Exception as e:
-            print(f"[GLOBAL CRAWLER ERROR] {e}")
+<img width="538" height="191" alt="image" src="https://github.com/user-attachments/assets/f5257f2f-fb6b-4ec3-b4e6-79cfba9b3c6a" />
 
-        time.sleep(900)  # 15분
+-> 백그라운드 스레드에서 해외 뉴스 크롤링 주기적 실행
+-> Flask 서버와 크롤링 태스크 분리
         
 
 # Redis 캐시 기반 조회 로직
-def get_global_with_cache(prefix, source, page, size, order, query):
-    key = _cache_key_global(prefix, source, page, size, order)
+<img width="777" height="404" alt="image" src="https://github.com/user-attachments/assets/9b885819-d039-4b84-8fe8-f9022443e3f7" />
 
-    cached = redis_client.get(key)
-    if cached:
-        return json.loads(cached)
-
-    content, total_pages = _sort_and_page_global(query, page, size, order)
-    result = {"content": content, "number": page, "totalPages": total_pages}
-
-    redis_client.setex(key, CACHE_TTL, json.dumps(result))
-    return result
 
 
 # 뉴스 데이터 품질 검증
-def _is_valid_news(news: dict) -> bool:
-    title = (news.get("title") or "").strip()
-    content = (news.get("content") or "").strip()
-    source = (news.get("source") or "").strip()
-
-    if len(title) < 5:
-        return False
-    if len(content) < 30:
-        return False
-    if not source:
-        return False
-
-    return True
+<img width="559" height="507" alt="image" src="https://github.com/user-attachments/assets/78fba1df-7530-4a0b-8499-3658dc1df3bb" />
 
 
 
