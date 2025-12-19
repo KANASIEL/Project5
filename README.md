@@ -85,7 +85,7 @@ async def task_global_crawling():
 - 여러 해외 뉴스 소스를 asyncio.gather로 병렬 수
 - 크롤링 후 Redis 캐시 생성 자동 처리
 
-<br>
+
 
 async def get_article_detail(session, url, source):
     try:
@@ -118,7 +118,7 @@ async def get_article_detail(session, url, source):
 - 불필요한 태그 제거를 통한 콘텐츠 정제 처리
 - 소스별 작성자 추출 로직 분기 처리
 
-<br>
+
 
 def cache_global_news():
     news = list(
