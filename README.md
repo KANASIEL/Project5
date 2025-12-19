@@ -44,11 +44,100 @@
 
 ## 📰 내가 담당한 역할
 
-- 국내·해외 뉴스 크롤링 로직 구현
+- 해외 뉴스 크롤링 로직 구현
 - 비동기 기반 뉴스 수집 처리 (asyncio, aiohttp)
 - 기사 제목, 본문, 언론사, 작성일, 이미지 URL 등 핵심 데이터 추출
 - 불완전하거나 품질이 낮은 기사 데이터 필터링 로직 구현
 - 크롤링된 뉴스 데이터를 MongoDB에 구조화하여 저장
 - 뉴스 페이지와 데이터 연동 및 카테고리별 뉴스 조회 지원
 
-- 
+## 🧠 구현 포인트
+
+- 비동기 크롤링을 적용하여 대량 뉴스 수집 시 I/O 대기 시간 최소화
+- 기사 품질 유지를 위해 제목·본문·작성일·언론사 기준의 데이터 필터링 적용
+- 중복 기사 저장을 방지하기 위해 기사 URL 기준 중복 체크 로직 적용
+
+
+## 🧩 주요 코드
+
+async def task_global_crawling():
+    global is_global_crawling
+    if is_global_crawling:
+        return
+
+    is_global_crawling = True
+    try:
+        async with aiohttp.ClientSession() as session:
+            await asyncio.gather(
+                crawl_generic(session, "https://www.cnbc.com/id/100727362/device/rss/rss.html", "CNBC"),
+                crawl_generic(session, "https://feeds.bbci.co.uk/news/business/rss.xml", "BBC"),
+                crawl_yahoo(session),
+                return_exceptions=True
+            )
+
+        # 크롤링 끝나면 Redis 캐시 생성
+        cache_global_news()
+
+    finally:
+        is_global_crawling = False
+
+- 해외 뉴스 크롤링 전체 흐름을 제어하는 메인 비동기 태스크
+- 여러 해외 뉴스 소스를 asyncio.gather로 병렬 수
+- 크롤링 후 Redis 캐시 생성 자동 처리
+
+<br>
+
+async def get_article_detail(session, url, source):
+    try:
+        async with session.get(url, headers=HEADERS, timeout=10) as res:
+            if res.status != 200:
+                return "", "", None
+
+            soup = BeautifulSoup(await res.text(), "html.parser")
+
+            for tag in soup(["script", "style", "nav", "footer", "header"]):
+                tag.decompose()
+
+            paragraphs = soup.select("p")
+            content = "\n".join(
+                p.get_text(strip=True)
+                for p in paragraphs
+                if len(p.get_text(strip=True)) > 30
+            )
+
+            og = soup.select_one("meta[property='og:image']")
+            image_url = og.get("content") if og else ""
+
+            author = extract_author(soup, source)
+            return content, image_url, author
+
+    except:
+        return "", "", None
+        
+- 해외 뉴스 상세 페이지에서 본문, 이미지, 작성자 정보 추출
+- 불필요한 태그 제거를 통한 콘텐츠 정제 처리
+- 소스별 작성자 추출 로직 분기 처리
+
+<br>
+
+def cache_global_news():
+    news = list(
+        collection.find({"region": "global"})
+        .sort("pubDate", -1)
+        .limit(200)
+    )
+
+    for n in news:
+        n["_id"] = str(n["_id"])
+
+    redis_client.setex(
+        REDIS_KEY_GLOBAL_LATEST,
+        CACHE_TTL,
+        json.dumps(news)
+    )
+
+    print("Redis 글로벌 뉴스 캐시 갱신 완료")
+
+- 최신 해외 뉴스 데이터를 Redis에 캐시 저장
+- 화면/API 요청 시 DB 조회 없이 빠른 응답 제공
+- 캐시 TTL을 적용하여 데이터 최신성 유지
