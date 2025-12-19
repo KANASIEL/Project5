@@ -42,6 +42,8 @@
 | 개발 도구 / IDE      | ![IntelliJ IDEA](https://img.shields.io/badge/IntelliJ%20IDEA-000000?style=flat&logo=intellijidea&logoColor=white)&nbsp;![STS](https://img.shields.io/badge/Spring%20Tool%20Suite-6DB33F?style=flat&logo=spring&logoColor=white)&nbsp;![VS Code](https://img.shields.io/badge/VS%20Code-007ACC?style=flat&logo=visualstudiocode&logoColor=white) |
 | 형상 관리 / 협업     | ![GitHub](https://img.shields.io/badge/GitHub-181717?style=flat&logo=github&logoColor=white)&nbsp;![Notion](https://img.shields.io/badge/Notion-000000?style=flat&logo=notion&logoColor=white) |
 
+
+
 ## 📰 내가 담당한 역할
 
 - 해외 뉴스 크롤링 로직 구현
@@ -51,11 +53,15 @@
 - 크롤링된 뉴스 데이터를 MongoDB에 구조화하여 저장
 - 뉴스 페이지와 데이터 연동 및 카테고리별 뉴스 조회 지원
 
+
+
 ## 🧠 구현 포인트
 
 - 비동기 크롤링을 적용하여 대량 뉴스 수집 시 I/O 대기 시간 최소화
 - 기사 품질 유지를 위해 제목·본문·작성일·언론사 기준의 데이터 필터링 적용
 - 중복 기사 저장을 방지하기 위해 기사 URL 기준 중복 체크 로직 적용
+
+
 
 
 ## 🧩 주요 코드
@@ -138,22 +144,30 @@ def cache_global_news():
 - 캐시 TTL을 적용하여 데이터 최신성 유지
 
 
+
+
 ## 🌐 해외 뉴스 API 서버 (Flask)
 
 해외 뉴스 크롤링 데이터를 제공하기 위한 Flask 기반 API 서버로,  
 Redis 캐시를 활용하여 빠른 뉴스 조회 및 검색 기능을 제공합니다.
 
+
+
 ## 🧩 주요 엔드포인트
+
 ### GET /news/global
 - 해외 뉴스 목록 조회 API
 - 언론사(CNN, BBC, CNBC) 필터링 지원
 - 페이지네이션 및 정렬(desc/asc) 지원
 - Redis 캐시 적용
 
+
 ### GET /news/global/search
 - 해외 뉴스 검색 API
 - 제목, 본문, 작성자, 언론사 기준 검색
 - 검색 결과 Redis 캐싱 적용
+
+
 
 ## ⚙ 핵심 로직
 <b>해외 뉴스 크롤링 스케줄 실행</b>
@@ -167,6 +181,8 @@ def get_global_with_cache(prefix, source, page, size, order, query):
 
 <b>뉴스 데이터 품질 검증</b>
 def _is_valid_news(news: dict) -> bool:
+
+
 
 
 ## ⚡ 성능 최적화 및 설계 포인트
