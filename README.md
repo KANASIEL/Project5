@@ -136,3 +136,41 @@ def cache_global_news():
 - 최신 해외 뉴스 데이터를 Redis에 캐시 저장
 - 화면/API 요청 시 DB 조회 없이 빠른 응답 제공
 - 캐시 TTL을 적용하여 데이터 최신성 유지
+
+
+## 🌐 해외 뉴스 API 서버 (Flask)
+
+해외 뉴스 크롤링 데이터를 제공하기 위한 Flask 기반 API 서버로,  
+Redis 캐시를 활용하여 빠른 뉴스 조회 및 검색 기능을 제공합니다.
+
+## 🧩 주요 엔드포인트
+### GET /news/global
+- 해외 뉴스 목록 조회 API
+- 언론사(CNN, BBC, CNBC) 필터링 지원
+- 페이지네이션 및 정렬(desc/asc) 지원
+- Redis 캐시 적용
+
+### GET /news/global/search
+- 해외 뉴스 검색 API
+- 제목, 본문, 작성자, 언론사 기준 검색
+- 검색 결과 Redis 캐싱 적용
+
+## ⚙ 핵심 로직
+<b>해외 뉴스 크롤링 스케줄 실행</b>
+def run_global_crawler():
+    while True:
+        asyncio.run(task_global_crawling())
+        time.sleep(900)
+
+<b>Redis 캐시 기반 조회 로직</b>
+def get_global_with_cache(prefix, source, page, size, order, query):
+
+<b>뉴스 데이터 품질 검증</b>
+def _is_valid_news(news: dict) -> bool:
+
+
+## ⚡ 성능 최적화 및 설계 포인트
+- Redis 캐시 적용으로 해외 뉴스 목록 및 검색 API 응답 속도 개선
+- 캐시 TTL 설정을 통해 데이터 최신성과 성능의 균형 유지
+- 페이지네이션 시 불완전 데이터 필터링을 고려한 여유 조회(limit * 2) 전략 적용
+- Flask 서버와 크롤링 태스크를 분리하여 안정적인 서비스 제공
