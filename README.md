@@ -42,99 +42,302 @@
 | 개발 도구 / IDE      | ![IntelliJ IDEA](https://img.shields.io/badge/IntelliJ%20IDEA-000000?style=flat&logo=intellijidea&logoColor=white)&nbsp;![STS](https://img.shields.io/badge/Spring%20Tool%20Suite-6DB33F?style=flat&logo=spring&logoColor=white)&nbsp;![VS Code](https://img.shields.io/badge/VS%20Code-007ACC?style=flat&logo=visualstudiocode&logoColor=white) |
 | 형상 관리 / 협업     | ![GitHub](https://img.shields.io/badge/GitHub-181717?style=flat&logo=github&logoColor=white)&nbsp;![Notion](https://img.shields.io/badge/Notion-000000?style=flat&logo=notion&logoColor=white) |
 
+## 주요 크롤링 코드 🕷️
 
+<details>
+<summary><strong>네이버 증권 KOSPI/KOSDAQ 크롤링 코드</strong></summary>
+    
 
-## 📰 내가 담당한 역할
+**파일명**: `crawler_krx_naver.py`  
+**용도**: 네이버 증권에서 KOSPI/KOSDAQ 전 종목 시세를 매일 자동 크롤링 → MongoDB 저장 + Redis 캐시 갱신  
+**자동화**: Linux(Ubuntu) crontab을 활용한 월~금 09시부터 15시30분까지 10분 간격 실행 예약
+@@ -199,3 +199,289 @@
+start_time = time.time()
+run_crawler()
+print(f"\n소요 시간: {time.time() - start_time:.1f}초")
+```
 
-- 해외 뉴스 크롤링 로직 구현
-- 비동기 기반 뉴스 수집 처리 (asyncio, aiohttp)
-- 기사 제목, 본문, 언론사, 작성일, 이미지 URL 등 핵심 데이터 추출
-- 불완전하거나 품질이 낮은 기사 데이터 필터링 로직 구현
-- 크롤링된 뉴스 데이터를 MongoDB에 구조화하여 저장
-- 뉴스 페이지와 데이터 연동 및 카테고리별 뉴스 조회 지원
+<details>
+<summary><strong>네이버 국내 뉴스 크롤링 코드</strong></summary>
+```python
+import asyncio
+import aiohttp
+from bs4 import BeautifulSoup
+from datetime import datetime
+import os
 
+from pymongo.mongo_client import MongoClient
+from pymongo.server_api import ServerApi
 
+# -------------------------
+# MongoDB 연결
+# -------------------------
+MONGO_URI = os.environ.get("MONGO_URI")
 
-## 🧠 구현 포인트
+# 로컬 테스트할 때만 아래 주석 풀어서 사용하세요
+# if not MONGO_URI:
+#     MONGO_URI = "mongodb+srv://..." 
 
-- 비동기 크롤링을 적용하여 대량 뉴스 수집 시 I/O 대기 시간 최소화
-- 기사 품질 유지를 위해 제목·본문·작성일·언론사 기준의 데이터 필터링 적용
-- 중복 기사 저장을 방지하기 위해 기사 URL 기준 중복 체크 로직 적용
+if not MONGO_URI:
+    raise RuntimeError("MONGO_URI not set in crawler")
 
+client = MongoClient(MONGO_URI, server_api=ServerApi("1"))
+db = client["stock"]
+collection = db["news_crawling"]
 
+# -------------------------
+# 뉴스 카테고리별 URL
+# -------------------------
+CATEGORY_URLS = {
+    "금융": "https://news.naver.com/breakingnews/section/101/259",
+    "증권": "https://news.naver.com/breakingnews/section/101/258",
+    "산업/재계": "https://news.naver.com/breakingnews/section/101/261",
+    "중기/벤처": "https://news.naver.com/breakingnews/section/101/771",
+    "글로벌 경제": "https://news.naver.com/breakingnews/section/101/260",
+    "생활경제": "https://news.naver.com/breakingnews/section/101/310",
+    "경제 일반": "https://news.naver.com/breakingnews/section/101/263",
+}
 
+HEADERS = {"User-Agent": "Mozilla/5.0"}
 
-## 🧩 주요 코드
-<img width="1037" height="504" alt="image" src="https://github.com/user-attachments/assets/10461eb8-6cd7-4f0f-bffb-cde0f1e2b7e7" />
+# -------------------------
+# 로그 출력
+# -------------------------
+def log(msg):
+    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {msg}")
 
-- 해외 뉴스 크롤링 전체 흐름을 제어하는 메인 비동기 태스크
-- 여러 해외 뉴스 소스를 asyncio.gather로 병렬 수집
-- 크롤링 완료 후 Redis 캐시 생성까지 자동 처리
+# -------------------------
+# URL 변환
+# -------------------------
+def to_pc_url(link):
+    if "m.news.naver.com" in link:
+        return link.replace("m.news.naver.com", "n.news.naver.com")
+    return link
 
+# -------------------------
+# 뉴스 상세 크롤링
+# -------------------------
+async def fetch_news_detail(session, link):
+    link = to_pc_url(link)
+    author = content = media = mediaLogo = image_url = pubDate = ""
 
-<img width="786" height="583" alt="image" src="https://github.com/user-attachments/assets/e41ca461-fa4b-4641-9e53-24ac31fe2198" />
-        
-- 해외 뉴스 상세 페이지에서 본문, 이미지, 작성자 정보 추출
-- 불필요한 태그 제거를 통한 콘텐츠 정제 처리
-- 소스별 작성자 추출 로직 분기 처리
+    try:
+        headers = HEADERS.copy()
+        headers.update(
+            {
+                "Referer": "https://news.naver.com/",
+                "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
+            }
+        )
 
+        async with session.get(link, headers=headers, timeout=15) as resp:
+            html = await resp.text()
+            soup = BeautifulSoup(html, "lxml")
 
+            # 작성자
+            author_tag = soup.select_one(
+                ".byline span, .byline, .article_info, .writer"
+            )
+            if author_tag:
+                author = author_tag.get_text(strip=True)
 
-<img width="508" height="394" alt="image" src="https://github.com/user-attachments/assets/dea3eb84-0103-46b8-9d54-96357cff7d76" />
+            # 본문
+            content_tag = (
+                soup.select_one("#articleBodyContents")
+                or soup.select_one("#dic_area")
+                or soup.select_one(".news_end")
+                or soup.select_one(".article_body")
+            )
+            if content_tag:
+                for s in content_tag.select(
+                    "script, style, .ad, .link_area, iframe"
+                ):
+                    s.decompose()
+                content = content_tag.get_text(separator="\n").strip()
 
-- 최신 해외 뉴스 데이터를 Redis에 캐시 저장
-- 화면/API 요청 시 DB 조회 없이 빠른 응답 제공
-- 캐시 TTL을 적용하여 데이터 최신성 유지
+            # 언론사
+            meta_author = soup.select_one(
+                "meta[property='og:article:author'], meta[name='author']"
+            )
+            if meta_author and meta_author.has_attr("content"):
+                media = meta_author["content"].strip()
 
+            # 대표 이미지
+            meta_image = soup.select_one("meta[property='og:image']")
+            if meta_image and meta_image.has_attr("content"):
+                image_url = meta_image["content"].strip()
 
+            # 작성일
+            meta_date = soup.select_one(
+                'meta[property="article:published_time"]'
+            )
+            if meta_date and meta_date.has_attr("content"):
+                pubDate = meta_date["content"].strip()
+            else:
+                date_tag = soup.select_one('span._ARTICLE_DATE_TIME')
+                if date_tag and date_tag.has_attr("data-date-time"):
+                    pubDate = date_tag["data-date-time"].strip()
 
+            # 언론사 로고
+            def first_url_from_srcset(s):
+                if not s:
+                    return ""
+                parts = s.split(",")
+                first = parts[0].strip().split(" ")[0]
+                return first
 
-## 🌐 해외 뉴스 API 서버 (Flask)
+            logo_tag = soup.select_one("img.media_end_head_top_logo_img")
+            if logo_tag:
+                for a in (
+                    "src",
+                    "data-src",
+                    "data-original",
+                    "data-lazy-src",
+                    "data-srcset",
+                    "srcset",
+                ):
+                    if logo_tag.has_attr(a):
+                        val = logo_tag.get(a, "").strip()
+                        if a in ("srcset", "data-srcset"):
+                            val = first_url_from_srcset(val)
+                        if val:
+                            mediaLogo = val
+                            break
 
-해외 뉴스 크롤링 데이터를 제공하기 위한 Flask 기반 API 서버로,  
-Redis 캐시를 활용하여 빠른 뉴스 조회 및 검색 기능을 제공합니다.
+            if not mediaLogo:
+                pc_logo = soup.select_one(".media_end_head_top_logo img")
+                if pc_logo:
+                    for a in ("src", "data-src", "srcset"):
+                        if pc_logo.has_attr(a):
+                            val = pc_logo.get(a, "").strip()
+                            if a == "srcset":
+                                val = first_url_from_srcset(val)
+                            if val:
+                                mediaLogo = val
+                                break
 
+            if not media:
+                meta_site = soup.select_one(
+                    "meta[property='og:site_name']"
+                )
+                if meta_site and meta_site.has_attr("content"):
+                    media = meta_site["content"].strip()
+            if media and media.endswith("| 네이버"):
+                media = media.replace("| 네이버", "").strip()
 
+    except Exception as e:
+        log(f"⚠ 뉴스 상세 크롤링 실패: {link} / Error: {e}")
 
-## 🧩 주요 엔드포인트
+    return author, content, media, mediaLogo, image_url, pubDate
 
-### GET /news/global
-- 해외 뉴스 목록 조회 API
-- 언론사(CNN, BBC, CNBC) 필터링 지원
-- 페이지네이션 및 정렬(desc/asc) 지원
-- Redis 캐시 적용
+# -------------------------
+# 뉴스 리스트 크롤링
+# -------------------------
+async def fetch_news_list(session, url, max_items=1000):
+    news_list = []
+    try:
+        async with session.get(url, headers=HEADERS, timeout=10) as resp:
+            html = await resp.text()
+            soup = BeautifulSoup(html, "lxml")
+            items = soup.select("a.sa_text_title")
 
+            for i, a in enumerate(items):
+                if i >= max_items:
+                    break
+                href = a["href"]
+                if href.startswith("/"):
+                    href = "https://news.naver.com" + href
+                title = a.get_text(strip=True)
+                news_list.append({"link": href, "title": title})
+    except Exception as e:
+        log(f"⚠ 뉴스 리스트 크롤링 실패: {url} / Error: {e}")
+    return news_list
 
-### GET /news/global/search
-- 해외 뉴스 검색 API
-- 제목, 본문, 작성자, 언론사 기준 검색
-- 검색 결과 Redis 캐싱 적용
+# -------------------------
+# 카테고리별 크롤링
+# -------------------------
+async def crawl_category(session, category, url):
+    news_list = await fetch_news_list(session, url)
+    tasks = []
+    valid_news = []
 
+    for news in news_list:
+        if collection.find_one({"link": news["link"]}):
+            log(f"[SKIP] 이미 저장됨: {news['title']}")
+            continue
 
+        tasks.append(fetch_news_detail(session, news["link"]))
+        valid_news.append(news)
 
-## ⚙ 핵심 로직
-# 해외 뉴스 크롤링 스케줄 실행
-<img width="538" height="191" alt="image" src="https://github.com/user-attachments/assets/f5257f2f-fb6b-4ec3-b4e6-79cfba9b3c6a" />
+        # 임시 문서 삽입 (상세 크롤 후 품질검사에서 걸러질 수 있음)
+        collection.update_one(
+            {"link": news["link"]},
+            {
+                "$setOnInsert": {
+                    "title": news["title"],
+                    "link": news["link"],
+                    "category": category,
+                    "author": "",
+                    "content": "",
+                    "media": "",
+                    "mediaLogo": "",
+                    "image_url": "",
+                    "pubDate": "",
+                }
+            },
+            upsert=True,
+        )
 
--> 백그라운드 스레드에서 해외 뉴스 크롤링 주기적 실행
--> Flask 서버와 크롤링 태스크 분리
-        
+    results = await asyncio.gather(*tasks)
 
-# Redis 캐시 기반 조회 로직
-<img width="777" height="404" alt="image" src="https://github.com/user-attachments/assets/9b885819-d039-4b84-8fe8-f9022443e3f7" />
+    for (author, content, media, mediaLogo, image_url, pubDate), news in zip(
+        results, valid_news
+    ):
+        has_title = bool(news.get("title", "").strip())
+        has_content = bool(content and content.strip())
+        has_media = bool(media and media.strip())
+        has_date = bool(pubDate and pubDate.strip())
 
+        # 제목이 없거나, (본문도 없고 언론사/날짜도 없으면) 삭제
+        if not has_title or (not has_content and not (has_media and has_date)):
+            log(f"[DROP] 내용 부족으로 삭제: {news['title']}")
+            collection.delete_one({"link": news["link"]})
+            continue
 
+        # pubDate가 비어 있으면 날짜 없는 기사라서 제거
+        if not has_date:
+            log(f"[DROP] 날짜 없음으로 삭제: {news['title']}")
+            collection.delete_one({"link": news["link"]})
+            continue
 
-# 뉴스 데이터 품질 검증
-<img width="559" height="507" alt="image" src="https://github.com/user-attachments/assets/78fba1df-7530-4a0b-8499-3658dc1df3bb" />
+        collection.update_one(
+            {"link": news["link"]},
+            {
+                "$set": {
+                    "author": author,
+                    "content": content,
+                    "media": media,
+                    "mediaLogo": mediaLogo,
+                    "image_url": image_url,
+                    "pubDate": pubDate,
+                }
+            },
+        )
 
+    log(f"✅ {category} 뉴스 크롤링 완료. 총 저장: {len(valid_news)}건")
 
+    # -------------------------
+    # [수정됨] 메인 실행 함수
+    # 이름 변경: main -> task_korea_crawling
+    # -------------------------
+    async def task_korea_crawling():
+        async with aiohttp.ClientSession() as session:
+            for category, url in CATEGORY_URLS.items():
+                log(f"=== 🇰🇷 국내 뉴스 크롤링 시작: {category} ===")
+                await crawl_category(session, category, url)
+            log("🎉 국내 뉴스 크롤링 전체 완료!")
+    
+    # 원래 있던 무한루프(periodic_crawl)와 실행부(__name__)는 삭제했습니다.
+    # app.py에서 task_korea_crawling 함수만 import해서 사용합니다.
 
-
-
-
-## ⚡ 성능 최적화 및 설계 포인트
-- Redis 캐시 적용으로 해외 뉴스 목록 및 검색 API 응답 속도 개선
-- 캐시 TTL 설정을 통해 데이터 최신성과 성능의 균형 유지
-- 페이지네이션 시 불완전 데이터 필터링을 고려한 여유 조회(limit * 2) 전략 적용
-- Flask 서버와 크롤링 태스크를 분리하여 안정적인 서비스 제공
+```
