@@ -42,5 +42,110 @@
 | 개발 도구 / IDE      | ![IntelliJ IDEA](https://img.shields.io/badge/IntelliJ%20IDEA-000000?style=flat&logo=intellijidea&logoColor=white)&nbsp;![STS](https://img.shields.io/badge/Spring%20Tool%20Suite-6DB33F?style=flat&logo=spring&logoColor=white)&nbsp;![VS Code](https://img.shields.io/badge/VS%20Code-007ACC?style=flat&logo=visualstudiocode&logoColor=white) |
 | 형상 관리 / 협업     | ![GitHub](https://img.shields.io/badge/GitHub-181717?style=flat&logo=github&logoColor=white)&nbsp;![Notion](https://img.shields.io/badge/Notion-000000?style=flat&logo=notion&logoColor=white) |
 
-## 주요 크롤링 코드 🕷️
+## 🕷️ 주요 크롤링 코드
+
+<details>
+<summary><strong>📈 실시간 국내주식 크롤링 (KOSPI · KOSDAQ)</strong></summary>
+
+본 스크립트는 네이버 금융의 KOSPI·KOSDAQ 시가총액 페이지를 대상으로  
+국내 주식 종목 데이터를 매일 자동 수집하는 배치 크롤러입니다.
+
+- 대상 시장: KOSPI / KOSDAQ  
+- 저장 방식: MongoDB Upsert  
+- 캐시 처리: Redis 캐시 무효화  
+- 시간 기준: KST (Asia/Seoul)
+
+---
+
+<details>
+<summary><strong>MongoDB · Redis 초기화 및 인덱스</strong></summary>
+
+크롤러 실행 시 MongoDB와 Redis에 연결하며,  
+시장별 컬렉션을 분리하고 종목 코드(`code`) 기준으로 unique index를 생성합니다.
+
+```python
+mongo_client = pymongo.MongoClient("mongodb+srv://...")
+db = mongo_client["stock"]
+kospi_col = db["naver_kospi"]
+kosdaq_col = db["naver_kosdaq"]
+
+col.create_index("code", unique=True)
+```
+
+</details> <details> <summary><strong>HTTP 요청 안정화 (Session + Retry)</strong></summary>
+네이버 금융 서버의 일시적 오류나 요청 제한에 대응하기 위해
+Session과 Retry 전략을 적용했습니다.
+
+```python
+session = requests.Session()
+session.mount("https://", HTTPAdapter(max_retries=retries))
+```
+User-Agent 랜덤 적용
+서버 오류 및 요청 제한 대응
+
+</details> <details> <summary><strong>데이터 정제 유틸 함수</strong></summary>
+크롤링된 문자열 데이터를 숫자 타입으로 변환하기 위해
+정제 함수를 별도로 구현했습니다.
+
+```python
+def clean_int(text):
+    if not text or text.strip() in ["N/A", "-", ""]:
+        return None
+    return int(text.replace(",", ""))
+```
+
+</details> <details> <summary><strong>단일 페이지 크롤링 로직</strong></summary>
+KOSPI(sosok=0)와 KOSDAQ(sosok=1) 페이지를 구분하여 요청하며,
+시가총액 테이블에서 핵심 종목 정보를 추출합니다.
+
+```python
+def crawl_page(sosok, page):
+    url = f"https://finance.naver.com/sise/sise_market_sum.naver?sosok={sosok}&page={page}"
+```
+종목명 / 종목코드
+
+현재가, 등락률
+
+시가총액, 거래량, PER, ROE
+
+</details> <details> <summary><strong>페이지 순회 및 종료 조건</strong></summary>
+불필요한 요청을 줄이기 위해
+빈 페이지가 연속으로 발생하면 자동으로 크롤링을 종료합니다.
+
+```python
+for page in range(1, 60):
+    if empty_streak >= 3:
+        break
+```
+
+</details> <details> <summary><strong>Bulk Upsert 저장 방식</strong></summary>
+수집된 데이터는 종목 코드 기준으로
+삽입 또는 수정이 동시에 가능한 Upsert 구조로 저장됩니다.
+
+```python
+UpdateOne(
+    {"code": x["code"]},
+    {"$set": x},
+    upsert=True
+)
+```
+
+</details> <details> <summary><strong>Redis 캐시 무효화</strong></summary>
+모든 데이터 저장이 완료된 이후,
+서비스에서 사용 중인 종목 리스트 캐시를 삭제하여
+다음 조회 시 최신 데이터가 로드되도록 처리합니다.
+
+```python
+r.delete("krx_kospi_list", "krx_kosdaq_list")
+```
+
+</details> <details> <summary><strong>실행 및 성능 로그</strong></summary>
+크롤링 시작과 종료 시간을 기록하여
+배치 작업 성능을 모니터링할 수 있도록 구성했습니다.
+
+```python
+start_time = time.time()
+print(f"소요 시간: {time.time() - start_time:.1f}초")
+```
+</details> </details>
 
