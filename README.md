@@ -275,10 +275,10 @@ async def task_korea_crawling():
 
 </details> </details> 
 
-## 검색API 코드
+## 🔍 검색API 코드
 
 <details>
-<summary><strong>🔍 종목 검색 API (GPT 기반 오타 보정 & 유사 종목 추천)</strong></summary>
+<summary><strong>🏷️ 종목 검색 API (GPT 기반 오타 보정 & 유사 종목 추천)</strong></summary>
 
 본 API는 **FastAPI 기반 국내 주식 종목 검색 서비스**로,  
 초성 검색 · 영문 키보드 오타 · 한글 오타를 모두 지원하며  
