@@ -275,3 +275,203 @@ async def task_korea_crawling():
 
 </details> </details> 
 
+## 검색API 코드
+
+<details>
+<summary><strong>🔍 종목 검색 API (GPT 기반 오타 보정 & 유사 종목 추천)</strong></summary>
+
+본 API는 **FastAPI 기반 국내 주식 종목 검색 서비스**로,  
+초성 검색 · 영문 키보드 오타 · 한글 오타를 모두 지원하며  
+검색 실패 시 **GPT를 활용한 종목명 추론 및 추천 기능**을 제공합니다.
+
+- **Backend**: FastAPI  
+- **Database**: MongoDB Atlas  
+- **형태소 분석**: Kiwi  
+- **문자열 유사도**: Levenshtein Distance  
+- **AI 보정**: OpenAI GPT-4o-mini  
+
+<details>
+<summary><strong>🚀 FastAPI 앱 설정 및 CORS</strong></summary>
+
+```python
+from fastapi import FastAPI, Query, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()
+
+origins = ["http://localhost:5173"]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+```
+</details>
+
+<details> <summary><strong>🗄️ MongoDB · OpenAI 초기화</strong></summary>
+    
+```python
+from pymongo import MongoClient
+from openai import OpenAI
+from typing import Optional
+
+MONGO_URI = "mongodb+srv://kh:1234@cluster0.fbav0ho.mongodb.net/"
+
+client: MongoClient = None
+db = None
+krx_col = None
+naver_kospi_col = None
+naver_kosdaq_col = None
+client_llm: Optional[OpenAI] = None
+
+@app.on_event("startup")
+def startup_db_client():
+    global client, db, krx_col, naver_kospi_col, naver_kosdaq_col, client_llm
+
+    client = MongoClient(MONGO_URI)
+    client.admin.command("ping")
+    db = client["stock"]
+    krx_col = db["krx"]
+    naver_kospi_col = db["naver_kospi"]
+    naver_kosdaq_col = db["naver_kosdaq"]
+
+    client_llm = OpenAI(api_key=OPENAI_API_KEY)
+
+@app.on_event("shutdown")
+def shutdown_db_client():
+    if client:
+        client.close()
+```
+</details>
+
+<details> <summary><strong>📦 응답 모델 정의</strong></summary>
+
+```python
+from pydantic import BaseModel
+from typing import List
+
+class StockSearchResponse(BaseModel):
+    code: str
+    name: str
+    market: str
+    current_price: int | float | None = None
+    change: str | None = None
+    change_rate: str | None = None
+    volume: int | None = None
+    market_cap: int | None = None
+    foreign_ratio: float | None = None
+    per: float | None = None
+    roe: float | None = None
+    crawled_at: str | None = None
+    chosung: str | None = None
+    crawl_date: str | None = None
+
+class SearchSuggestionResponse(BaseModel):
+    results: list[StockSearchResponse]
+    suggestion_original_query: str | None = None
+    suggestion_converted_text: str | None = None
+    suggestion_message: str | None = None
+    suggestion_list: List[str] | None = None
+    gpt_inferred_word: str | None = None
+```
+
+</details>
+
+<details> <summary><strong>🔠 초성 처리 유틸리티</strong></summary>
+
+```python
+import re
+
+CHOSUNG_LIST = ["ㄱ","ㄲ","ㄴ","ㄷ","ㄸ","ㄹ","ㅁ","ㅂ","ㅃ","ㅅ","ㅆ","ㅇ","ㅈ","ㅉ","ㅊ","ㅋ","ㅌ","ㅍ","ㅎ"]
+
+def get_chosung(text: str) -> str:
+    result = []
+    for char in text:
+        if "가" <= char <= "힣":
+            code = ord(char) - 0xAC00
+            result.append(CHOSUNG_LIST[code // 588])
+        else:
+            result.append(char)
+    return "".join(result)
+
+def contains_only_chosung(text: str) -> bool:
+    return bool(re.match(r'^[ㄱ-ㅎ]+$', text))
+```
+
+</details>
+
+<details> <summary><strong>⌨️ 영문 키보드 → 한글 자모 변환</strong></summary>
+
+```python
+KEY_MAP = {
+    'q': 'ㅂ', 'w': 'ㅈ', 'e': 'ㄷ', 'r': 'ㄱ', 't': 'ㅅ',
+    'a': 'ㅁ', 's': 'ㄴ', 'd': 'ㅇ', 'f': 'ㄹ', 'g': 'ㅎ',
+    'z': 'ㅋ', 'x': 'ㅌ', 'c': 'ㅊ', 'v': 'ㅍ'
+}
+
+def eng_to_kor_keyboard(text: str) -> str:
+    return "".join(KEY_MAP.get(c, c) for c in text)
+```
+
+</details>
+<details> <summary><strong>📏 Levenshtein 유사도 계산</strong></summary>
+
+```python
+import Levenshtein
+
+def get_levenshtein_similarity(str1: str, str2: str) -> float:
+    distance = Levenshtein.distance(str1, str2)
+    max_len = max(len(str1), len(str2))
+    return 1.0 - (distance / max_len) if max_len else 0.0
+```
+
+</details>
+<details> <summary><strong>🤖 GPT 기반 종목명 추천</strong></summary>
+
+```python
+def get_gpt_suggestions(original_query, converted_query, best_match_names):
+    prompt = f"""
+    입력 쿼리: {original_query}
+    변환 쿼리: {converted_query}
+    후보 리스트: {best_match_names}
+    """
+
+    response = client_llm.chat.completions.create(
+        model="gpt-4o-mini-2024-07-18",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.5
+    )
+
+    return json.loads(response.choices[0].message.content)
+```
+
+</details>
+<details> <summary><strong>🔎 종목 검색 API</strong></summary>
+
+```python
+@app.get("/search", response_model=SearchSuggestionResponse)
+def search_stocks(q: str = Query(...)):
+    q = q.strip()
+
+    if re.match(r'^[a-zA-Z]+$', q):
+        q = eng_to_kor_keyboard(q)
+
+    filter_query = {"name": {"$regex": q, "$options": "i"}}
+    krx_results = list(krx_col.find(filter_query, {"_id": 0}))
+
+    return SearchSuggestionResponse(
+        results=krx_results,
+        suggestion_original_query=q
+    )
+```
+</details>
+✅ 핵심 포인트
+
+초성 / 영문 오타 / 한글 오타 대응
+
+MongoDB + 네이버 시세 병합 구조
+
+GPT는 검색 실패 시 보조 추론용
+</details>
