@@ -26,7 +26,7 @@
 | 손원주 | 검색엔진 (형태소 분석 TF-IDF랭킹 오타보정), AI요약 등 | [![GitHub](https://img.shields.io/badge/GitHub-000000?style=flat&logo=github&logoColor=white)](https://github.com/swj6498) |
 | 지윤정 | 검색엔진 (형태소 분석 TF-IDF랭킹 오타보정), AI요약 등 | [![GitHub](https://img.shields.io/badge/GitHub-000000?style=flat&logo=github&logoColor=white)](https://github.com/Jiyunzeng) |
 
-## 기술 스택 🛠️
+## 🛠️ 기술 스택
 
 | 카테고리             | 기술                                                                                                                                 |
 |----------------------|--------------------------------------------------------------------------------------------------------------------------------------|
