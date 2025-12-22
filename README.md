@@ -149,3 +149,129 @@ print(f"소요 시간: {time.time() - start_time:.1f}초")
 ```
 </details> </details>
 
+<details>
+<summary><strong>🇰🇷 국내 뉴스 크롤링 (네이버 뉴스)</strong></summary>
+
+본 스크립트는 네이버 뉴스의 경제 섹션을 대상으로  
+국내 주요 뉴스를 **비동기 방식**으로 수집하는 크롤러입니다.  
+카테고리별 뉴스 목록을 조회한 뒤, 각 기사 상세 페이지를 병렬로 크롤링하여  
+MongoDB에 저장합니다.
+
+- 대상: 네이버 국내 뉴스 (경제 섹션)
+- 방식: asyncio + aiohttp 비동기 크롤링
+- 저장소: MongoDB
+- 실행 방식: FastAPI / 배치 작업에서 함수 단위 호출
+
+---
+
+<details>
+<summary><strong>MongoDB 연결 및 환경 변수 설정</strong></summary>
+
+MongoDB 접속 정보는 보안을 위해 **환경 변수(MONGO_URI)** 로 관리합니다.  
+환경 변수가 설정되지 않은 경우 크롤러 실행을 중단하도록 구성했습니다.
+
+```python
+MONGO_URI = os.environ.get("MONGO_URI")
+
+if not MONGO_URI:
+    raise RuntimeError("MONGO_URI not set in crawler")
+
+client = MongoClient(MONGO_URI, server_api=ServerApi("1"))
+db = client["stock"]
+collection = db["news_crawling"]
+```
+운영 환경 보안 강화
+로컬 / 배포 환경 분리 가능
+
+</details> <details> <summary><strong>뉴스 카테고리 정의</strong></summary>
+네이버 경제 뉴스의 세부 카테고리를 딕셔너리로 정의하여
+카테고리별 크롤링이 가능하도록 구성했습니다.
+
+```python
+CATEGORY_URLS = {
+    "금융": "https://news.naver.com/breakingnews/section/101/259",
+    "증권": "https://news.naver.com/breakingnews/section/101/258",
+    "산업/재계": "https://news.naver.com/breakingnews/section/101/261",
+    "중기/벤처": "https://news.naver.com/breakingnews/section/101/771",
+    "글로벌 경제": "https://news.naver.com/breakingnews/section/101/260",
+    "생활경제": "https://news.naver.com/breakingnews/section/101/310",
+    "경제 일반": "https://news.naver.com/breakingnews/section/101/263",
+}
+```
+카테고리 확장 용이
+
+카테고리별 로그 및 통계 관리 가능
+
+</details> <details> <summary><strong>모바일 → PC 뉴스 URL 변환</strong></summary>
+모바일 뉴스 링크를 PC 뉴스 링크로 변환하여
+일관된 HTML 구조에서 파싱할 수 있도록 처리했습니다.
+
+```python
+def to_pc_url(link):
+    if "m.news.naver.com" in link:
+        return link.replace("m.news.naver.com", "n.news.naver.com")
+    return link
+```
+</details> <details> <summary><strong>뉴스 상세 페이지 비동기 크롤링</strong></summary>
+기사 상세 페이지에서 작성자, 본문, 언론사, 대표 이미지, 작성일,
+언론사 로고 등을 추출합니다.
+
+```python
+async def fetch_news_detail(session, link):
+    async with session.get(link, headers=headers, timeout=15) as resp:
+        html = await resp.text()
+```
+BeautifulSoup 기반 HTML 파싱
+광고, 스크립트 제거 후 본문 정제
+meta 태그 기반 정보 보완 추출
+
+</details> <details> <summary><strong>뉴스 목록 크롤링</strong></summary>
+카테고리 페이지에서 뉴스 제목과 링크 목록을 수집합니다.
+
+```python
+async def fetch_news_list(session, url, max_items=1000):
+    soup = BeautifulSoup(html, "lxml")
+    items = soup.select("a.sa_text_title")
+```
+최대 수집 개수 제한
+
+상대 경로 → 절대 경로 변환
+
+</details> <details> <summary><strong>카테고리별 크롤링 및 중복 처리</strong></summary>
+이미 MongoDB에 저장된 뉴스는 제외하고,
+신규 기사만 상세 크롤링 대상으로 처리합니다.
+
+```python
+if collection.find_one({"link": news["link"]}):
+    continue
+```
+중복 크롤링 방지
+임시 문서 선삽입 후 상세 정보 업데이트
+
+</details> <details> <summary><strong>기사 품질 검증 및 필터링</strong></summary>
+제목, 본문, 언론사, 작성일 기준으로
+품질이 낮은 기사는 자동 제거합니다.
+
+```python
+if not has_title or (not has_content and not (has_media and has_date)):
+    collection.delete_one({"link": news["link"]})
+```
+내용 없는 기사 제거
+날짜 없는 기사 제거
+데이터 신뢰도 향상
+
+</details> <details> <summary><strong>메인 실행 함수</strong></summary>
+FastAPI 또는 스케줄러에서 호출할 수 있도록
+함수 단위로 실행 구조를 분리했습니다.
+
+```python
+async def task_korea_crawling():
+    async with aiohttp.ClientSession() as session:
+        for category, url in CATEGORY_URLS.items():
+            await crawl_category(session, category, url)
+```
+비동기 병렬 처리
+서비스 연동에 최적화
+
+</details> </details> 
+
