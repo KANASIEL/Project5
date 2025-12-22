@@ -475,3 +475,171 @@ MongoDB + 네이버 시세 병합 구조
 
 GPT는 검색 실패 시 보조 추론용
 </details>
+
+
+<details>
+<summary><strong>📰 Flask 뉴스 API (MongoDB + Redis 캐시)</strong></summary>
+
+본 API는 **Flask 기반 뉴스 조회 서비스**로,  
+카테고리별 뉴스, 키워드 검색, Redis 캐시, 크롤러 자동 실행 기능을 제공합니다.
+
+- **Backend**: Flask  
+- **Database**: MongoDB Atlas  
+- **캐시**: Redis  
+- **크롤러**: 비동기 Naver 뉴스 크롤러  
+- **자동 정리**: 30일 지난 뉴스 삭제  
+
+<details>
+<summary><strong>🚀 Flask 앱 설정 & CORS</strong></summary>
+
+```python
+from flask import Flask
+from flask_cors import CORS
+
+app = Flask(__name__)
+CORS(app)  # 모든 도메인 접근 허용
+```
+
+</details> <details> <summary><strong>🗄️ MongoDB & Redis 초기화</strong></summary>
+    
+```python
+from pymongo.mongo_client import MongoClient
+from pymongo.server_api import ServerApi
+import redis, os
+
+MONGO_URI = os.environ.get("MONGO_URI")
+client = MongoClient(MONGO_URI, server_api=ServerApi("1"))
+db = client["stock"]
+collection = db["news_crawling"]
+
+REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6380/0")
+redis_client = redis.from_url(REDIS_URL, decode_responses=True)
+CACHE_TTL = 60  # 캐시 1분
+```
+
+</details> <details> <summary><strong>📅 pubDate 파싱 & 오래된 뉴스 삭제</strong></summary>
+    
+```python
+from datetime import datetime, timedelta
+
+def _parse_pub_date(value):
+    if isinstance(value, datetime):
+        return value
+    if isinstance(value, str):
+        try:
+            return datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except Exception:
+            for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+                try:
+                    return datetime.strptime(value, fmt)
+                except:
+                    continue
+    return None
+
+def delete_old_news(days=30):
+    threshold = datetime.now() - timedelta(days=days)
+    result = collection.delete_many({"pubDate": {"$lt": threshold}})
+    print(f"[CLEANUP] {result.deleted_count}개 삭제 (기준일: {threshold})")
+```
+
+</details> <details> <summary><strong>📃 Mongo 정렬 + 페이지네이션</strong></summary>
+
+```python
+def _sort_and_page(query, page, size, order):
+    sort_dir = -1 if order != "asc" else 1
+    cursor = (
+        collection.find(query, {"_id": 0})
+        .sort("pubDate", sort_dir)
+        .skip(page * size)
+        .limit(size)
+    )
+    content = []
+    for news in cursor:
+        parsed = _parse_pub_date(news.get("pubDate"))
+        if parsed:
+            news["pubDate"] = parsed.strftime("%Y-%m-%d %H:%M:%S")
+            content.append(news)
+    total_count = collection.count_documents(query)
+    total_pages = (total_count + size - 1) // size
+    return content, total_pages
+```
+
+</details> <details> <summary><strong>💾 Redis 캐시 유틸</strong></summary>
+
+```python
+import json
+
+def _cache_key(prefix, category, page, size, order):
+    cat = category or ""
+    return f"{prefix}:cat={cat}:page={page}:size={size}:order={order}"
+
+def get_news_with_cache(prefix, category, page, size, order, query):
+    key = _cache_key(prefix, category, page, size, order)
+    cached = redis_client.get(key)
+    if cached:
+        return json.loads(cached)
+    content, total_pages = _sort_and_page(query, page, size, order)
+    result = {"content": content, "number": page, "totalPages": total_pages}
+    redis_client.setex(key, CACHE_TTL, json.dumps(result))
+    return result
+```
+
+</details> <details> <summary><strong>🔎 뉴스 조회 & 검색 API</strong></summary>
+    
+```python
+from flask import request, jsonify
+from urllib.parse import unquote
+
+@app.route("/news")
+def get_news():
+    category = unquote(request.args.get("category", ""))
+    page = int(request.args.get("page", 0))
+    size = int(request.args.get("size", 5))
+    order = request.args.get("order", "desc")
+    query = {"category": category} if category else {}
+    result = get_news_with_cache("news", category, page, size, order, query)
+    return jsonify(result)
+
+@app.route("/news/search")
+def search_news():
+    q = request.args.get("q", "").strip()
+    category = unquote(request.args.get("category", ""))
+    page = int(request.args.get("page", 0))
+    size = int(request.args.get("size", 5))
+    order = request.args.get("order", "desc")
+    if not q:
+        return jsonify({"content": [], "number": 0, "totalPages": 0})
+    regex = {"$regex": q, "$options": "i"}
+    or_query = {"$or": [{"title": regex}, {"content": regex}, {"author": regex}, {"media": regex}]}
+    query = {"$and": [{"category": category}, or_query]} if category else or_query
+    content, total_pages = _sort_and_page(query, page, size, order)
+    return jsonify({"content": content, "number": page, "totalPages": total_pages})
+```
+
+</details> <details> <summary><strong>⏱️ 백그라운드 크롤러 스레드</strong></summary>
+
+```python
+import threading, asyncio, time
+import scripts.naver_news_crawler as crawler
+
+def run_crawler():
+    while True:
+        asyncio.run(crawler.task_korea_crawling())
+        delete_old_news(30)
+        time.sleep(3600)
+
+threading.Thread(target=run_crawler, daemon=True).start()
+```
+
+</details>
+✅ 핵심 포인트
+
+카테고리별/키워드 뉴스 검색 지원
+
+Redis 캐시로 1분간 조회 성능 향상
+
+Naver 뉴스 비동기 크롤러 + 오래된 뉴스 자동 삭제
+
+Flask + MongoDB 기반으로 간단하게 확장 가능
+
+</details>
